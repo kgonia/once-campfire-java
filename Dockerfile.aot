@@ -6,10 +6,15 @@
 #
 #   docker build -f Dockerfile.aot -t once-campfire-java:aot --build-arg APP_VERSION=... .
 #
+# --build-arg JDK=28 builds on the JDK 28 early-access build instead, whose cache also keeps the
+# code C1 and C2 compiled during training (JEP 544). That code is for the CPU it was compiled on, so
+# build the image on the machine type it will run on.
+#
 # The training run is a fresh install driven through first run, posting and the main pages. It
 # never sees production data, and the cache holds no application state, only classes and profiles.
 
 ARG DEBIAN_RELEASE=trixie
+ARG JDK=26
 
 FROM docker.io/library/maven:3.9.11-eclipse-temurin-25 AS build
 WORKDIR /src
@@ -27,7 +32,8 @@ RUN --mount=type=cache,id=campfire-java-m2,target=/root/.m2 mvn -q -B package -D
 # (Quarkus's native-image substitutions, Jakarta EL), java.net.http (jsoup's Jsoup.connect) and
 # java.compiler (Vert.x verticle compilation), none of which run here. java.rmi is needed: SmallRye
 # context propagation loads Narayana's JTA context provider at boot, whose exceptions extend
-# RemoteException. java.sql brings java.logging, java.xml and java.transaction.xa; jdk.zipfs is
+# RemoteException; java.security.jgss for the same reason, Agroal's Kerberos provider being loaded
+# with the pools. java.sql brings java.logging, java.xml and java.transaction.xa; jdk.zipfs is
 # required by SmallRye's class loader; jdk.net, which jdeps can't see, is looked up reflectively by
 # the JDK's and Netty's socket code. Logging class loads through the parity suite, posting, uploads
 # and TLS unfurls shows nothing
@@ -40,8 +46,18 @@ RUN --mount=type=cache,id=campfire-java-m2,target=/root/.m2 mvn -q -B package -D
 # exception when loading aot-linked classes"). Linking from jmods instead of the run-time image
 # doesn't help. Any of jdk.internal.le, jdk.attach, jdk.compiler or jdk.jartool avoids it, and
 # jdk.internal.le adds no tool.
-FROM docker.io/library/eclipse-temurin:26-jdk AS runtime
-RUN jlink --add-modules java.base,java.management,java.naming,java.rmi,java.sql,jdk.net,jdk.unsupported,jdk.zipfs,jdk.internal.le \
+FROM docker.io/library/eclipse-temurin:26-jdk AS jdk-26
+
+FROM docker.io/library/debian:${DEBIAN_RELEASE}-slim AS jdk-28
+ADD --checksum=sha256:fd0b94162fede0e2f7a31106a38d0105b23e96521d8c61c0f1a0967e1383b59d \
+    https://download.java.net/java/early_access/jdk28/20/GPL/openjdk-28-ea+20_linux-x64_bin.tar.gz /tmp/jdk.tar.gz
+# binutils: jlink's --strip-debug runs objcopy.
+RUN apt-get update -qq && apt-get install --no-install-recommends -y binutils && rm -rf /var/lib/apt/lists && \
+    mkdir -p /opt/java/openjdk && tar -xzf /tmp/jdk.tar.gz -C /opt/java/openjdk --strip-components=1 && rm /tmp/jdk.tar.gz
+ENV PATH=/opt/java/openjdk/bin:$PATH
+
+FROM jdk-${JDK} AS runtime
+RUN jlink --add-modules java.base,java.management,java.naming,java.rmi,java.security.jgss,java.sql,jdk.net,jdk.unsupported,jdk.zipfs,jdk.internal.le \
       --strip-debug --no-man-pages --no-header-files --generate-cds-archive --output /runtime
 
 
