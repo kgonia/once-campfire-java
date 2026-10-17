@@ -8,6 +8,8 @@ import io.quarkus.runtime.annotations.RegisterForReflection;
 /// options (strong or weak keys, size or weight bound, expiry); these are the ones the app's
 /// caches (fragments, page digests, the response caches) were seen to load. A cache built with
 /// new options needs its classes added here. Agroal instantiates the SQLite driver by name.
+/// acme4j picks its CA providers with a `ServiceLoader`, from its `META-INF/services` (a native
+/// resource, see `application.properties`).
 @RegisterForReflection(classNames = {
     "com.github.benmanes.caffeine.cache.FS", "com.github.benmanes.caffeine.cache.FSMS",
     "com.github.benmanes.caffeine.cache.PS", "com.github.benmanes.caffeine.cache.PSMW",
@@ -16,6 +18,9 @@ import io.quarkus.runtime.annotations.RegisterForReflection;
     "com.github.benmanes.caffeine.cache.SSMWA", "com.github.benmanes.caffeine.cache.SSMWW",
     "com.github.benmanes.caffeine.cache.WS", "com.github.benmanes.caffeine.cache.WSMS",
     "org.sqlite.JDBC",
+    "org.shredzone.acme4j.provider.actalis.ActalisAcmeProvider", "org.shredzone.acme4j.provider.google.GoogleAcmeProvider",
+    "org.shredzone.acme4j.provider.letsencrypt.LetsEncryptAcmeProvider", "org.shredzone.acme4j.provider.pebble.PebbleAcmeProvider",
+    "org.shredzone.acme4j.provider.sslcom.SslComAcmeProvider", "org.shredzone.acme4j.provider.zerossl.ZeroSSLAcmeProvider",
 })
 final class NativeImageHints {
     private NativeImageHints() {}
