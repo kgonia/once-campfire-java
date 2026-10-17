@@ -126,17 +126,10 @@ public class Conn implements AutoCloseable {
         }
     }
 
-    /// Runs an INSERT and returns `last_insert_rowid()`.
+    /// Runs an INSERT and returns the new row's id, with `RETURNING` as Rails' adapter does: one
+    /// statement inside the writer's lock instead of a second `last_insert_rowid()` query.
     public long insert(String sql, Object... args) {
-        try {
-            bind(sql, args).executeUpdate();
-            try (Statement s = jdbc.createStatement(); ResultSet rs = s.executeQuery("SELECT last_insert_rowid()")) {
-                rs.next();
-                return rs.getLong(1);
-            }
-        } catch (SQLException e) {
-            throw new DbException(sql, e);
-        }
+        return count(sql + " RETURNING \"id\"", args);
     }
 
     public void execute(String sql) {

@@ -20,7 +20,11 @@ public final class SessionLookup {
 
     /// The session and user for `token`, or null.
     public Session.WithUser find(String token) {
-        long version = db.dataVersion();
+        return find(token, db.dataVersion());
+    }
+
+    /// The same, as of a data version the caller just read.
+    public Session.WithUser find(String token, long version) {
         Entry entry = entries.get(token);
         if (entry != null && entry.version() == version) return entry.found();
         Session.WithUser found = db.read(conn -> Session.findByToken(conn, token));

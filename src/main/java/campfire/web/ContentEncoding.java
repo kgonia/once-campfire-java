@@ -32,8 +32,9 @@ final class ContentEncoding {
     /// bodies, redirects among them, are gzipped too.
     static boolean shouldDeflate(int status, @Nullable String cacheControl, @Nullable String contentEncoding, boolean emptyWithAppSetLength) {
         if (status < 200 || status == 204 || status == 304) return false;
-        if (cacheControl != null && NO_TRANSFORM.matcher(cacheControl).find()) return false;
-        if (contentEncoding != null && !IDENTITY.matcher(contentEncoding).find()) return false;
+        // `contains` first: the lookbehind patterns are only needed to rule out near-misses.
+        if (cacheControl != null && cacheControl.contains("no-transform") && NO_TRANSFORM.matcher(cacheControl).find()) return false;
+        if (contentEncoding != null && !(contentEncoding.contains("identity") && IDENTITY.matcher(contentEncoding).find())) return false;
         return !emptyWithAppSetLength;
     }
 

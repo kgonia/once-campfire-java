@@ -37,9 +37,6 @@ public interface Config {
 
     Optional<String> gitRevision();
 
-    /// Pooled read-only SQLite connections; defaults to twice the CPUs, at least 4.
-    Optional<Integer> dbReaders();
-
     @WithDefault("3")
     int jobConcurrency();
 
@@ -61,10 +58,6 @@ public interface Config {
 
     default Path filesPath() {
         return storage().resolve("files");
-    }
-
-    default int readers() {
-        return dbReaders().orElse(Math.max(4, Runtime.getRuntime().availableProcessors() * 2));
     }
 
     default long responseCacheBytes() {

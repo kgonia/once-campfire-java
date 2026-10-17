@@ -1,13 +1,14 @@
 package campfire.db;
 
+import io.agroal.api.AgroalDataSource;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -17,6 +18,13 @@ import org.sqlite.JDBC;
 /// observer connection whose `data_version` tells caches when anything committed (including
 /// another process), and a checkpointer that keeps WAL checkpoints off the write path.
 ///
+/// The writer and the readers are the `writer` and `readers` datasources (Agroal pools, see
+/// `application.properties`). Agroal doesn't cache prepared statements, and SQLite prepares per
+/// connection, so each pooled connection keeps its {@link Conn}, statement cache and all, by the
+/// SQLite connection underneath; the pools don't retire connections. The observer and checkpointer
+/// are connections of their own, opened with the writer's URL: `data_version` only means something
+/// asked of the same connection every time.
+///
 /// Writes run in `BEGIN IMMEDIATE` (`default_transaction_mode: immediate` in the reference's
 /// `config/database.yml`); their after-commit work runs in order once the transaction commits,
 /// the way Active Record runs `after_commit` callbacks. A write nested in another on the same
@@ -24,8 +32,6 @@ import org.sqlite.JDBC;
 public final class Database implements AutoCloseable {
     private static final Logger LOG = Logger.getLogger(Database.class.getName());
 
-    /// `timeout: 5000` in `config/database.yml`.
-    static final int BUSY_TIMEOUT_MS = 5000;
     /// Commits between background PASSIVE checkpoints (SQLite's auto-checkpoint is 1,000 pages).
     private static final int CHECKPOINT_EVERY_COMMITS = 64;
     /// WAL size at which the writer itself checkpoints with RESTART.
@@ -62,9 +68,11 @@ public final class Database implements AutoCloseable {
     }
 
     private final Path path;
-    private final Tx writer;
+    private final AgroalDataSource writerPool;
+    private final AgroalDataSource readerPool;
+    private final Map<Connection, Tx> writers = new ConcurrentHashMap<>();
+    private final Map<Connection, Conn> readers = new ConcurrentHashMap<>();
     private final ReentrantLock writeLock = new ReentrantLock();
-    private final BlockingQueue<Conn> readers;
     private final Conn observer;
     private final ReentrantLock observerLock = new ReentrantLock();
     private final Conn checkpointer;
@@ -74,17 +82,19 @@ public final class Database implements AutoCloseable {
     private int commitsSinceCheckpoint;
     private static final ThreadLocal<Tx> CURRENT = new ThreadLocal<>();
 
-    public Database(Path path, int readerCount) {
+    /// `path` is the file both pools open.
+    public Database(Path path, AgroalDataSource writerPool, AgroalDataSource readerPool) {
         this.path = path;
+        this.writerPool = writerPool;
+        this.readerPool = readerPool;
+        String url = writerPool.getConfiguration().connectionPoolConfiguration().connectionFactoryConfiguration().jdbcUrl();
         try {
             Files.createDirectories(path.toAbsolutePath().getParent());
-            this.writer = new Tx(open(false));
-            Schema.prepare(writer);
-            writer.execute("PRAGMA wal_autocheckpoint=0");
-            this.readers = new ArrayBlockingQueue<>(readerCount);
-            for (int i = 0; i < readerCount; i++) readers.add(new Conn(open(true)));
-            this.observer = new Conn(open(true));
-            this.checkpointer = new Conn(open(false));
+            // Before either pool opens a connection: switching a new file to WAL needs it alone, and
+            // pools open theirs concurrently, which would then find the file locked.
+            this.checkpointer = new Conn(open(url, false));
+            Schema.prepare(checkpointer);
+            this.observer = new Conn(open(url, true));
             this.checkpointThread = Thread.ofPlatform().name("campfire-db-checkpointer").daemon().start(this::runCheckpoints);
         } catch (SQLException | java.io.IOException e) {
             throw new IllegalStateException("can't open " + path + ": " + e.getMessage(), e);
@@ -95,20 +105,17 @@ public final class Database implements AutoCloseable {
         return path;
     }
 
-    private java.sql.Connection open(boolean readOnly) throws SQLException {
-        var properties = new Properties();
-        properties.setProperty("busy_timeout", String.valueOf(BUSY_TIMEOUT_MS));
-        properties.setProperty("foreign_keys", "true");
-        properties.setProperty("journal_mode", "WAL");
-        properties.setProperty("synchronous", "NORMAL");
-        properties.setProperty("journal_size_limit", "67108864");
-        properties.setProperty("cache_size", "2000");
-        properties.setProperty("open_mode", String.valueOf(0x00000002 | 0x00000004 | 0x00008000)); // READWRITE | CREATE | NOMUTEX
-        var connection = JDBC.createConnection("jdbc:sqlite:" + path.toAbsolutePath(), properties);
+    private static java.sql.Connection open(String url, boolean readOnly) throws SQLException {
+        var connection = JDBC.createConnection(url, new java.util.Properties());
         try (var s = connection.createStatement()) {
             if (readOnly) s.execute("PRAGMA query_only = true");
         }
         return connection;
+    }
+
+    /// The {@link Tx} of a connection borrowed from the writer pool.
+    private Tx writer(Connection borrowed) throws SQLException {
+        return writers.computeIfAbsent(borrowed.unwrap(Connection.class), Tx::new);
     }
 
     /// Runs `work` in a write transaction (or joins the current one), then its after-commit work.
@@ -118,7 +125,11 @@ public final class Database implements AutoCloseable {
         writeLock.lock();
         List<Runnable> queued;
         T value;
+        Connection borrowed = null;
+        Tx writer = null;
         try {
+            borrowed = writerPool.getConnection();
+            writer = writer(borrowed);
             CURRENT.set(writer);
             writer.inTransaction = true;
             writer.afterCommit = new ArrayList<>();
@@ -139,7 +150,7 @@ public final class Database implements AutoCloseable {
             }
             queued = writer.afterCommit;
             writer.afterCommit = new ArrayList<>();
-            noteCommit();
+            noteCommit(writer);
             // After-commit work may write again (Active Record runs it outside the transaction).
             RuntimeException first = null;
             for (Runnable hook : queued) {
@@ -152,10 +163,21 @@ public final class Database implements AutoCloseable {
             }
             if (first != null) throw first;
             return value;
+        } catch (SQLException e) {
+            throw new DbException("can't get the write connection", e);
         } finally {
             CURRENT.remove();
-            writer.inTransaction = false;
+            if (writer != null) writer.inTransaction = false;
+            if (borrowed != null) release(borrowed);
             writeLock.unlock();
+        }
+    }
+
+    private static void release(Connection borrowed) {
+        try {
+            borrowed.close();
+        } catch (SQLException e) {
+            LOG.log(Level.WARNING, "returning a connection to its pool failed", e);
         }
     }
 
@@ -163,17 +185,18 @@ public final class Database implements AutoCloseable {
     public <T> T read(Read<T> read) {
         Tx current = CURRENT.get();
         if (current != null) return read.run(current);
+        Connection borrowed;
         Conn conn;
         try {
-            conn = readers.take();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new DbException("interrupted waiting for a read connection");
+            borrowed = readerPool.getConnection();
+            conn = readers.computeIfAbsent(borrowed.unwrap(Connection.class), Conn::new);
+        } catch (SQLException e) {
+            throw new DbException("can't get a read connection", e);
         }
         try {
             return read.run(conn);
         } finally {
-            readers.add(conn);
+            release(borrowed);
         }
     }
 
@@ -187,7 +210,7 @@ public final class Database implements AutoCloseable {
         }
     }
 
-    private void noteCommit() {
+    private void noteCommit(Tx writer) {
         if (++commitsSinceCheckpoint < CHECKPOINT_EVERY_COMMITS) return;
         commitsSinceCheckpoint = 0;
         try {
@@ -229,10 +252,12 @@ public final class Database implements AutoCloseable {
         checkpointThread.interrupt();
         writeLock.lock();
         try {
-            readers.forEach(Conn::close);
+            readers.values().forEach(Conn::close);
+            writers.values().forEach(Conn::close);
+            readerPool.close();
+            writerPool.close();
             observer.close();
             checkpointer.close();
-            writer.close();
         } finally {
             writeLock.unlock();
         }

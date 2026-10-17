@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 import campfire.db.Database;
+import campfire.db.TestDatabase;
 import campfire.db.Times;
 import campfire.rooms.Membership;
 import campfire.rooms.Room;
@@ -67,7 +68,7 @@ final class CableTestSupport implements AutoCloseable {
 
     private CableTestSupport(Cable.Options options) throws Exception {
         dir = Files.createTempDirectory("cable-test");
-        db = new Database(dir.resolve("test.sqlite3"), 2);
+        db = TestDatabase.open(dir.resolve("test.sqlite3"));
         loadFixtures();
         cable = new Cable(db, secrets, token -> db.read(conn -> Session.findByToken(conn, token)), options);
         broadcasts = new Broadcasts(cable);

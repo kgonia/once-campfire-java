@@ -57,8 +57,7 @@ public final class ResponseCache {
         }
         String key = key(request, session, endpoint);
         if (key == null) return Optional.empty();
-        long version = request.app().db().dataVersion();
-        if (version != request.dataVersionAtStart()) return Optional.empty();
+        long version = request.dataVersionAtStart();
         Entry entry = entries.getIfPresent(key);
         if (entry == null || entry.version() != version) {
             request.cacheTicket(new Ticket(version, key));

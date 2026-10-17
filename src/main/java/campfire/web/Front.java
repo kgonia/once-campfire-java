@@ -141,8 +141,8 @@ public class Front {
     /// Seconds since the request arrived, to the microsecond.
     static String runtime(RoutingContext rc) {
         Long started = rc.get(STARTED);
-        double seconds = started == null ? 0 : (System.nanoTime() - started) / 1e9;
-        return String.format(java.util.Locale.ROOT, "%.6f", seconds);
+        long micros = started == null ? 0 : (System.nanoTime() - started + 500) / 1000;
+        return micros / 1_000_000 + "." + Long.toString(1_000_000 + micros % 1_000_000).substring(1);
     }
 
     /// An empty 413 for a declared body over the limit (0 is none), before the app sees it.

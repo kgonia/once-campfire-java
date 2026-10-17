@@ -16,7 +16,8 @@ Packages are organized by feature. Inside a feature:
 - **`*Service`**: `@ApplicationScoped` beans that own the transactions and the side effects, such as cable
   broadcasts, disconnecting sockets, webhooks and push.
 - **Records and static queries** for each table (`Room`, `Message`, `User`, …), plus view models and presenters
-  that build what the templates render.
+  that build what the templates render. `Room` and `Membership` build their SQL with jOOQ (see below); the
+  other tables still use hand-written SQL strings.
 
 | package | what's in it |
 |---|---|
@@ -51,6 +52,42 @@ of its own:
 These are the same positions the Rust port's askama `{%-` tags take. Partials end with as many newlines as their
 Rust counterpart renders, and pages end at their layout call.
 
+## Idiomatic approach and exceptions
+
+The default is the framework's own way of doing things. A deviation needs one of two reasons: matching Rails
+byte for byte, or a measured performance loss. Each deviation is listed below with its reason.
+
+**What's standard:**
+- Quarkus REST resources on virtual threads, CDI beans, `@ConfigMapping`, and request/response filters.
+- Two Quarkus-managed Agroal datasources, `writer` and `readers`, configured in `application.properties`.
+- jOOQ code generation from the database schema, with queries built on the generated tables and columns. This is
+  jOOQ's ["SQL builder with code generation"](https://www.jooq.org/doc/latest/manual/getting-started/use-cases/jooq-as-a-sql-builder-with-code-generation/)
+  mode, so a renamed column breaks the build instead of a request.
+- Caffeine for caches, jte for templates, jsoup for HTML, and JSpecify with NullAway for nullability.
+
+**Exceptions:**
+
+| what | instead of | why |
+|---|---|---|
+| jOOQ only renders SQL, once per query, into a constant (`campfire.db.Sql`); `Conn` runs it on a cached `PreparedStatement` | executing through jOOQ | Measured on Linux: a primary-key lookup takes 3 µs this way, 13 µs through jOOQ, and 9 µs with jOOQ's `keepStatement`. On cached pages that cost room_show 23% and messages_page 43%. |
+| A prepared-statement cache per connection | the driver's or pool's cache | sqlite-jdbc and Agroal have none. Without it room_show loses 21%. The pools never retire a connection, so the cache stays valid. |
+| `Database.write`: one writer, `BEGIN IMMEDIATE`, after-commit hooks | `@Transactional`/JTA, or jOOQ's `transaction()` | A plain `BEGIN` in SQLite is deferred, so concurrent writers fail with `SQLITE_BUSY` when they upgrade to a write lock. This is what Rails' adapter does. |
+| The `data_version` observer and the WAL checkpointer, on connections of their own | pooled connections | `PRAGMA data_version` only means something asked of the same connection every time. |
+| jOOQ classes generated from `schema.sql` loaded into SQLite at build time (`src/build/jooq`) | running migrations, e.g. Flyway, then generating | Rails owns the migrations. `schema.sql` is exactly what `db:prepare` creates. |
+| The front layer's own cache and gzip (`web.Front`, `ContentEncoding`) | Quarkus/Vert.x HTTP compression | Byte parity: Rack's and Thruster's gzip headers, `Vary` merging, and cached gzipped pages. |
+| Its own JSON writer (`rails.Json`) | Jackson | Byte parity: Rails escapes `<`, `>` and `&` as `<` etc., and formats numbers as Ruby does. |
+| Header names lowercased, request ids, `X-Runtime` | framework defaults | Rack 3 and Rails behaviour that the Rust port reproduces. |
+
+What the datasources need for SQLite (in `application.properties`):
+- `db-kind=other` with the SQLite driver.
+- The pragmas in the JDBC URL.
+- A one-connection writer pool.
+- Transactions disabled.
+- No idle removal or background validation.
+
+Agroal can't tell whether a connection survived an error for `db-kind=other`. Its startup warning about this is
+silenced, because a local file's connections don't break.
+
 ## Build and run
 
 Requires JDK 25 and Maven 3.9.
@@ -62,7 +99,7 @@ CAMPFIRE_STORAGE=./storage SECRET_KEY_BASE=… HTTP_PORT=3000 java -jar target/q
 
 Configuration is the Rails app's environment: `SECRET_KEY_BASE`, `DISABLE_SSL`, `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY`,
 `APP_VERSION`, `GIT_REVISION`, `HTTP_PORT`, plus `CAMPFIRE_STORAGE` (default `/rails/storage`, which holds `db/` and
-`files/`).
+`files/`) and `DB_READERS` (the most read connections, opened as needed; default 16).
 
 Images, with the same user, layout and port contract as the Rails image:
 

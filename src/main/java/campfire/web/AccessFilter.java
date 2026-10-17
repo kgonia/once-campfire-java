@@ -63,7 +63,7 @@ public class AccessFilter {
             request.markFramework();
             return null;
         }
-        if (request.isGet()) request.dataVersionAtStart(db.dataVersion());
+        request.dataVersionAtStart(db.dataVersion());
 
         boolean isPublic = has(resource, Access.Public.class);
         boolean guestOnly = has(resource, Access.GuestOnly.class);

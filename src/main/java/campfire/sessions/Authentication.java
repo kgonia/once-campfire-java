@@ -29,7 +29,7 @@ public class Authentication {
     public boolean resume(CurrentRequest request) {
         String token = request.signedCookie(CurrentRequest.SESSION_TOKEN_COOKIE);
         if (token == null) return false;
-        Session.WithUser found = sessions.find(token);
+        Session.WithUser found = sessions.find(token, dataVersion(request));
         if (found == null) return false;
         Session session = found.session();
         if (session.needsResume(Times.now())) {
@@ -50,7 +50,14 @@ public class Authentication {
     /// upload endpoints ask).
     public boolean hasSession(CurrentRequest request) {
         String token = request.signedCookie(CurrentRequest.SESSION_TOKEN_COOKIE);
-        return token != null && sessions.find(token) != null;
+        return token != null && sessions.find(token, dataVersion(request)) != null;
+    }
+
+    /// The version the access filter read, so a request reads it once; framework endpoints skip
+    /// that filter.
+    private long dataVersion(CurrentRequest request) {
+        long version = request.dataVersionAtStart();
+        return version >= 0 ? version : db.dataVersion();
     }
 
     /// Signs a bot in from its `bot_key` (`<id>-<token>`), surrounding whitespace ignored.

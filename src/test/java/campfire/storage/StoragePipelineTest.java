@@ -14,6 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import campfire.db.Database;
+import campfire.db.TestDatabase;
 import campfire.rails.Json;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -44,7 +45,7 @@ class StoragePipelineTest {
 
     @BeforeEach
     void setUp() {
-        db = new Database(dir.resolve("db.sqlite3"), 2);
+        db = TestDatabase.open(dir.resolve("db.sqlite3"));
         storage = new Storage(dir.resolve("files"), VERIFIER, db, 16L * 1024 * 1024);
         service = new ActiveStorageService();
         service.storage = storage;

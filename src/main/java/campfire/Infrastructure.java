@@ -11,6 +11,8 @@ import campfire.rails.SecureRandoms;
 import campfire.storage.Storage;
 import campfire.web.ResponseCache;
 import campfire.sessions.SessionLookup;
+import io.agroal.api.AgroalDataSource;
+import io.quarkus.agroal.DataSource;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.inject.Disposes;
 import jakarta.enterprise.inject.Produces;
@@ -25,8 +27,8 @@ import java.nio.file.Path;
 public class Infrastructure {
     @Produces
     @ApplicationScoped
-    Database database(Config config) {
-        return new Database(config.databasePath(), config.readers());
+    Database database(Config config, @DataSource("writer") AgroalDataSource writer, @DataSource("readers") AgroalDataSource readers) {
+        return new Database(config.databasePath(), writer, readers);
     }
 
     void close(@Disposes Database db) {

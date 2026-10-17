@@ -62,7 +62,8 @@ public class CurrentRequest {
     private @Nullable User user;
     private @Nullable Session session;
     private boolean authenticatedByBot;
-    /// The database's data version when the request arrived (GETs only); see `ResponseCache`.
+    /// The database's data version when the access filter admitted the request, read once and
+    /// shared by the session lookup and `ResponseCache`; -1 for framework endpoints.
     private long dataVersionAtStart = -1;
     private ResponseCache.@Nullable Ticket cacheTicket;
     /// The gzipped body that came with a cache hit, so it isn't compressed again.
@@ -153,7 +154,7 @@ public class CurrentRequest {
         return routing;
     }
 
-    long dataVersionAtStart() {
+    public long dataVersionAtStart() {
         return dataVersionAtStart;
     }
 

@@ -226,6 +226,10 @@ public class ResponseFinisher {
         }
     }
 
+    private static String strong(String etag) {
+        return etag.startsWith("W/") ? etag.substring(2) : etag;
+    }
+
     /// `If-None-Match` wins over `If-Modified-Since`; weak and strong tags compare equal.
     private static boolean notModified(ContainerResponseContext response, CurrentRequest request) {
         String etag = header(response, "ETag");
@@ -233,7 +237,7 @@ public class ResponseFinisher {
         if (etag != null && ifNoneMatch != null) {
             for (String candidate : ifNoneMatch.split(",")) {
                 String c = candidate.strip();
-                if (c.equals("*") || c.equals(etag) || c.replaceFirst("^W/", "").equals(etag.replaceFirst("^W/", ""))) return true;
+                if (c.equals("*") || c.equals(etag) || strong(c).equals(strong(etag))) return true;
             }
             return false;
         }
