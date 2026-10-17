@@ -57,10 +57,6 @@ byte for byte, or a measured performance loss. Each deviation is listed below wi
 - Quarkus REST resources on virtual threads, CDI beans, `@ConfigMapping`, and request/response filters.
 - Actions that validate their own responses (`fresh_when`) use JAX-RS `EntityTag`, `Request#evaluatePreconditions`
   and `CacheControl`.
-- Sign-in through Quarkus Security: an `HttpAuthenticationMechanism` (`sessions.SessionMechanism`) reads the
-  Rails-signed `session_token` cookie or the bot API's `bot_key`, and identity providers look them up. It runs only
-  when the access filter asks (`quarkus.http.auth.proactive=false`), and a remembered session is answered without
-  a thread hop.
 - The scheme and host behind a reverse proxy from `quarkus.http.proxy.*`, trusting the same private ranges Rails
   does.
 - Rails' static security headers as `quarkus.http.header.*`. Only HSTS, which depends on the scheme, is set in
@@ -81,6 +77,7 @@ byte for byte, or a measured performance loss. Each deviation is listed below wi
 |---|---|---|
 | jOOQ only renders SQL, once per query, into a constant (`campfire.db.Sql`); `Conn` runs it on a cached `PreparedStatement` | executing through jOOQ | Measured on Linux: a primary-key lookup takes 3 µs this way, 13 µs through jOOQ, and 9 µs with jOOQ's `keepStatement`. On cached pages that cost room_show 23% and messages_page 43%. |
 | A prepared-statement cache per connection | the driver's or pool's cache | sqlite-jdbc and Agroal have none. Without it room_show loses 21%. The pools never retire a connection, so the cache stays valid. |
+| `sessions.Authentication` reads the Rails-signed `session_token` cookie or the bot API's `bot_key` itself, once per request | a Quarkus Security `HttpAuthenticationMechanism` and identity providers | Measured: Quarkus' authentication handler, authorizer and deferred `SecurityIdentity` (Mutiny, context propagation) took about 35% of a signed-in sidebar request's CPU samples and cost room_show, sidebar and search about 10% of their throughput. |
 | `Database.write`: one writer, `BEGIN IMMEDIATE`, after-commit hooks | `@Transactional`/JTA, or jOOQ's `transaction()` | A plain `BEGIN` in SQLite is deferred, so concurrent writers fail with `SQLITE_BUSY` when they upgrade to a write lock. This is what Rails' adapter does. |
 | The `data_version` observer and the WAL checkpointer, on connections of their own | pooled connections | `PRAGMA data_version` only means something asked of the same connection every time. |
 | The full-text index (`message_search_index`) in plain SQL: its writes are strings, and searches name it with `table(name(...))` and a `MATCH` template | generated classes | It's an FTS5 virtual table, which the code generator doesn't read. |

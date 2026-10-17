@@ -4,29 +4,43 @@ import campfire.cable.Cable;
 import campfire.db.Database;
 import campfire.db.Times;
 import campfire.users.User;
+import campfire.rails.Secrets;
 import campfire.web.Cookies;
 import campfire.web.Paths;
 import campfire.web.RailsSession;
 import campfire.web.RequestOrigin;
+import campfire.web.RequestState;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import io.quarkus.logging.Log;
-import io.quarkus.security.identity.CurrentIdentityAssociation;
 import io.vertx.ext.web.RoutingContext;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Provider;
+import java.time.Instant;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.jspecify.annotations.Nullable;
 
 /// Signing in and out. A browser holds a signed `session_token` cookie naming a row in `sessions`;
-/// bots authenticate per request with the `bot_key` path segment instead. {@link SessionMechanism}
-/// finds who the request names; this signs the {@link Viewer} in as them.
+/// bots authenticate per request with the `bot_key` path segment instead.
+///
+/// Not a Quarkus `HttpAuthenticationMechanism`: its handler, authorizer and deferred
+/// `SecurityIdentity` cost about a tenth of a signed-in page's throughput, for a cookie lookup.
 @ApplicationScoped
 public class Authentication {
+    /// `/rooms/:room_id/:bot_key/messages...`, the only routes with a `bot_key`.
+    private static final Pattern BOT_ROUTE = Pattern.compile("/rooms/[^/]+/([^/]+)/messages(?:[/.].*)?");
+    /// Who the request names, worked out once per request; {@link #NOBODY} when no one.
+    private static final String SIGNED_IN = "campfire.signed-in";
+    private static final Object NOBODY = new Object();
+
     @Inject
     Database db;
     @Inject
     SessionLookup sessions;
     @Inject
-    CurrentIdentityAssociation identity;
+    Secrets secrets;
     @Inject
     Viewer viewer;
     @Inject
@@ -41,8 +55,44 @@ public class Authentication {
     @Inject
     Provider<Cable> cable;
 
+    /// Verified `session_token` values by raw cookie: a valid signature stays valid, and the
+    /// cookie is permanent, expiring in twenty years.
+    private final Cache<String, String> verified = Caffeine.newBuilder().maximumSize(10_000).build();
+
     private @Nullable SignedIn signedIn() {
-        return identity.getIdentity().getPrincipal() instanceof SignedIn signedIn ? signedIn : null;
+        Object known = routing.get(SIGNED_IN);
+        if (known == null) routing.put(SIGNED_IN, known = identify());
+        return known instanceof SignedIn signedIn ? signedIn : null;
+    }
+
+    /// The session the cookie names, as of the data version the access filter read; else, on the
+    /// bot API, the bot its key names.
+    private Object identify() {
+        String token = verify(Cookies.incoming(routing.request(), Cookies.SESSION_TOKEN));
+        if (token != null) {
+            long version = RequestState.dataVersionAtStart(routing);
+            Session.WithUser found = version >= 0 ? sessions.find(token, version) : sessions.find(token);
+            if (found != null) return new SignedIn(found.session(), found.user());
+        }
+        String botKey = botKey(routing.normalizedPath());
+        User bot = botKey == null ? null : db.read(conn -> User.authenticateBot(conn, botKey));
+        return bot == null ? NOBODY : new SignedIn(null, bot);
+    }
+
+    private @Nullable String verify(@Nullable String raw) {
+        if (raw == null) return null;
+        String token = verified.getIfPresent(raw);
+        if (token != null) return token;
+        token = secrets.verifySignedCookie(Cookies.SESSION_TOKEN, raw, Instant.now());
+        if (token != null) verified.put(raw, token);
+        return token;
+    }
+
+    private static @Nullable String botKey(String path) {
+        Matcher route = BOT_ROUTE.matcher(path);
+        if (!route.matches()) return null;
+        String key = route.group(1).strip();
+        return key.isEmpty() ? null : key;
     }
 
     /// Signs the request in from its session cookie, if that names a live session. Activity is
