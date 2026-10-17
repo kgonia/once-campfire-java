@@ -167,7 +167,7 @@ final class FrontCache {
         private List<String> names = List.of();
 
         Variant(HttpServerRequest request) {
-            String host = request.getHeader("host");
+            String host = Front.authority(request);
             String query = request.query();
             this.base = request.method().name() + "\n" + request.path() + "\n" + (query == null ? "" : query) + "\n"
                 + (host == null ? "" : host);

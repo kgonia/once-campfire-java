@@ -8,6 +8,7 @@ import campfire.web.Access;
 import campfire.web.CurrentRequest;
 import campfire.web.Formats;
 import campfire.web.Paths;
+import campfire.web.Responses;
 import gg.jte.generated.precompiled.first_runs.JteshowGenerated;
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import jakarta.inject.Inject;
@@ -36,7 +37,7 @@ public class FirstRunResource {
 
     @GET
     public Response show() {
-        if (firstRuns.done()) return request.redirect(request.url(Paths.ROOT));
+        if (firstRuns.done()) return Responses.redirect(request.url(Paths.ROOT));
         Formats.respondTo(request, "html");
         return pages.page((out, v) -> JteshowGenerated.render(out, null, v));
     }
@@ -45,13 +46,13 @@ public class FirstRunResource {
     @POST
     @SuppressWarnings("unchecked")
     public Response create() {
-        if (firstRuns.done()) return request.redirect(request.url(Paths.ROOT));
+        if (firstRuns.done()) return Responses.redirect(request.url(Paths.ROOT));
         request.requireHash("user");
         var user = (Map<String, Object>) Objects.requireNonNull(request.params().get("user"));
         User administrator = firstRuns.create(stringOrNull(user, "name"), stringOrEmpty(user, "email_address"), stringOrEmpty(user, "password"),
             AttachmentChange.of(user, "avatar"));
         if (administrator != null) authentication.start(request, administrator);
-        return request.redirect(request.url(Paths.ROOT));
+        return Responses.redirect(request.url(Paths.ROOT));
     }
 
     private static @org.jspecify.annotations.Nullable String stringOrNull(Map<String, Object> params, String key) {

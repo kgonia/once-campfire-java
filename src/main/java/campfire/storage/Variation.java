@@ -54,14 +54,6 @@ public final class Variation {
         return new Variation(map);
     }
 
-    public Map<String, Object> transformations() {
-        return transformations;
-    }
-
-    public Object get(String name) {
-        return transformations.get(name);
-    }
-
     public boolean isEmpty() {
         return transformations.isEmpty();
     }

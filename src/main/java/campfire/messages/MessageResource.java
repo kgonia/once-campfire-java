@@ -13,6 +13,7 @@ import campfire.web.Params;
 import campfire.web.Paths;
 import campfire.web.RecordNotFound;
 import campfire.web.ResponseCache;
+import campfire.web.Responses;
 import gg.jte.generated.precompiled.messages.JteeditGenerated;
 import gg.jte.generated.precompiled.messages.JteindexGenerated;
 import gg.jte.generated.precompiled.messages.JteshowGenerated;
@@ -57,7 +58,7 @@ public class MessageResource {
         var cached = cache.lookup(request, "messages#index");
         if (cached.isPresent()) return cached.get();
         List<Message> page = messages.page(room, request.params().present("before"), request.params().present("after"));
-        if (page.isEmpty()) return request.head(204);
+        if (page.isEmpty()) return Responses.head(204);
         View v = pages.view();
         List<Safe> html = messages.render(v, page);
         byte[] body = Pages.bytes(v, (out, view) -> JteindexGenerated.render(out, null, html));
@@ -65,7 +66,7 @@ public class MessageResource {
         // touching the messages, so only the body itself validates it.
         String etag = HttpCache.weakEtag(request, PageDigest.validator(body), "messages/index");
         if (HttpCache.fresh(request, etag)) {
-            return HttpCache.tagged(Response.fromResponse(request.head(304)), etag).build();
+            return HttpCache.tagged(Response.fromResponse(Responses.head(304)), etag).build();
         }
         return HttpCache.tagged(pages.response(200, body), etag).build();
     }
@@ -78,14 +79,14 @@ public class MessageResource {
         try {
             room = access.membership(roomId).room();
         } catch (RecordNotFound e) {
-            return CurrentRequest.html(200, Pages.bytes(pages.view(), (out, view) -> Jteroom_not_foundGenerated.render(out, null, view))).build();
+            return Responses.html(200, Pages.bytes(pages.view(), (out, view) -> Jteroom_not_foundGenerated.render(out, null, view))).build();
         }
         request.requireHash("message");
         Params params = request.params();
         var posted = messages.post(pages.detachedView(), room, request.user(), params.string("message", "body"),
             params.get("message", "attachment"), params.string("message", "client_message_id"));
         String target = Broadcasts.roomDomId(room, Broadcasts.MESSAGES);
-        return CurrentRequest.turboStream(Pages.bytes(null, (out, v) -> Jtecreateturbo_streamGenerated.render(out, null, target, posted.html())));
+        return Responses.turboStream(Pages.bytes(null, (out, v) -> Jtecreateturbo_streamGenerated.render(out, null, target, posted.html())));
     }
 
     @GET
@@ -123,7 +124,7 @@ public class MessageResource {
         Message edited = messages.edit(pages.detachedView(), room, message, request.params().string("message", "body"));
         // Rails has no JSON template for the edited message.
         if (request.wantsJson()) throw new IllegalStateException("Missing template messages/show");
-        return request.redirect(Paths.roomMessage(room.id(), edited.id()));
+        return Responses.redirect(request.url(Paths.roomMessage(room.id(), edited.id())));
     }
 
     @DELETE
@@ -134,6 +135,6 @@ public class MessageResource {
         access.requireAdministrator(message.creatorId());
         messages.delete(room, message);
         String target = Broadcasts.messageDomId(message, null);
-        return CurrentRequest.turboStream(Pages.bytes(null, (out, v) -> Jtedestroyturbo_streamGenerated.render(out, null, target)));
+        return Responses.turboStream(Pages.bytes(null, (out, v) -> Jtedestroyturbo_streamGenerated.render(out, null, target)));
     }
 }

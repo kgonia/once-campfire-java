@@ -34,10 +34,6 @@ public record Boost(long id, long messageId, long boosterId, String content, Ins
             Conn.getTime(rs, offset + 5), Conn.getTime(rs, offset + 6));
     }
 
-    public String domId() {
-        return "boost_" + id;
-    }
-
     /// A boost with its booster.
     public record WithBooster(Boost boost, User booster) {}
 
@@ -53,10 +49,6 @@ public record Boost(long id, long messageId, long boosterId, String content, Ins
 
     public static Boost find(Conn conn, long messageId, long id) {
         return conn.one(FIND, rs -> from(rs, 0), messageId, id);
-    }
-
-    public static List<WithBooster> forMessage(Conn conn, long messageId) {
-        return forMessages(conn, List.of(messageId)).getOrDefault(messageId, List.of());
     }
 
     /// `message.boosts.ordered` with boosters, for a page of messages.

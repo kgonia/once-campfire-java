@@ -8,7 +8,6 @@ import java.sql.Statement;
 import java.sql.Types;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -109,10 +108,6 @@ public class Conn implements AutoCloseable {
         }, args);
     }
 
-    public String string(String sql, Object... args) {
-        return one(sql, rs -> rs.getString(1), args);
-    }
-
     public List<Long> longs(String sql, Object... args) {
         return list(sql, rs -> rs.getLong(1), args);
     }
@@ -140,11 +135,6 @@ public class Conn implements AutoCloseable {
         }
     }
 
-    /// `?, ?, ?` for an IN list of `n` values (at least one, so `IN (NULL)` matches nothing).
-    public static String placeholders(int n) {
-        return n == 0 ? "NULL" : String.join(", ", Collections.nCopies(n, "?"));
-    }
-
     @Override
     public void close() {
         for (var statement : statements.values()) {
@@ -161,11 +151,6 @@ public class Conn implements AutoCloseable {
     }
 
     // ResultSet helpers for nullable columns.
-
-    public static Long getLong(ResultSet rs, int column) throws SQLException {
-        long v = rs.getLong(column);
-        return rs.wasNull() ? null : v;
-    }
 
     public static Instant getTime(ResultSet rs, int column) throws SQLException {
         return Times.parseDb(rs.getString(column));

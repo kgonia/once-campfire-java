@@ -40,21 +40,11 @@ public final class Guard {
         }
     }
 
-    /// `PrivateNetworkGuard.resolve(hostname)` with the system resolver.
-    public static InetAddress resolvePublic(String host) throws GuardException {
-        return resolve(Network.system().resolver(), host);
-    }
-
     /// `PrivateNetworkGuard.resolve(hostname)`: the first public address.
     public static InetAddress resolve(Network.Resolver resolver, String host) throws GuardException {
         var addresses = resolvePublicIps(resolver, host);
         if (addresses.isEmpty()) throw new Violation(host);
         return addresses.getFirst();
-    }
-
-    /// `PrivateNetworkGuard.private_ip?(ip)`
-    public static boolean isPrivate(InetAddress ip) {
-        return blocked(ip);
     }
 
     /// `Surfguard.resolve_public_ips(host)`. Malformed input comes back empty rather than raising.

@@ -11,6 +11,7 @@ import campfire.web.Formats;
 import campfire.web.Halt;
 import campfire.web.Params;
 import campfire.web.Paths;
+import campfire.web.Responses;
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.DELETE;
@@ -65,7 +66,7 @@ public class BotMessageResource {
         Room room = room(roomId);
         Object attachment = request.params().get("attachment");
         String body = rawBody();
-        if (blank(attachment) && body.isBlank()) throw new Halt(request.head(422));
+        if (blank(attachment) && body.isBlank()) throw new Halt(Responses.head(422));
         var posted = attachment != null ? messages.post(pages.detachedView(), room, request.user(), null, attachment, null)
             : messages.post(pages.detachedView(), room, request.user(), body, null, null);
         Response created = Formats.head(request, 201);
@@ -90,7 +91,7 @@ public class BotMessageResource {
         Object attachment = request.params().get("attachment");
         Message edited = attachment != null ? messages.replaceAttachment(pages.detachedView(), room, message, attachment)
             : messages.edit(pages.detachedView(), room, message, rawBody());
-        if ("html".equals(request.format())) return request.redirect(Paths.roomMessage(room.id(), edited.id()));
+        if ("html".equals(request.format())) return Responses.redirect(request.url(Paths.roomMessage(room.id(), edited.id())));
         return json(200, api.messageJson(pages.view(), edited, request.baseUrl())).build();
     }
 
@@ -109,11 +110,11 @@ public class BotMessageResource {
     private Room room(String roomId) {
         Long id = Params.parseId(roomId);
         return (id == null ? java.util.Optional.<Room>empty() : rooms.findForUser(request.user().id(), id))
-            .orElseThrow(() -> new Halt(request.head(404)));
+            .orElseThrow(() -> new Halt(Responses.head(404)));
     }
 
     private void requireAdministrator(Message message) {
-        if (!request.user().canAdminister(message.creatorId())) throw new Halt(request.head(403));
+        if (!request.user().canAdminister(message.creatorId())) throw new Halt(Responses.head(403));
     }
 
     private String rawBody() {

@@ -62,10 +62,6 @@ public record Message(long id, long roomId, long creatorId, String clientMessage
         return "message_" + clientMessageId;
     }
 
-    public String domId(String prefix) {
-        return prefix + "_message_" + clientMessageId;
-    }
-
     // -- Queries -------------------------------------------------------------------------------
 
     /// `room.messages`; binds the room id.

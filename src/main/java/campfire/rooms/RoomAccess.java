@@ -7,6 +7,7 @@ import campfire.web.Halt;
 import campfire.web.Params;
 import campfire.web.Paths;
 import campfire.web.RecordNotFound;
+import campfire.web.Responses;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import java.util.Optional;
@@ -43,22 +44,21 @@ public class RoomAccess {
                 case SHARED -> !r.isDirect();
                 case DIRECT -> r.isDirect();
             })
-            .orElseThrow(() -> new Halt(request.redirectWithAlert(Paths.ROOT, "Room not found or inaccessible")));
+            .orElseThrow(() -> {
+                request.flash().set("alert", "Room not found or inaccessible");
+                return new Halt(Responses.redirect(request.url(Paths.ROOT)));
+            });
     }
 
     /// 403 unless the user is an administrator or created the record.
     public void requireAdministrator(long creatorId) {
-        if (!request.user().canAdminister(creatorId)) throw new Halt(request.head(403));
-    }
-
-    public void requireAdministrator() {
-        if (!request.user().canAdminister()) throw new Halt(request.head(403));
+        if (!request.user().canAdminister(creatorId)) throw new Halt(Responses.head(403));
     }
 
     /// 403 when the account lets only administrators create rooms and the user isn't one.
     public void requireRoomCreation() {
         Account account = app.account().account();
-        if (account != null && account.restrictRoomCreationToAdministrators() && !request.user().isAdministrator()) throw new Halt(request.head(403));
+        if (account != null && account.restrictRoomCreationToAdministrators() && !request.user().isAdministrator()) throw new Halt(Responses.head(403));
     }
 
     /// Remembered in the `last_room` cookie, where the root page and the "back" links go. Only

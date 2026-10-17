@@ -18,16 +18,13 @@ import campfire.rails.Json;
 import campfire.rails.Messages;
 import campfire.rails.MessageVerifier;
 import campfire.rails.Secrets;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.math.BigDecimal;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.security.MessageDigest;
@@ -197,11 +194,6 @@ public final class Storage implements AutoCloseable {
 
     // -- Paths -------------------------------------------------------------------------------------
 
-    /// `blob.signed_id`.
-    public String signedId(Blob blob) {
-        return Urls.signedBlobId(verifier, blob.id());
-    }
-
     /// `rails_blob_path(blob)`.
     public String blobPath(Blob blob) {
         return Urls.blobRedirectPath(verifier, blob, null);
@@ -220,11 +212,6 @@ public final class Storage implements AutoCloseable {
     /// `url_for(blob.preview(transformations))`: the variation exactly as given.
     public String previewPath(Blob blob, Variation transformations) {
         return Urls.representationRedirectPath(verifier, blob, transformations);
-    }
-
-    /// `url_for(blob.representation(transformations))`.
-    public String representationPath(Blob blob, Variation transformations) {
-        return previewable(blob) ? previewPath(blob, transformations) : variantPath(blob, transformations);
     }
 
     /// The message attachment's thumbnail (`Messages::AttachmentPresentation`): the video poster
@@ -259,10 +246,6 @@ public final class Storage implements AutoCloseable {
 
         public String widthText() {
             return width instanceof Double d ? rubyFloat(d) : width.toString();
-        }
-
-        public String heightText() {
-            return height instanceof Double d ? rubyFloat(d) : height.toString();
         }
     }
 
@@ -592,10 +575,6 @@ public final class Storage implements AutoCloseable {
         } catch (RuntimeException e) {
             LOG.log(Level.WARNING, "processing attachment blob " + blob.id() + " failed", e);
         }
-    }
-
-    public void processAttachmentLater(Blob blob) {
-        runLater("process attachment blob " + blob.id(), () -> processAttachment(blob));
     }
 
     // -- Purging -----------------------------------------------------------------------------------

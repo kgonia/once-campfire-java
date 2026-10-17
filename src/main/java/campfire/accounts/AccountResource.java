@@ -7,6 +7,7 @@ import campfire.web.CurrentRequest;
 import campfire.web.Formats;
 import campfire.web.Halt;
 import campfire.web.Paths;
+import campfire.web.Responses;
 import gg.jte.generated.precompiled.accounts.JteeditGenerated;
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import jakarta.inject.Inject;
@@ -62,7 +63,8 @@ public class AccountResource {
         var params = (Map<String, Object>) attributes;
         String name = params.get("name") instanceof String s ? s : null;
         accounts.update(account, name, settings(params.get("settings")), AttachmentChange.of(params, "logo"));
-        return request.redirectWithNotice(Paths.editAccount(), "✓");
+        request.flash().set("notice", "✓");
+        return Responses.redirect(request.url(Paths.editAccount()));
     }
 
     /// The submitted settings as strings, or null when no settings hash was sent.
@@ -74,6 +76,6 @@ public class AccountResource {
     }
 
     private void requireAdministrator() {
-        if (!request.user().canAdminister()) throw new Halt(request.head(403));
+        if (!request.user().canAdminister()) throw new Halt(Responses.head(403));
     }
 }

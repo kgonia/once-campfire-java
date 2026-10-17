@@ -55,22 +55,12 @@ public record Blob(long id, String key, String filename, String contentType, Str
         return metadataMap().get(name) instanceof Number n ? n : null;
     }
 
-    public boolean isImage() {
-        return contentType != null && contentType.startsWith("image/");
-    }
-
     public boolean isVideo() {
         return contentType != null && contentType.startsWith("video/");
     }
 
-    public boolean isAudio() {
-        return contentType != null && contentType.startsWith("audio/");
-    }
-
     private static final String FIND = Sql.render(select(COLUMNS).from(ACTIVE_STORAGE_BLOBS)
         .where(ACTIVE_STORAGE_BLOBS.ID.eq(param(ACTIVE_STORAGE_BLOBS.ID))).limit(inline(1)));
-    private static final String FIND_BY_KEY = Sql.render(select(COLUMNS).from(ACTIVE_STORAGE_BLOBS)
-        .where(ACTIVE_STORAGE_BLOBS.KEY.eq(param(ACTIVE_STORAGE_BLOBS.KEY))).limit(inline(1)));
     private static final String INSERT = Sql.render(insertInto(ACTIVE_STORAGE_BLOBS, ACTIVE_STORAGE_BLOBS.BYTE_SIZE, ACTIVE_STORAGE_BLOBS.CHECKSUM,
             ACTIVE_STORAGE_BLOBS.CONTENT_TYPE, ACTIVE_STORAGE_BLOBS.CREATED_AT, ACTIVE_STORAGE_BLOBS.FILENAME, ACTIVE_STORAGE_BLOBS.KEY,
             ACTIVE_STORAGE_BLOBS.METADATA, ACTIVE_STORAGE_BLOBS.SERVICE_NAME)
@@ -88,10 +78,6 @@ public record Blob(long id, String key, String filename, String contentType, Str
 
     public static Blob find(Conn conn, long id) {
         return conn.one(FIND, Blob::from, id);
-    }
-
-    public static Blob findByKey(Conn conn, String key) {
-        return conn.one(FIND_BY_KEY, Blob::from, key);
     }
 
     public static long create(Tx tx, String key, String filename, String contentType, String metadataJson, long byteSize, String checksum,

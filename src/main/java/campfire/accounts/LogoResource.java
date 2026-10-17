@@ -6,6 +6,7 @@ import campfire.web.CurrentRequest;
 import campfire.web.Halt;
 import campfire.web.HttpCache;
 import campfire.web.Paths;
+import campfire.web.Responses;
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.DELETE;
@@ -59,8 +60,8 @@ public class LogoResource {
     @DELETE
     public Response destroy() {
         request.markDownload();
-        if (!request.user().canAdminister()) throw new Halt(request.head(403));
+        if (!request.user().canAdminister()) throw new Halt(Responses.head(403));
         accounts.deleteLogo(accounts.account());
-        return request.redirect(Paths.editAccount());
+        return Responses.redirect(request.url(Paths.editAccount()));
     }
 }

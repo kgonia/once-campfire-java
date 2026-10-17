@@ -13,7 +13,6 @@ import io.vertx.ext.web.FileUpload;
 import io.vertx.ext.web.RoutingContext;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.core.Response;
 import java.net.InetAddress;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -56,22 +55,10 @@ public class CurrentRequest {
     /// The body claimed to be JSON but isn't; the request is a 400 before anything else.
     private boolean malformedBody;
     private final List<String> setCookies = new ArrayList<>();
-    private @Nullable String format;
 
     private @Nullable User user;
     private @Nullable Session session;
     private boolean authenticatedByBot;
-    /// The database's data version when the access filter admitted the request, read once and
-    /// shared by the session lookup and `ResponseCache`; -1 for framework endpoints.
-    private long dataVersionAtStart = -1;
-    private ResponseCache.@Nullable Ticket cacheTicket;
-    /// The gzipped body that came with a cache hit, so it isn't compressed again.
-    private byte @Nullable [] cachedGzip;
-    /// File downloads skip the page security headers and the content ETag, as Rails' streamed
-    /// responses do.
-    private boolean download;
-    private boolean framework;
-    private boolean exceptionResponse;
 
     private @Nullable Map<String, Object> railsSession;
     private boolean railsSessionDirty;
@@ -137,44 +124,19 @@ public class CurrentRequest {
         pathParams.forEach(params()::put);
     }
 
-    void format(String format) {
-        this.format = format;
+    RequestState state() {
+        return RequestState.of(routing);
     }
 
     /// For routes with a format of their own (the bot API's is JSON), unless the path names one.
     public void defaultFormat(String format) {
-        if (this.format == null) this.format = format;
+        RequestState state = state();
+        if (state.format == null) state.format = format;
     }
 
-    // The request's bookkeeping is reached through methods: resources hold a client proxy, whose own
-    // fields would be shared by every request.
-
-    RoutingContext routing() {
-        return routing;
-    }
-
+    /// See {@link RequestState#dataVersionAtStart}.
     public long dataVersionAtStart() {
-        return dataVersionAtStart;
-    }
-
-    void dataVersionAtStart(long version) {
-        this.dataVersionAtStart = version;
-    }
-
-    ResponseCache.@Nullable Ticket cacheTicket() {
-        return cacheTicket;
-    }
-
-    void cacheTicket(ResponseCache.Ticket ticket) {
-        this.cacheTicket = ticket;
-    }
-
-    byte @Nullable [] cachedGzip() {
-        return cachedGzip;
-    }
-
-    void cachedGzip(byte @Nullable [] gzip) {
-        this.cachedGzip = gzip;
+        return state().dataVersionAtStart;
     }
 
     // -- Request -----------------------------------------------------------------------------------
@@ -210,9 +172,9 @@ public class CurrentRequest {
         return facts().params();
     }
 
-    /// The `.json`/`.js` suffix the path came with, or null.
+    /// The `.json`/`.js` suffix the path came with (or the route's default), or null.
     public @Nullable String format() {
-        return format;
+        return state().format;
     }
 
     public byte[] body() {
@@ -253,7 +215,7 @@ public class CurrentRequest {
     /// The Host (or a trusted proxy's X-Forwarded-Host) without the scheme's default port.
     public String hostWithPort() {
         String forwardedHost = trustedForwarded() ? header("x-forwarded-host") : null;
-        String host = forwardedHost != null ? forwardedHost : header("host");
+        String host = forwardedHost != null ? forwardedHost : Front.authority(routing.request());
         if (host == null || host.isBlank()) host = "localhost";
         host = host.split(",")[0].strip();
         if (ssl() && host.endsWith(":443")) host = host.substring(0, host.length() - 4);
@@ -312,12 +274,8 @@ public class CurrentRequest {
         return remoteIp = peerAddress == null ? "" : peerAddress;
     }
 
-    public boolean wantsTurboStream() {
-        String accept = header("accept");
-        return accept != null && accept.contains("text/vnd.turbo-stream.html");
-    }
-
     public boolean wantsJson() {
+        String format = format();
         if ("json".equals(format)) return true;
         String accept = header("accept");
         return format == null && accept != null && accept.startsWith("application/json");
@@ -327,32 +285,14 @@ public class CurrentRequest {
         return header("turbo-frame") != null;
     }
 
+    /// See {@link RequestState#download}.
     public void markDownload() {
-        download = true;
+        state().download = true;
     }
 
-    boolean isDownload() {
-        return download;
-    }
-
-    /// Served by one of Rails' own controllers (Active Storage, Turbo Native) rather than the
-    /// app's: none of the app's checks or version headers apply.
-    void markFramework() {
-        framework = true;
-    }
-
-    boolean isFramework() {
-        return framework;
-    }
-
-    /// The response is one of Rails' exception pages, which bypass the controller: no session
-    /// commit, cookies, default or version headers, ETag or Cache-Control.
+    /// See {@link RequestState#exceptionResponse}.
     public void markExceptionResponse() {
-        exceptionResponse = true;
-    }
-
-    boolean isExceptionResponse() {
-        return exceptionResponse;
+        state().exceptionResponse = true;
     }
 
     // -- Who is signed in -----------------------------------------------------------------------------
@@ -534,6 +474,7 @@ public class CurrentRequest {
         Map<String, Object> railsSession = railsSession();
         var values = new LinkedHashMap<>(railsSession);
         values.remove("session_id");
+        // Rails keeps its CSRF token here; the app checks Fetch Metadata instead and never reads it.
         values.remove("_csrf_token");
         if (values.isEmpty()) {
             deleteCookie(SESSION_COOKIE);
@@ -589,56 +530,7 @@ public class CurrentRequest {
         }
     }
 
-    // -- Responses ---------------------------------------------------------------------------------
-
-    /// An empty response. Rails sends `text/html` for these even when the request asked for JSON.
-    public Response head(int status) {
-        return Response.status(status).entity(new byte[0]).header("Content-Type", "text/html").build();
-    }
-
-    /// A redirect with Rails' little HTML body; paths are made absolute against this request.
-    public Response redirect(String location) {
-        return redirect(location, 302);
-    }
-
-    public Response redirect(String location, int status) {
-        String absolute = location.startsWith("/") ? baseUrl() + location : location;
-        return html(status, new byte[0]).header("Location", absolute).build();
-    }
-
-    public Response redirectWithNotice(String location, String notice) {
-        flash().set("notice", notice);
-        return redirect(location);
-    }
-
-    public Response redirectWithAlert(String location, String alert) {
-        flash().set("alert", alert);
-        return redirect(location);
-    }
-
-    public static Response.ResponseBuilder html(int status, String html) {
-        return html(status, html.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-    }
-
-    public static Response.ResponseBuilder html(int status, byte[] html) {
-        return Response.status(status).entity(html).header("Content-Type", "text/html; charset=utf-8");
-    }
-
-    public static Response turboStream(byte[] body) {
-        return Response.ok(body).header("Content-Type", "text/vnd.turbo-stream.html; charset=utf-8").build();
-    }
-
-    public static Response json(int status, Object value) {
-        return Response.status(status).entity(Json.encode(value).getBytes(java.nio.charset.StandardCharsets.UTF_8))
-            .header("Content-Type", "application/json; charset=utf-8").build();
-    }
-
     // -- Params ------------------------------------------------------------------------------------
-
-    /// An id parameter as Active Record casts it: leading digits, else null.
-    public @Nullable Long idParam(String name) {
-        return Params.parseId(params().string(name));
-    }
 
     /// The 400 error page unless `key` is present (strings, arrays and hashes alike).
     public void require(String key) {

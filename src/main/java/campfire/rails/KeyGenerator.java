@@ -7,7 +7,7 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 
 /// `Rails.application.key_generator`: a caching PBKDF2-HMAC-SHA256 key generator with 1000
-/// iterations (`load_defaults` 7.0+). Keys are 64 bytes by default; encrypted cookies ask for 32.
+/// iterations (`load_defaults` 7.0+). Signing keys are 64 bytes; encrypted cookies ask for 32.
 public final class KeyGenerator {
     public static final int ITERATIONS = 1000;
 
@@ -18,10 +18,6 @@ public final class KeyGenerator {
 
     public KeyGenerator(String secretKeyBase) {
         this.secret = secretKeyBase.toCharArray();
-    }
-
-    public byte[] generateKey(String salt) {
-        return generateKey(salt, 64);
     }
 
     public byte[] generateKey(String salt, int length) {

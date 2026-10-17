@@ -3,6 +3,7 @@ package campfire.pwa;
 import campfire.web.Access;
 import campfire.web.CurrentRequest;
 import campfire.web.Formats;
+import campfire.web.Responses;
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
@@ -28,7 +29,7 @@ public class TurboNativeResource {
             case "resume" -> "Staying put…";
             default -> "Refreshing…";
         };
-        var response = CurrentRequest.html(200, text);
+        var response = Responses.html(200, text);
         if (Formats.variesOnAccept(request)) response.header("Vary", "Accept");
         return response.build();
     }

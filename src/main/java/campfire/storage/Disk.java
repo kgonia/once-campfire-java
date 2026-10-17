@@ -38,14 +38,6 @@ public final class Disk {
         this.name = name;
     }
 
-    public Path root() {
-        return root;
-    }
-
-    public String name() {
-        return name;
-    }
-
     /// `path_for(key)`.
     public Path pathFor(String key) {
         String a = key.length() >= 2 ? key.substring(0, 2) : key;
@@ -95,10 +87,6 @@ public final class Disk {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-    }
-
-    public boolean exists(String key) {
-        return Files.exists(pathFor(key));
     }
 
     /// The path of `service.url(key, expires_in:, filename:, content_type:, disposition:)`; the

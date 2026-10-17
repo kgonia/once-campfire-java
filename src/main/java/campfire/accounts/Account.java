@@ -45,8 +45,6 @@ public record Account(long id, String name, String joinCode, String customStyles
         assignments.put(ACCOUNTS.UPDATED_AT, param(ACCOUNTS.UPDATED_AT));
         return Sql.render(DSL.update(ACCOUNTS).set(assignments).where(ACCOUNTS.ID.eq(param(ACCOUNTS.ID))));
     }).toArray(String[]::new);
-    private static final String TOUCH = Sql.render(DSL.update(ACCOUNTS).set(ACCOUNTS.UPDATED_AT, param(ACCOUNTS.UPDATED_AT))
-        .where(ACCOUNTS.ID.eq(param(ACCOUNTS.ID))));
     private static final String RESET_JOIN_CODE = Sql.render(DSL.update(ACCOUNTS).set(ACCOUNTS.JOIN_CODE, param(ACCOUNTS.JOIN_CODE))
         .set(ACCOUNTS.UPDATED_AT, param(ACCOUNTS.UPDATED_AT)).where(ACCOUNTS.ID.eq(param(ACCOUNTS.ID))));
 
@@ -132,10 +130,6 @@ public record Account(long id, String name, String joinCode, String customStyles
         values.add(Times.now());
         values.add(account.id());
         tx.update(UPDATE_CHANGED[changed], values.toArray());
-    }
-
-    public static void touch(Tx tx, long id) {
-        tx.update(TOUCH, Times.now(), id);
     }
 
     public static void resetJoinCode(Tx tx, long id) {

@@ -6,6 +6,7 @@ import campfire.web.CurrentRequest;
 import campfire.web.Params;
 import campfire.web.Paths;
 import campfire.web.ResponseCache;
+import campfire.web.Responses;
 import gg.jte.generated.precompiled.rooms.JteshowGenerated;
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import jakarta.inject.Inject;
@@ -37,7 +38,7 @@ public class RoomResource {
     @GET
     public Response index() {
         Room room = rooms.newestForUser(request.user().id()).orElseThrow(() -> new IllegalStateException("No route matches room_url(nil)"));
-        return request.redirect(Paths.room(room.id()));
+        return Responses.redirect(request.url(Paths.room(room.id())));
     }
 
     @GET
@@ -77,6 +78,6 @@ public class RoomResource {
         Room room = access.room(id, RoomAccess.Scope.ANY);
         access.requireAdministrator(room.creatorId());
         rooms.destroy(room);
-        return request.redirect(Paths.ROOT);
+        return Responses.redirect(request.url(Paths.ROOT));
     }
 }

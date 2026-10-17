@@ -3,6 +3,7 @@ package campfire.accounts;
 import campfire.web.CurrentRequest;
 import campfire.web.Halt;
 import campfire.web.Paths;
+import campfire.web.Responses;
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.POST;
@@ -22,8 +23,8 @@ public class JoinCodeResource {
 
     @POST
     public Response create() {
-        if (!request.user().canAdminister()) throw new Halt(request.head(403));
+        if (!request.user().canAdminister()) throw new Halt(Responses.head(403));
         accounts.resetJoinCode(accounts.account());
-        return request.redirect(Paths.editAccount());
+        return Responses.redirect(request.url(Paths.editAccount()));
     }
 }

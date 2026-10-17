@@ -5,6 +5,7 @@ import campfire.web.CurrentRequest;
 import campfire.web.Formats;
 import campfire.web.Params;
 import campfire.web.Paths;
+import campfire.web.Responses;
 import gg.jte.generated.precompiled.users.push_subscriptions.JteindexGenerated;
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import jakarta.inject.Inject;
@@ -60,7 +61,7 @@ public class PushSubscriptionResource {
                 default -> {}
             }
         });
-        return request.head(subscriptions.register(userId, fields, request.userAgent()) ? 200 : 422);
+        return Responses.head(subscriptions.register(userId, fields, request.userAgent()) ? 200 : 422);
     }
 
     @DELETE
@@ -68,7 +69,7 @@ public class PushSubscriptionResource {
     public Response destroy(@PathParam("id") String id) {
         Long subscriptionId = Params.parseId(id);
         if (subscriptionId != null) subscriptions.delete(request.user().id(), subscriptionId);
-        return request.redirect(request.url(Paths.USER_PUSH_SUBSCRIPTIONS));
+        return Responses.redirect(request.url(Paths.USER_PUSH_SUBSCRIPTIONS));
     }
 
     @POST
@@ -79,6 +80,6 @@ public class PushSubscriptionResource {
         if (subscriptionId == null) throw new campfire.web.RecordNotFound();
         String location = request.url(Paths.USER_PUSH_SUBSCRIPTIONS);
         subscriptions.sendTest(userId, subscriptionId, location);
-        return request.redirect(location);
+        return Responses.redirect(location);
     }
 }

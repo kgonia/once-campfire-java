@@ -5,6 +5,7 @@ import campfire.view.View;
 import campfire.web.CurrentRequest;
 import campfire.web.Paths;
 import campfire.web.RecordNotFound;
+import campfire.web.Responses;
 import gg.jte.generated.precompiled.messages.boosts.JteindexGenerated;
 import gg.jte.generated.precompiled.messages.boosts.JtenewGenerated;
 import io.smallrye.common.annotation.RunOnVirtualThread;
@@ -54,7 +55,7 @@ public class BoostResource {
         request.requireHash("boost");
         String content = request.params().get("boost", "content") instanceof String s ? s : null;
         boosts.create(pages.detachedView(), message, request.user(), content);
-        return request.redirect(Paths.messageBoosts(message.id()));
+        return Responses.redirect(request.url(Paths.messageBoosts(message.id())));
     }
 
     /// Only one's own boosts; 204 since Rails has no template for this.
@@ -64,6 +65,6 @@ public class BoostResource {
         Message message = boosts.reachableMessage(request.user(), messageId);
         Boost boost = RecordNotFound.require(boosts.findOwn(message, request.user(), id));
         boosts.delete(message, boost);
-        return request.head(204);
+        return Responses.head(204);
     }
 }

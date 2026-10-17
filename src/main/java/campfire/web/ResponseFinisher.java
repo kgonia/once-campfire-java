@@ -4,6 +4,7 @@ import campfire.App;
 import campfire.view.PageDigest;
 import campfire.view.Pages;
 import io.quarkus.arc.ClientProxy;
+import io.vertx.ext.web.RoutingContext;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerResponseContext;
@@ -27,9 +28,9 @@ import org.jboss.resteasy.reactive.server.ServerResponseFilter;
 import org.jspecify.annotations.Nullable;
 
 /// Runs after every resource method, errors included: writes the session and queued cookies, the
-/// request id and runtime, the version and security headers, the stylesheet preload `Link`, a
-/// content ETag (answering 304 when the client has it), offers the page to the response caches,
-/// and gzips it for a client that takes gzip (see {@link ContentEncoding}).
+/// version and security headers, the stylesheet preload `Link`, a content ETag (answering 304 when
+/// the client has it), offers the page to the response caches, and gzips it for a client that
+/// takes gzip (see {@link ContentEncoding}).
 ///
 /// Exception pages carry none of the page headers, as Rails renders them outside the controller.
 public class ResponseFinisher {
@@ -45,26 +46,26 @@ public class ResponseFinisher {
     Pages pages;
 
     @ServerResponseFilter
-    public void finish(ContainerRequestContext context, ContainerResponseContext response) {
+    public void finish(ContainerRequestContext context, ContainerResponseContext response, RoutingContext routing) {
         // Each call through the request-scoped client proxy looks the instance up again.
         CurrentRequest request = ClientProxy.unwrap(current);
+        RequestState state = RequestState.of(routing);
         MultivaluedMap<String, Object> headers = response.getHeaders();
         // The resource set the length itself (files, error pages): an empty body stays unencoded.
         boolean lengthSet = response.getHeaderString("Content-Length") != null;
-        if (request.isExceptionResponse()) {
+        if (state.exceptionResponse) {
             if (request.ssl()) headers.putSingle("strict-transport-security", "max-age=63072000; includeSubDomains");
-            requestTracking(headers, request);
-            encode(response, true, request);
-            offer(response, request);
+            encode(response, true, request, state);
+            offer(response, routing);
             return;
         }
         request.commitSession();
         for (String cookie : request.setCookies()) headers.add("Set-Cookie", cookie);
-        if (!request.isFramework()) {
+        if (!state.framework) {
             headers.putSingle("X-Version", app.config().appVersion());
             app.config().gitRevision().filter(r -> !r.isEmpty()).ifPresent(r -> headers.putSingle("X-Rev", r));
         }
-        if (!request.isDownload()) {
+        if (!state.download) {
             headers.putSingle("x-frame-options", "SAMEORIGIN");
             headers.putSingle("x-content-type-options", "nosniff");
             headers.putSingle("x-xss-protection", "0");
@@ -78,12 +79,11 @@ public class ResponseFinisher {
         if (type != null && type.startsWith("text/vnd.turbo-stream.html") && header(response, "Vary") == null && Formats.variesOnAccept(request)) {
             headers.putSingle("Vary", "Accept");
         }
-        requestTracking(headers, request);
         // Bodiless responses (204, 304) get Rack::ETag's default too.
         if (response.getEntity() == null && header(response, "Cache-Control") == null) headers.putSingle("Cache-Control", "no-cache");
         readSmallFile(response);
         if (response.getEntity() instanceof byte[] body) {
-            etag(response, body, !request.isDownload());
+            etag(response, body, !state.download);
             if (response.getStatus() == 200 && request.isGet() && notModified(response, request)) {
                 response.setStatus(304);
                 response.setEntity(null);
@@ -94,21 +94,15 @@ public class ResponseFinisher {
                 return;
             }
             boolean gzipAccepted = "gzip".equals(ContentEncoding.negotiate(request.header("accept-encoding")));
-            if (request.cacheTicket() != null) {
-                byte[] cached = request.cachedGzip();
+            if (state.cacheTicket != null) {
+                byte[] cached = state.cachedGzip;
                 byte[] gzip = cached != null ? cached : gzipAccepted ? Gzip.compress(body) : null;
                 cache.admit(request, response.getStatus(), liveHeaders(response), body, gzip);
-                request.cachedGzip(gzip);
+                state.cachedGzip = gzip;
             }
         }
-        encode(response, lengthSet, request);
-        offer(response, request);
-    }
-
-    /// Rails' request id and runtime, for every response that isn't a static file.
-    private static void requestTracking(MultivaluedMap<String, Object> headers, CurrentRequest request) {
-        headers.putSingle("x-request-id", Front.requestId(request.header("x-request-id")));
-        headers.putSingle("x-runtime", Front.runtime(request.routing()));
+        encode(response, lengthSet, request, state);
+        offer(response, routing);
     }
 
     /// Appends the stylesheet preloads to any `Link` the page set itself.
@@ -129,7 +123,7 @@ public class ResponseFinisher {
     }
 
     /// The app's gzip, then the proxy's for what's still unencoded.
-    private void encode(ContainerResponseContext response, boolean lengthSet, CurrentRequest request) {
+    private void encode(ContainerResponseContext response, boolean lengthSet, CurrentRequest request, RequestState state) {
         MultivaluedMap<String, Object> headers = response.getHeaders();
         Object entity = response.getEntity();
         boolean empty = entity == null || entity instanceof byte[] b && b.length == 0;
@@ -150,17 +144,17 @@ public class ResponseFinisher {
                 long mtime = ContentEncoding.mtime(header(response, "Last-Modified"));
                 headers.putSingle("Content-Encoding", "gzip");
                 headers.remove("Content-Length");
-                response.setEntity(gzipped(entity, mtime, request));
+                response.setEntity(gzipped(entity, mtime, state));
                 return;
             }
         }
         compressUnencoded(response, request);
     }
 
-    private static Object gzipped(@Nullable Object entity, long mtime, CurrentRequest request) {
+    private static Object gzipped(@Nullable Object entity, long mtime, RequestState state) {
         return switch (entity) {
             case null -> Gzip.compress(new byte[0], mtime, null);
-            case byte[] body when mtime == 0 && request.cachedGzip() != null -> request.cachedGzip();
+            case byte[] body when mtime == 0 && state.cachedGzip != null -> state.cachedGzip;
             case byte[] body -> Gzip.compress(body, mtime, null);
             case String text -> Gzip.compress(text.getBytes(StandardCharsets.UTF_8), mtime, null);
             case Path file -> (StreamingOutput) out -> {
@@ -195,7 +189,7 @@ public class ResponseFinisher {
     }
 
     /// Offers the finished response to the proxy's cache; a public one loses its cookies.
-    private void offer(ContainerResponseContext response, CurrentRequest request) {
+    private void offer(ContainerResponseContext response, RoutingContext routing) {
         if (!(response.getEntity() instanceof byte[] body)) {
             if (FrontCache.lifetime(response.getStatus(), header(response, "Cache-Control"), header(response, "Vary")) != null) {
                 response.getHeaders().remove("Set-Cookie");
@@ -206,7 +200,7 @@ public class ResponseFinisher {
         response.getHeaders().forEach((name, values) -> {
             for (Object value : values) headers.add(new FrontCache.Header(name, String.valueOf(value)));
         });
-        if (front.offer(request.routing(), response.getStatus(), headers, body)) response.getHeaders().remove("Set-Cookie");
+        if (front.offer(routing, response.getStatus(), headers, body)) response.getHeaders().remove("Set-Cookie");
     }
 
     /// A weak ETag of the first 32 hex digits of the body's SHA-256 (or its {@link PageDigest} when

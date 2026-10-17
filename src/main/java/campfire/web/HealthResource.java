@@ -25,9 +25,9 @@ public class HealthResource {
             var status = new LinkedHashMap<String, Object>();
             status.put("status", "up");
             status.put("timestamp", Instant.now().truncatedTo(ChronoUnit.SECONDS).toString());
-            response = Response.fromResponse(CurrentRequest.json(200, status));
+            response = Response.fromResponse(Responses.json(200, status));
         } else {
-            response = CurrentRequest.html(200, "<!DOCTYPE html><html><body style=\"background-color: green\"></body></html>");
+            response = Responses.html(200, "<!DOCTYPE html><html><body style=\"background-color: green\"></body></html>");
         }
         if (Formats.variesOnAccept(request)) response.header("Vary", "Accept");
         return response.build();

@@ -108,6 +108,9 @@ public class Authentication {
     public String afterSignIn(CurrentRequest request) {
         Object stored = request.sessionValue("return_to_after_authenticating");
         request.setSessionValue("return_to_after_authenticating", null);
-        return stored == null ? request.url(Paths.ROOT) : stored.toString();
+        if (stored == null) return request.url(Paths.ROOT);
+        // A full URL as stored here; a path resolves against this request, as `redirect_to` does.
+        String location = stored.toString();
+        return location.startsWith("/") ? request.url(location) : location;
     }
 }

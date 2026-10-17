@@ -2,8 +2,6 @@ package campfire.web;
 
 import campfire.db.Times;
 import campfire.messages.Message;
-import campfire.rooms.Room;
-import campfire.users.User;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -47,10 +45,6 @@ public final class Paths {
         return "/rooms/" + roomId;
     }
 
-    public static String room(Room room) {
-        return room(room.id());
-    }
-
     public static String roomMessages(long roomId) {
         return "/rooms/" + roomId + "/messages";
     }
@@ -79,30 +73,12 @@ public final class Paths {
         return "/rooms/" + roomId + "/" + botKey + "/messages";
     }
 
-    /// `edit_polymorphic_path(room)`: by STI class.
-    public static String editRoom(Room room) {
-        return switch (room.type()) {
-            case Room.OPEN -> "/rooms/opens/" + room.id() + "/edit";
-            case Room.CLOSED -> "/rooms/closeds/" + room.id() + "/edit";
-            default -> "/rooms/directs/" + room.id() + "/edit";
-        };
-    }
-
     public static String editRoomsOpen(long roomId) {
         return "/rooms/opens/" + roomId + "/edit";
     }
 
     public static String editRoomsClosed(long roomId) {
         return "/rooms/closeds/" + roomId + "/edit";
-    }
-
-    /// `polymorphic_path(room)` for forms: the STI class's resource.
-    public static String roomResource(Room room) {
-        return switch (room.type()) {
-            case Room.OPEN -> "/rooms/opens/" + room.id();
-            case Room.CLOSED -> "/rooms/closeds/" + room.id();
-            default -> "/rooms/directs/" + room.id();
-        };
     }
 
     public static String roomsDirect(long roomId) {
@@ -199,34 +175,14 @@ public final class Paths {
         return "/messages/" + message.id();
     }
 
-    public static String user(User user) {
-        return user(user.id());
-    }
-
     // -- Route helpers as templates call them (`root_path`, `searches_path`, ...) --------------------
-
-    public static String root() {
-        return ROOT;
-    }
-
-    public static String newSession() {
-        return NEW_SESSION;
-    }
 
     public static String session() {
         return SESSION;
     }
 
-    public static String firstRun() {
-        return FIRST_RUN;
-    }
-
     public static String editAccount() {
         return ACCOUNT_EDIT;
-    }
-
-    public static String account() {
-        return ACCOUNT;
     }
 
     public static String accountBots() {
@@ -241,20 +197,12 @@ public final class Paths {
         return ACCOUNT_JOIN_CODE;
     }
 
-    public static String accountLogo() {
-        return ACCOUNT_LOGO;
-    }
-
     public static String accountCustomStyles() {
         return ACCOUNT_CUSTOM_STYLES;
     }
 
     public static String editAccountCustomStyles() {
         return EDIT_ACCOUNT_CUSTOM_STYLES;
-    }
-
-    public static String accountUsers() {
-        return ACCOUNT_USERS;
     }
 
     public static String userSidebar() {
@@ -281,14 +229,6 @@ public final class Paths {
         return NEW_ROOMS_CLOSED;
     }
 
-    public static String roomsOpens() {
-        return ROOMS_OPENS;
-    }
-
-    public static String roomsCloseds() {
-        return ROOMS_CLOSEDS;
-    }
-
     public static String roomsDirects() {
         return ROOMS_DIRECTS;
     }
@@ -303,17 +243,5 @@ public final class Paths {
 
     public static String clearSearches() {
         return CLEAR_SEARCHES;
-    }
-
-    public static String unfurlLink() {
-        return UNFURL_LINK;
-    }
-
-    public static String webmanifest() {
-        return WEBMANIFEST;
-    }
-
-    public static String serviceWorker() {
-        return SERVICE_WORKER;
     }
 }

@@ -2,6 +2,7 @@ package campfire.users;
 
 import campfire.web.CurrentRequest;
 import campfire.web.Paths;
+import campfire.web.Responses;
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.DELETE;
@@ -23,17 +24,17 @@ public class BanResource {
 
     @POST
     public Response create(@PathParam("user_id") String userId) {
-        if (!request.user().canAdminister()) return request.head(403);
+        if (!request.user().canAdminister()) return Responses.head(403);
         User user = users.find(userId);
         users.ban(user);
-        return request.redirect(request.url(Paths.user(user.id())));
+        return Responses.redirect(request.url(Paths.user(user.id())));
     }
 
     @DELETE
     public Response destroy(@PathParam("user_id") String userId) {
-        if (!request.user().canAdminister()) return request.head(403);
+        if (!request.user().canAdminister()) return Responses.head(403);
         User user = users.find(userId);
         users.unban(user);
-        return request.redirect(request.url(Paths.user(user.id())));
+        return Responses.redirect(request.url(Paths.user(user.id())));
     }
 }

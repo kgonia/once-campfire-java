@@ -7,6 +7,7 @@ import campfire.web.CurrentRequest;
 import campfire.web.Params;
 import campfire.web.Paths;
 import campfire.web.RecordNotFound;
+import campfire.web.Responses;
 import gg.jte.generated.precompiled.rooms.directs.JteeditGenerated;
 import gg.jte.generated.precompiled.rooms.directs.JtenewGenerated;
 import io.smallrye.common.annotation.RunOnVirtualThread;
@@ -53,7 +54,7 @@ public class DirectRoomResource {
     @POST
     public Response create() {
         Room room = directs.findOrCreate(pages.detachedView(), request.user(), RoomParams.userIds(request));
-        return request.redirect(Paths.room(room.id()));
+        return Responses.redirect(request.url(Paths.room(room.id())));
     }
 
     /// Off to the room page, which checks membership.
@@ -62,7 +63,7 @@ public class DirectRoomResource {
     public Response show(@PathParam("id") String id) {
         Long roomId = Params.parseId(id);
         if (roomId == null) throw new RecordNotFound();
-        return request.redirect(Paths.room(roomId));
+        return Responses.redirect(request.url(Paths.room(roomId)));
     }
 
     @GET
@@ -79,6 +80,6 @@ public class DirectRoomResource {
     @Path("{id}")
     public Response destroy(@PathParam("id") String id) {
         rooms.destroy(access.room(id, RoomAccess.Scope.DIRECT));
-        return request.redirect(Paths.ROOT);
+        return Responses.redirect(request.url(Paths.ROOT));
     }
 }

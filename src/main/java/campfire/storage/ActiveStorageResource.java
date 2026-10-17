@@ -6,9 +6,10 @@ import campfire.rails.HttpFormats;
 import campfire.rails.Json;
 import campfire.sessions.Authentication;
 import campfire.web.Access;
-import campfire.web.AuthenticityToken;
+import campfire.web.AccessFilter;
 import campfire.web.CurrentRequest;
 import campfire.web.Formats;
+import campfire.web.Responses;
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
@@ -67,7 +68,7 @@ public class ActiveStorageResource {
     @GET
     @Path("blobs/redirect/{signed_id}/{filename: .+}")
     public Response blobRedirect(@PathParam("signed_id") String signedId) {
-        return storage.blob(signedId).map(this::redirectTo).orElseGet(() -> request.head(404));
+        return storage.blob(signedId).map(this::redirectTo).orElseGet(() -> Responses.head(404));
     }
 
     /// The route `rails_blob_path` used before the redirect/proxy split.
@@ -82,7 +83,7 @@ public class ActiveStorageResource {
     public Response blobProxy(@PathParam("signed_id") String signedId) {
         request.markDownload();
         Blob blob = storage.blob(signedId).orElse(null);
-        if (blob == null) return request.head(404);
+        if (blob == null) return Responses.head(404);
         String range = request.header("range");
         if (range != null && !range.isBlank()) return byteRange(blob, range);
         return stream(blob, true);
@@ -92,8 +93,8 @@ public class ActiveStorageResource {
     @Path("representations/redirect/{signed_blob_id}/{variation_key}/{filename: .+}")
     public Response representationRedirect(@PathParam("signed_blob_id") String signedBlobId, @PathParam("variation_key") String variationKey) {
         Blob blob = storage.blob(signedBlobId).orElse(null);
-        if (blob == null) return request.head(404);
-        return storage.representation(blob, variationKey).map(this::redirectTo).orElseGet(() -> request.head(404));
+        if (blob == null) return Responses.head(404);
+        return storage.representation(blob, variationKey).map(this::redirectTo).orElseGet(() -> Responses.head(404));
     }
 
     @GET
@@ -107,8 +108,8 @@ public class ActiveStorageResource {
     public Response representationProxy(@PathParam("signed_blob_id") String signedBlobId, @PathParam("variation_key") String variationKey) {
         request.markDownload();
         Blob blob = storage.blob(signedBlobId).orElse(null);
-        if (blob == null) return request.head(404);
-        return storage.representation(blob, variationKey).map(image -> stream(image, false)).orElseGet(() -> request.head(404));
+        if (blob == null) return Responses.head(404);
+        return storage.representation(blob, variationKey).map(image -> stream(image, false)).orElseGet(() -> Responses.head(404));
     }
 
     /// The disk service's file, with conditional GET on its mtime and byte ranges.
@@ -142,12 +143,13 @@ public class ActiveStorageResource {
         return Formats.head(request, 204);
     }
 
-    /// Creates the blob a client then PUTs to the returned URL. Unlike the app's own pages, this
-    /// needs a CSRF token.
+    /// Creates the blob a client then PUTs to the returned URL. Rails guards this with its CSRF
+    /// token, which the app's pages don't carry; it gets the same Fetch Metadata check as every
+    /// other write instead, so Active Storage's JavaScript can call it from any signed-in page.
     @POST
     @Path("direct_uploads")
     public Response directUploadsCreate() {
-        if (!AuthenticityToken.verified(request)) return exceptionPage(422);
+        if (!AccessFilter.sameOriginWrite(request)) return exceptionPage(422);
         if (!authentication.hasSession(request)) return Formats.head(request, 401);
         Map<?, ?> params = blobParams();
         if (params == null) return exceptionPage(400);
@@ -159,7 +161,7 @@ public class ActiveStorageResource {
         if (byteSize < 0 || byteSize > storage.maxDirectUploadBytes()) return exceptionPage(413);
         Map<?, ?> metadata = params.get("metadata") instanceof Map<?, ?> m ? m : Map.of();
         var upload = storage.createDirectUpload(request.baseUrl(), filename, text(params.get("content_type")), metadata, byteSize, checksum);
-        Response json = CurrentRequest.json(200, upload.json());
+        Response json = Responses.json(200, upload.json());
         return Formats.variesOnAccept(request) ? withHeader(json, "Vary", "Accept") : json;
     }
 
@@ -168,7 +170,7 @@ public class ActiveStorageResource {
     /// A private, five-minute redirect to the blob's disk URL.
     private Response redirectTo(Blob blob) {
         String url = storage.serviceUrl(request.baseUrl(), blob, request.params().string("disposition"));
-        return Response.fromResponse(request.redirect(url)).header("Cache-Control", "max-age=300, private").header("Date", now()).build();
+        return Response.fromResponse(Responses.redirect(url)).header("Cache-Control", "max-age=300, private").header("Date", now()).build();
     }
 
     /// The whole file under a URL cached for a hundred years; the ETag is the URL's own.
@@ -180,7 +182,7 @@ public class ActiveStorageResource {
                 .header("Cache-Control", "max-age=" + HUNDRED_YEARS + ", public, immutable").build();
         }
         var file = storage.file(blob).orElse(null);
-        if (file == null) return withHeaders(Response.fromResponse(request.head(404)), validators).header("Cache-Control", "no-cache").build();
+        if (file == null) return withHeaders(Response.fromResponse(Responses.head(404)), validators).header("Cache-Control", "no-cache").build();
         var response = withHeaders(Response.ok(file), validators)
             .header("Cache-Control", "max-age=" + HUNDRED_YEARS + ", public, immutable")
             .header("Content-Type", servingType(blob))
@@ -193,7 +195,7 @@ public class ActiveStorageResource {
     /// names no satisfiable range (or none at all) is a 416.
     private Response byteRange(Blob blob, String header) {
         List<long[]> ranges = FileServer.byteRanges(header, Math.max(0, blob.byteSize()));
-        if (ranges == null || ranges.isEmpty()) return request.head(416);
+        if (ranges == null || ranges.isEmpty()) return Responses.head(416);
         var file = storage.file(blob).orElseThrow(() -> new StorageException("file not found for blob " + blob.id()));
         String type = servingType(blob);
         var parts = new ArrayList<Object>();

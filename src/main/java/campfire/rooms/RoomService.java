@@ -8,7 +8,9 @@ import campfire.messages.MessagePresenter;
 import campfire.users.User;
 import campfire.users.UserView;
 import campfire.view.View;
+import io.quarkus.runtime.StartupEvent;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
 import java.util.List;
 import java.util.Optional;
@@ -24,6 +26,16 @@ public class RoomService {
     Broadcasts broadcasts;
     @Inject
     Cable cable;
+
+    /// No socket outlives the process, so memberships the previous process left connected are
+    /// reset before the first request, as Rails does when Puma boots. Otherwise presence and unread
+    /// marks treat those members as online until `Membership.CONNECTION_TTL` passes.
+    void disconnectAll(@Observes StartupEvent startup) {
+        db.write(tx -> {
+            Membership.disconnectAll(tx);
+            return null;
+        });
+    }
 
     public Optional<Room> findForUser(long userId, long roomId) {
         return Optional.ofNullable(db.read(conn -> Room.findForUser(conn, userId, roomId)));

@@ -1,7 +1,6 @@
 package campfire.view;
 
 import gg.jte.Content;
-import gg.jte.TemplateOutput;
 import gg.jte.html.HtmlTemplateOutput;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -15,10 +14,6 @@ public final class HtmlOut implements HtmlTemplateOutput {
     private int length;
     /// Cached fragments written with {@link Safe#handed()}, in order.
     private final List<PageDigest.Handed> handed = new ArrayList<>();
-
-    public HtmlOut() {
-        this(8192);
-    }
 
     public HtmlOut(int capacity) {
         buffer = new byte[capacity];
@@ -119,25 +114,12 @@ public final class HtmlOut implements HtmlTemplateOutput {
         return body;
     }
 
-    public void write(Content content) {
-        if (content != null) content.writeTo(this);
-    }
-
     public byte[] toByteArray() {
         return Arrays.copyOf(buffer, length);
-    }
-
-    public int length() {
-        return length;
     }
 
     @Override
     public String toString() {
         return new String(buffer, 0, length, StandardCharsets.UTF_8);
-    }
-
-    /// Writes `content` into a template output, used by {@link Safe} and pre-rendered fragments.
-    public static void writeBytes(TemplateOutput output, byte[] bytes) {
-        output.writeBinaryContent(bytes);
     }
 }

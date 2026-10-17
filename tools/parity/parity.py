@@ -31,9 +31,13 @@ def norm_headers(hs):
             continue
         v = v.replace(':4100', ':PORT').replace(':4101', ':PORT').replace(':4102', ':PORT').replace(':4103', ':PORT').replace(':4104', ':PORT').replace(':4105', ':PORT')
         if k == 'set-cookie':
+            # Compared by meaning: attribute case and order are the framework's, and `expires` is
+            # the time of the response.
             name, _, rest = v.partition('=')
             value, _, attrs = rest.partition(';')
-            v = name + '=<' + ('empty' if not value else 'value') + '>;' + attrs
+            attrs = sorted(a.strip().lower() if not a.strip().lower().startswith('expires=') else 'expires'
+                           for a in attrs.split(';') if a.strip())
+            v = name + '=<' + ('empty' if not value else 'value') + '>; ' + '; '.join(attrs)
         out.append(f'{k}: {v}')
     return sorted(out)
 

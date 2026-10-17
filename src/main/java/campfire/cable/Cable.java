@@ -136,7 +136,7 @@ public final class Cable implements Broadcasts.PubSub, AutoCloseable {
     private boolean allowRequestOrigin(HttpServerRequest request) {
         if (options.disableRequestForgeryProtection()) return true;
         String origin = request.getHeader("origin");
-        String host = request.getHeader("host");
+        String host = campfire.web.Front.authority(request);
         String proto = options.assumeSsl() || request.isSSL() || forwardedSsl(request.headers()) ? "https" : "http";
         if (options.allowSameOriginAsHost() && origin != null && origin.equals(proto + "://" + (host == null ? "" : host))) return true;
         if (origin != null && options.allowedRequestOrigins().contains(origin)) return true;
@@ -238,11 +238,6 @@ public final class Cable implements Broadcasts.PubSub, AutoCloseable {
     /// Broadcastings that currently have subscribers (connections' internal channels included).
     public int streamCount() {
         return hub.streamCount();
-    }
-
-    /// Open connections (authenticated and welcomed).
-    public int connectionCount() {
-        return connections.size();
     }
 
     /// `ActionCable.server.restart`: closes every connection with `server_restart`.

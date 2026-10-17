@@ -20,16 +20,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ThreadLocalRandom;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 /// Vert.x handlers in front of the REST resources, outermost first:
 ///
 /// - the proxy layer the Rails image runs behind (Thruster): the request size limit, the
-///   `X-Request-Start` and `X-Forwarded-*` request headers, the shared cache of public responses
+///   `X-Forwarded-*` request headers, the shared cache of public responses
 ///   ({@link FrontCache}, answering `X-Cache: hit`, `miss` or `bypass`), the `Vary` its
 ///   compression adds, and the headers a bodiless status can't carry;
 /// - the cable WebSocket;
@@ -46,8 +44,6 @@ public class Front {
     static final String CACHE_STATE = "campfire.front.cache";
     private static final String BYPASS = "bypass";
     private static final String FINISHED = "campfire.front.finished";
-    /// When the request arrived, in `System.nanoTime()`, for `X-Runtime`.
-    static final String STARTED = "campfire.front.started";
 
     @Inject
     Config config;
@@ -76,7 +72,8 @@ public class Front {
         router.route().order(-10).method(HttpMethod.POST).handler(rc -> {
             String override = rc.request().getFormAttribute("_method");
             String method = override == null ? "" : override.toUpperCase(java.util.Locale.ROOT);
-            if (method.equals("PUT") || method.equals("PATCH") || method.equals("DELETE")) rc.reroute(HttpMethod.valueOf(method), rc.request().path());
+            // The URI, not the path: Rails merges the query string into params for every method.
+            if (method.equals("PUT") || method.equals("PATCH") || method.equals("DELETE")) rc.reroute(HttpMethod.valueOf(method), rc.request().uri());
             else rc.next();
         });
     }
@@ -90,7 +87,6 @@ public class Front {
     }
 
     private void proxy(RoutingContext rc) {
-        rc.put(STARTED, System.nanoTime());
         HttpServerRequest request = rc.request();
         HttpServerResponse response = rc.response();
         boolean cacheable = FrontCache.cacheable(request);
@@ -99,18 +95,11 @@ public class Front {
             response.setStatusCode(413).end();
             return;
         }
-        MultiMap headers = request.headers();
-        String start = headers.get("x-request-start");
-        if (start == null || start.isEmpty()) headers.set("X-Request-Start", "t=" + System.currentTimeMillis());
         if (!cacheable) {
             rc.put(CACHE_STATE, BYPASS);
             // Vert.x writes a WebSocket handshake without the headers-end callbacks, so what they
             // would add goes on now (the handshake takes the response's headers).
-            if ("websocket".equalsIgnoreCase(request.getHeader("upgrade"))) {
-                response.headers().set("x-request-id", requestId(request.getHeader("x-request-id")));
-                response.headers().set("x-runtime", runtime(rc));
-                finishHeaders(rc, false);
-            }
+            if ("websocket".equalsIgnoreCase(request.getHeader("upgrade"))) finishHeaders(rc, false);
         } else {
             switch (cache.lookup(request)) {
                 case FrontCache.Hit(FrontCache.Stored stored) -> {
@@ -124,25 +113,12 @@ public class Front {
         rc.next();
     }
 
-    /// Rails' request id: the client's, cut down to word characters, `-` and `@` (at most 255),
-    /// else a new random (version 4) UUID. It's a tracing id, not a secret, so it comes from
-    /// `ThreadLocalRandom` rather than `UUID.randomUUID()`'s shared `SecureRandom`.
-    static String requestId(@Nullable String incoming) {
-        if (incoming == null || incoming.isBlank()) {
-            var random = ThreadLocalRandom.current();
-            return new UUID((random.nextLong() & ~0xF000L) | 0x4000L, (random.nextLong() & ~(3L << 62)) | (2L << 62)).toString();
-        }
-        var sanitized = new StringBuilder();
-        incoming.codePoints().filter(c -> Character.isLetterOrDigit(c) || c == '_' || c == '-' || c == '@').limit(255)
-            .forEach(sanitized::appendCodePoint);
-        return sanitized.toString();
-    }
-
-    /// Seconds since the request arrived, to the microsecond.
-    static String runtime(RoutingContext rc) {
-        Long started = rc.get(STARTED);
-        long micros = started == null ? 0 : (System.nanoTime() - started + 500) / 1000;
-        return micros / 1_000_000 + "." + Long.toString(1_000_000 + micros % 1_000_000).substring(1);
+    /// The request's host and port: the `Host` header over HTTP/1.1, the `:authority` pseudo-header
+    /// over HTTP/2 (which has no `Host`). Null when the client sent neither.
+    public static @Nullable String authority(HttpServerRequest request) {
+        var authority = request.authority();
+        if (authority == null) return null;
+        return authority.port() < 0 ? authority.host() : authority.host() + ":" + authority.port();
     }
 
     /// An empty 413 for a declared body over the limit (0 is none), before the app sees it.
@@ -164,7 +140,7 @@ public class Front {
         String prior = String.join(", ", headers.getAll("x-forwarded-for"));
         String incomingHost = headers.get("x-forwarded-host");
         String incomingProto = headers.get("x-forwarded-proto");
-        String host = headers.get("host");
+        String host = authority(request);
         String client = request.remoteAddress() == null ? "" : request.remoteAddress().hostAddress();
         headers.remove("forwarded");
         headers.set("X-Forwarded-For", prior.isEmpty() ? client : prior + ", " + client);

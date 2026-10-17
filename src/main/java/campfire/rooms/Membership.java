@@ -10,7 +10,6 @@ import static org.jooq.impl.DSL.lower;
 import static org.jooq.impl.DSL.param;
 import static org.jooq.impl.DSL.select;
 import static org.jooq.impl.DSL.selectDistinct;
-import static org.jooq.impl.DSL.selectOne;
 import static org.jooq.impl.DSL.update;
 
 import campfire.db.Conn;
@@ -55,10 +54,6 @@ public record Membership(long id, long roomId, long userId, String involvement, 
         return connectedAt != null && !connectedAt.isBefore(now.minus(CONNECTION_TTL));
     }
 
-    public String involvementOrDefault() {
-        return involvement == null ? "mentions" : involvement;
-    }
-
     /// A membership with its room, as the sidebar and profile list them.
     public record WithRoom(Membership membership, Room room) {}
 
@@ -76,8 +71,6 @@ public record Membership(long id, long roomId, long userId, String involvement, 
 
     private static final String FIND = Sql.render(select(COLUMNS).from(MEMBERSHIPS).where(MEMBERSHIPS.ROOM_ID.eq(param(MEMBERSHIPS.ROOM_ID)))
         .and(MEMBERSHIPS.USER_ID.eq(param(MEMBERSHIPS.USER_ID))).limit(inline(1)));
-    private static final String EXISTS = Sql.render(selectOne().from(MEMBERSHIPS).where(MEMBERSHIPS.ROOM_ID.eq(param(MEMBERSHIPS.ROOM_ID)))
-        .and(MEMBERSHIPS.USER_ID.eq(param(MEMBERSHIPS.USER_ID))).limit(inline(1)));
     private static final String WITH_ORDERED_ROOM = Sql.render(withRoom().orderBy(lower(ROOMS.NAME)));
     private static final String VISIBLE_WITH_ORDERED_ROOM = Sql.render(withRoom().and(MEMBERSHIPS.INVOLVEMENT.ne(inline("invisible"))).orderBy(lower(ROOMS.NAME)));
     private static final String FOR_ROOM = Sql.render(select(COLUMNS).from(MEMBERSHIPS).where(MEMBERSHIPS.ROOM_ID.eq(param(MEMBERSHIPS.ROOM_ID)))
@@ -92,10 +85,6 @@ public record Membership(long id, long roomId, long userId, String involvement, 
 
     public static Membership find(Conn conn, long roomId, long userId) {
         return conn.one(FIND, Membership::from, roomId, userId);
-    }
-
-    public static boolean exists(Conn conn, long roomId, long userId) {
-        return conn.exists(EXISTS, roomId, userId);
     }
 
     /// `user.memberships.with_ordered_room`

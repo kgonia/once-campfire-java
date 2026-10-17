@@ -34,10 +34,6 @@ public enum Tools {
         this.versionFlag = versionFlag;
     }
 
-    public String command() {
-        return command;
-    }
-
     /// Whether `<tool> -version` runs and succeeds (memoized, like `VideoPreviewer.ffmpeg_exists?`).
     public boolean available() {
         Boolean known = available;
@@ -50,11 +46,6 @@ public enum Tools {
             available = known;
         }
         return known;
-    }
-
-    /// For tests: forget what {@link #available} found.
-    static void resetAvailability() {
-        for (Tools tool : values()) tool.available = null;
     }
 
     public record Result(int exitCode, byte[] stdout, String stderr) {

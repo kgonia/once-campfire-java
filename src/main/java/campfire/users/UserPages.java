@@ -28,9 +28,6 @@ public final class UserPages {
         }
     }
 
-    /// `transferId` signs the user in on another device until it expires.
-    public record UserShow(User user, String transferId) {}
-
     public record ProfileShow(User user, boolean avatarAttached, String transferId, List<ProfileMembership> sharedMemberships,
                               List<ProfileMembership> directMemberships) {}
 

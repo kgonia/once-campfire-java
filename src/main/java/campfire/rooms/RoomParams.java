@@ -2,6 +2,7 @@ package campfire.rooms;
 
 import campfire.web.CurrentRequest;
 import campfire.web.Halt;
+import campfire.web.Responses;
 import java.util.List;
 import java.util.Map;
 import org.jspecify.annotations.NullMarked;
@@ -20,7 +21,7 @@ final class RoomParams {
     static Name name(CurrentRequest request) {
         Object room = request.params().get("room");
         if (room instanceof String s && !s.isBlank()) throw new IllegalStateException("undefined method 'permit' for an instance of String");
-        if (!(room instanceof Map<?, ?> map) || map.isEmpty()) throw new Halt(request.head(400));
+        if (!(room instanceof Map<?, ?> map) || map.isEmpty()) throw new Halt(Responses.head(400));
         return map.get("name") instanceof String name ? new Name(true, name) : new Name(false, null);
     }
 

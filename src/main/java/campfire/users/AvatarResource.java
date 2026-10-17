@@ -7,6 +7,7 @@ import campfire.web.CurrentRequest;
 import campfire.web.Formats;
 import campfire.web.HttpCache;
 import campfire.web.Paths;
+import campfire.web.Responses;
 import gg.jte.generated.precompiled.users.avatars.JteshowGenerated;
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import jakarta.inject.Inject;
@@ -45,7 +46,7 @@ public class AvatarResource {
     public Response show(@PathParam("user_id") String token) {
         request.markDownload();
         User user = users.fromAvatarToken(token);
-        if (user == null) return request.head(404);
+        if (user == null) return Responses.head(404);
         String etag = HttpCache.weakEtag(request, HttpCache.cacheKeyWithVersion("users", user.id(), user.updatedAt()),
             initialsMayRender() ? TEMPLATE_DIGEST : null);
         if (HttpCache.fresh(request, etag)) return HttpCache.notModified(etag);
@@ -70,7 +71,7 @@ public class AvatarResource {
     public Response destroy() {
         request.markDownload();
         users.deleteAvatar(request.user().id());
-        return request.redirect(request.url(Paths.USER_PROFILE));
+        return Responses.redirect(request.url(Paths.USER_PROFILE));
     }
 
     /// The SVG template is found for these formats: anything, SVG, or none that Rails knows

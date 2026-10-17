@@ -84,10 +84,6 @@ final class Connection {
         Thread.ofVirtual().name("cable-connection").start(this::run);
     }
 
-    boolean closing() {
-        return closing;
-    }
-
     // -- The connection's thread -------------------------------------------------------------------
 
     private void run() {

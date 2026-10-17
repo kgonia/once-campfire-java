@@ -18,7 +18,7 @@ final class Protocol {
     static final int BEAT_INTERVAL = 3;
 
     /// `ActionCable::INTERNAL[:disconnect_reasons]`.
-    static final String UNAUTHORIZED = "unauthorized", INVALID_REQUEST = "invalid_request", SERVER_RESTART = "server_restart",
+    static final String UNAUTHORIZED = "unauthorized", SERVER_RESTART = "server_restart",
         REMOTE = "remote";
 
     static String welcome() {

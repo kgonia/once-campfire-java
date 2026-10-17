@@ -6,6 +6,7 @@ import campfire.web.CurrentRequest;
 import campfire.web.Formats;
 import campfire.web.Halt;
 import campfire.web.Paths;
+import campfire.web.Responses;
 import gg.jte.generated.precompiled.accounts.users.Jteindexturbo_streamGenerated;
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import jakarta.inject.Inject;
@@ -41,7 +42,7 @@ public class AccountUserResource {
         List<User> shown = people.stream().skip(page.offset()).limit(PeoplePage.PER_PAGE).toList();
         String nextPage = page.isLast() ? null : Long.toString(page.number() + 1);
         byte[] body = Pages.bytes(pages.view(), (out, v) -> Jteindexturbo_streamGenerated.render(out, null, v, shown, nextPage));
-        Response response = CurrentRequest.turboStream(body);
+        Response response = Responses.turboStream(body);
         if (Formats.variesOnAccept(request)) response.getHeaders().putSingle("Vary", "Accept");
         return response;
     }
@@ -61,7 +62,7 @@ public class AccountUserResource {
         request.require("user");
         String role = request.params().get("user") instanceof Map<?, ?> attributes && attributes.get("role") instanceof String s ? s : null;
         accounts.setRole(user, role);
-        return request.redirect(Paths.editAccount());
+        return Responses.redirect(request.url(Paths.editAccount()));
     }
 
     @DELETE
@@ -69,10 +70,10 @@ public class AccountUserResource {
     public Response destroy(@PathParam("id") String id) {
         requireAdministrator();
         accounts.deactivate(accounts.activeUser(id));
-        return request.redirect(Paths.editAccount());
+        return Responses.redirect(request.url(Paths.editAccount()));
     }
 
     private void requireAdministrator() {
-        if (!request.user().canAdminister()) throw new Halt(request.head(403));
+        if (!request.user().canAdminister()) throw new Halt(Responses.head(403));
     }
 }

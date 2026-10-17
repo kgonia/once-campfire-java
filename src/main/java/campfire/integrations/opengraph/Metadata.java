@@ -47,13 +47,6 @@ public final class Metadata {
         this.context = context;
     }
 
-    /// `Metadata.from_url(url)` then `valid?`, with the system network and the unfurl limits
-    /// (see {@link Opengraph#unfurl}): the metadata when valid, else null (Rails' `head
-    /// :no_content`, and where it raises).
-    public static Metadata fromUrl(String url) {
-        return Opengraph.unfurl(url) instanceof Opengraph.Unfurl.Json json ? json.metadata() : null;
-    }
-
     /// `Metadata.from_url(url)`
     static Metadata fromUrl(Network net, String url, Deadline deadline) throws RaisedException {
         var context = new Fetch.Context(net, deadline);
@@ -70,27 +63,6 @@ public final class Metadata {
     /// The `title`, `url`, `image` or `description`.
     public String get(String key) {
         return attributes.get(key);
-    }
-
-    public String title() {
-        return get("title");
-    }
-
-    public String url() {
-        return get("url");
-    }
-
-    public String image() {
-        return get("image");
-    }
-
-    public String description() {
-        return get("description");
-    }
-
-    /// The attributes in assignment order.
-    public Map<String, String> attributes() {
-        return Collections.unmodifiableMap(attributes);
     }
 
     /// `valid?`: sanitizes the title and description first (`before_validation`), then checks

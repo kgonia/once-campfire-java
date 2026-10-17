@@ -86,10 +86,6 @@ public final class Broadcasts {
         pubsub.broadcast(stream, Json.encode(tag));
     }
 
-    public void broadcast(String stream, Object payload) {
-        pubsub.broadcast(stream, Json.encode(payload));
-    }
-
     // -- Message::Broadcasts -------------------------------------------------------------------------
 
     /// `message.broadcast_create`: append to the room, then tell every member's unread stream.

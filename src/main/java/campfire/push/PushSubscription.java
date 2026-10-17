@@ -39,12 +39,6 @@ public record PushSubscription(long id, long userId, String endpoint, String p25
         .where(PUSH_SUBSCRIPTIONS.USER_ID.eq(param(PUSH_SUBSCRIPTIONS.USER_ID))).orderBy(PUSH_SUBSCRIPTIONS.ID));
     private static final String FIND = Sql.render(select(COLUMNS).from(PUSH_SUBSCRIPTIONS)
         .where(PUSH_SUBSCRIPTIONS.USER_ID.eq(param(PUSH_SUBSCRIPTIONS.USER_ID))).and(PUSH_SUBSCRIPTIONS.ID.eq(param(PUSH_SUBSCRIPTIONS.ID))).limit(inline(1)));
-    /// `IS`, so a null key matches a NULL column.
-    private static final String FIND_BY_KEYS = Sql.render(select(COLUMNS).from(PUSH_SUBSCRIPTIONS)
-        .where(PUSH_SUBSCRIPTIONS.USER_ID.eq(param(PUSH_SUBSCRIPTIONS.USER_ID)))
-        .and(PUSH_SUBSCRIPTIONS.ENDPOINT.isNotDistinctFrom(param(PUSH_SUBSCRIPTIONS.ENDPOINT)))
-        .and(PUSH_SUBSCRIPTIONS.P256DH_KEY.isNotDistinctFrom(param(PUSH_SUBSCRIPTIONS.P256DH_KEY)))
-        .and(PUSH_SUBSCRIPTIONS.AUTH_KEY.isNotDistinctFrom(param(PUSH_SUBSCRIPTIONS.AUTH_KEY))).limit(inline(1)));
     /// Binds room, connected-before, creator, then the mentioned user ids (none: only `everything`).
     private static final IntFunction<String> FOR_ROOM_DELIVERY = Sql.perCount(mentioned -> {
         Condition involved = MEMBERSHIPS.INVOLVEMENT.eq(inline("everything"));
@@ -81,10 +75,6 @@ public record PushSubscription(long id, long userId, String endpoint, String p25
 
     public static PushSubscription find(Conn conn, long userId, long id) {
         return conn.one(FIND, PushSubscription::from, userId, id);
-    }
-
-    public static PushSubscription findByKeys(Conn conn, long userId, String endpoint, String p256dh, String auth) {
-        return conn.one(FIND_BY_KEYS, PushSubscription::from, userId, endpoint, p256dh, auth);
     }
 
     private static final Map<String, Field<String>> KEY_COLUMNS = Map.of("endpoint", PUSH_SUBSCRIPTIONS.ENDPOINT, "p256dh_key",

@@ -9,6 +9,7 @@ import campfire.view.View;
 import campfire.web.CurrentRequest;
 import campfire.web.Formats;
 import campfire.web.Params;
+import campfire.web.Responses;
 import gg.jte.generated.precompiled.autocompletable.users.JteindexGenerated;
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import jakarta.inject.Inject;
@@ -68,7 +69,7 @@ public class AutocompleteResource {
                 if (page != pageCount) response.header("link", "<" + withPage(request.requestUrl(), page + 1) + ">; rel=\"next\"");
             }
         } else {
-            response = CurrentRequest.html(200, Pages.bytes(v, (out, view) -> JteindexGenerated.render(out, null, view, shown)));
+            response = Responses.html(200, Pages.bytes(v, (out, view) -> JteindexGenerated.render(out, null, view, shown)));
         }
         if (Formats.variesOnAccept(request)) response.header("Vary", "Accept");
         return response.build();

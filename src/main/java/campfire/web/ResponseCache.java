@@ -50,29 +50,30 @@ public final class ResponseCache {
     /// returns is offered to {@link #admit}. Bots, flashes and anything but plain GETs never cache.
     public Optional<Response> lookup(CurrentRequest current, String endpoint) {
         CurrentRequest request = ClientProxy.unwrap(current);
+        RequestState state = request.state();
         Session session = request.session();
-        if (!enabled || request.dataVersionAtStart() < 0 || session == null || request.authenticatedByBot() || !request.flash().isEmpty()
+        if (!enabled || state.dataVersionAtStart < 0 || session == null || request.authenticatedByBot() || !request.flash().isEmpty()
             || !eligible(request)) {
             return Optional.empty();
         }
         String key = key(request, session, endpoint);
         if (key == null) return Optional.empty();
-        long version = request.dataVersionAtStart();
+        long version = state.dataVersionAtStart;
         Entry entry = entries.getIfPresent(key);
         if (entry == null || entry.version() != version) {
-            request.cacheTicket(new Ticket(version, key));
+            state.cacheTicket = new Ticket(version, key);
             return Optional.empty();
         }
         var response = Response.status(entry.status()).entity(entry.body());
         entry.headers().forEach((name, values) -> values.forEach(value -> response.header(name, value)));
-        request.cachedGzip(entry.gzip());
+        state.cachedGzip = entry.gzip();
         return Optional.of(response.build());
     }
 
     /// Keeps a finished 200 (headers and ETag final, before gzip) if nothing was committed since the
     /// version its render started from.
     void admit(CurrentRequest request, int status, Map<String, List<String>> headers, byte[] body, byte @Nullable [] gzip) {
-        Ticket ticket = request.cacheTicket();
+        Ticket ticket = request.state().cacheTicket;
         if (ticket == null || status != 200 || body.length > MAX_BODY || !request.flash().isEmpty()) return;
         String cacheControl = first(headers, "Cache-Control");
         if (cacheControl != null && (cacheControl.contains("no-store") || cacheControl.contains("no-transform"))) return;
@@ -112,7 +113,7 @@ public final class ResponseCache {
             digest.update(size.putLong(0, bytes.length).array());
             digest.update(bytes);
         };
-        field.accept(Long.toString(request.dataVersionAtStart()));
+        field.accept(Long.toString(request.state().dataVersionAtStart));
         field.accept(endpoint);
         field.accept(Long.toString(request.user().id()));
         field.accept(Long.toString(session.id()));

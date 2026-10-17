@@ -5,6 +5,7 @@ import campfire.web.CurrentRequest;
 import campfire.web.Formats;
 import campfire.web.Halt;
 import campfire.web.Paths;
+import campfire.web.Responses;
 import gg.jte.generated.precompiled.accounts.custom_styles.JteeditGenerated;
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import jakarta.inject.Inject;
@@ -50,10 +51,11 @@ public class CustomStylesResource {
         request.require("account");
         boolean given = request.params().get("account") instanceof Map<?, ?> attributes && attributes.containsKey("custom_styles");
         accounts.updateCustomStyles(account, given, request.params().string("account", "custom_styles"));
-        return request.redirectWithNotice(Paths.editAccountCustomStyles(), "✓");
+        request.flash().set("notice", "✓");
+        return Responses.redirect(request.url(Paths.editAccountCustomStyles()));
     }
 
     private void requireAdministrator() {
-        if (!request.user().canAdminister()) throw new Halt(request.head(403));
+        if (!request.user().canAdminister()) throw new Halt(Responses.head(403));
     }
 }

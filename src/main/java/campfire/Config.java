@@ -37,9 +37,6 @@ public interface Config {
 
     Optional<String> gitRevision();
 
-    @WithDefault("3")
-    int jobConcurrency();
-
     /// Memory for whole cached pages; 0 turns the response cache off.
     @WithDefault("64")
     long responseCacheMb();

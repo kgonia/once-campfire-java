@@ -61,10 +61,6 @@ public final class Database implements AutoCloseable {
             if (inTransaction) afterCommit.add(work);
             else work.run();
         }
-
-        public boolean inTransaction() {
-            return inTransaction;
-        }
     }
 
     private final Path path;
@@ -100,10 +96,6 @@ public final class Database implements AutoCloseable {
         } catch (SQLException | java.io.IOException e) {
             throw new IllegalStateException("can't open " + path + ": " + e.getMessage(), e);
         }
-    }
-
-    public Path path() {
-        return path;
     }
 
     private static java.sql.Connection open(String url, boolean readOnly) throws SQLException {

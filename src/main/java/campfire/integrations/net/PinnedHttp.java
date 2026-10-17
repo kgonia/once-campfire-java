@@ -10,7 +10,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
-import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -598,42 +597,6 @@ public final class PinnedHttp {
                 throw new HttpException(HttpException.Kind.PROTOCOL, "wrong chunk size line: " + line);
             }
             return Long.parseLong(hex, 16);
-        }
-    }
-
-    // --- Convenience ---------------------------------------------------------------------------
-
-    /// Limits for {@link #request}: per connect, per read, for the whole exchange, and for the
-    /// (decoded) body.
-    public record Limits(Duration open, Duration read, Duration overall, long maxBody) {}
-
-    /// A complete response. `body` is null when it ran past `maxBody`.
-    public record HttpResult(int status, String reason, List<Header> headers, byte[] body) {
-        public String header(String name) {
-            String joined = null;
-            for (var h : headers) {
-                if (h.name().equalsIgnoreCase(name)) joined = joined == null ? h.value() : joined + ", " + h.value();
-            }
-            return joined;
-        }
-    }
-
-    /// One request to `uri` (http or https) over a connection to `pinned`, with `Net::HTTP`'s
-    /// default headers after the caller's and `Connection: close`. Redirects are the caller's.
-    public static HttpResult request(Network net, String method, URI uri, InetAddress pinned, List<Header> headers, byte[] body, Limits limits)
-        throws HttpException {
-        boolean https = "https".equalsIgnoreCase(uri.getScheme());
-        if (!https && !"http".equalsIgnoreCase(uri.getScheme())) throw new HttpException(HttpException.Kind.PROTOCOL, "not an HTTP URL: " + uri);
-        String host = uri.getHost();
-        if (host == null || host.isEmpty()) throw new HttpException(HttpException.Kind.PROTOCOL, "no host: " + uri);
-        int port = uri.getPort() >= 0 ? uri.getPort() : https ? 443 : 80;
-        String path = uri.getRawPath() == null || uri.getRawPath().isEmpty() ? "/" : uri.getRawPath();
-        String target = uri.getRawQuery() != null ? path + "?" + uri.getRawQuery() : path;
-        var endpoint = new Target(https, host, port, pinned);
-        var request = Request.netHttp(method, target, null, headers, body).transport(true, endpoint);
-        try (var response = exchange(net, endpoint, request, new Timeouts(limits.open(), limits.read()), Deadline.after(limits.overall()))) {
-            byte[] content = response.readBody(limits.maxBody());
-            return new HttpResult(response.status, response.reason, response.headers, content);
         }
     }
 }

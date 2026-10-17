@@ -88,11 +88,6 @@ public record Sound(String name, String text, Image image) {
         return null;
     }
 
-    /// `Sound.names`, sorted.
-    public static List<String> names() {
-        return BUILTIN.stream().map(Sound::name).sorted().toList();
-    }
-
     /// The sound a `/play <name>` message plays (ASCII word characters, nothing after), or null.
     public static Sound in(String plainText) {
         if (plainText == null || !plainText.startsWith("/play ")) return null;

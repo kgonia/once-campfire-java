@@ -6,6 +6,7 @@ import campfire.web.CurrentRequest;
 import campfire.web.Params;
 import campfire.web.Paths;
 import campfire.web.ResponseCache;
+import campfire.web.Responses;
 import gg.jte.generated.precompiled.searches.JteindexGenerated;
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import jakarta.inject.Inject;
@@ -44,14 +45,14 @@ public class SearchResource {
     @POST
     public Response create() {
         String query = searches.record(request.user().id(), submittedQuery());
-        return request.redirect(Paths.searches(query));
+        return Responses.redirect(request.url(Paths.searches(query)));
     }
 
     @DELETE
     @Path("clear")
     public Response clear() {
         searches.clear(request.user().id(), submittedQuery());
-        return request.redirect(Paths.SEARCHES);
+        return Responses.redirect(request.url(Paths.SEARCHES));
     }
 
     /// `q`, if given as a single value; an array or hash fails as it does in Rails.

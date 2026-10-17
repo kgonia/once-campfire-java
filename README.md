@@ -1,11 +1,13 @@
 # Campfire for Java
 
 A port of [Campfire](https://github.com/basecamp/once-campfire) to Java 25 and Quarkus. It is a drop-in
-replacement for the Rails app: it uses the same SQLite database, Active Storage files, signed and encrypted
-cookies, Action Cable protocol, and Web Push keys. For the same request and the same data it answers with the
-same bytes as the [Rust port](https://github.com/basecamp/once-campfire-rust): status, headers and body.
+replacement for the Rails app, as the [Rust port](https://github.com/basecamp/once-campfire-rust) defines one: it
+keeps the Rails database, Active Storage files, signed and encrypted cookie formats, Action Cable protocol and Web
+Push keys, so an existing install can switch to it with everyone staying signed in. Campfire behaves as it does
+in Rails; responses are not byte-identical to Rails or Rust.
 
-The code is meant to read as an ordinary Quarkus application, not as a transliteration of Rails or Rust.
+The code is meant to read as an ordinary Quarkus application, not as a transliteration of Rails or Rust. Rails
+internals are kept only where drop-in compatibility needs them.
 
 ## Layout
 
@@ -75,7 +77,7 @@ byte for byte, or a measured performance loss. Each deviation is listed below wi
 | The full-text index (`message_search_index`) in plain SQL: its writes are strings, and searches name it with `table(name(...))` and a `MATCH` template | generated classes | It's an FTS5 virtual table, which the code generator doesn't read. |
 | jOOQ classes generated from `schema.sql` loaded into SQLite at build time (`src/build/jooq`) | running migrations, e.g. Flyway, then generating | Rails owns the migrations. `schema.sql` is exactly what `db:prepare` creates. |
 | The front layer's own cache and gzip (`web.Front`, `ContentEncoding`) | Quarkus/Vert.x HTTP compression | Speed: a page is gzipped once and served compressed from the caches, where Vert.x would recompress every response on the event loop (69 µs for a 9 KB page, against about 105 µs of CPU for a whole cached room page). Also Rack's and Thruster's gzip headers and `Vary` merging, for byte parity. |
-| Its own JSON writer (`rails.Json`) | Jackson | Rails signs or hashes some JSON, and those bytes must match what Rails writes: Active Storage variation digests are stored in `active_storage_variant_records`, and signed blob ids appear in URLs. Rails also escapes `<`, `>` and `&` as `\u003c` etc. for HTML safety, which Jackson only does through its slow custom-escape path, and formats numbers as Ruby does. |
+| Its own JSON writer (`rails.Json`) | Jackson | Historical: it matched Rails byte for byte (`<` escapes, Ruby number formats) for parity with the Rust port, which is no longer a goal. Being replaced. |
 | Header names lowercased, request ids, `X-Runtime` | framework defaults | Rack 3 and Rails behaviour that the Rust port reproduces. |
 
 What the datasources need for SQLite (in `application.properties`):
@@ -116,13 +118,23 @@ a 99 MB jlink runtime. The Dockerfile explains the module list and a JDK 26.0.2.
 
 `tools/parity` runs Rust and Java side by side on fresh copies of a [verification](https://github.com/basecamp/once-campfire-verification)
 seed. It requests 125 cases from both and diffs normalized headers and bodies: every room, every message variant,
-the sidebar, search, the account and user pages, Turbo-Frame requests, and anonymous pages.
+the sidebar, search, the account and user pages, Turbo-Frame requests, and anonymous pages. Rust stands in for
+Rails' behaviour here; request ids, runtimes and cookie attribute formatting are ignored. It is a regression
+check, not a goal: deliberate differences from Rust are allowed. The verification harness's route contracts and
+browser flows (`browser/smoke.mjs`) are the acceptance checks.
 
 ```sh
 export CAMPFIRE_SEED=/path/to/fixtures/default JAVA_HOME=…
 tools/parity/up.sh                                         # Rust on :4100 (campfire-rust:app), Java on :4101
 python tools/parity/parity.py [--gzip] [--host campfire.test] [--ua chrome-win] [--only /rooms]
 ```
+
+`python tools/parity/writes.py` checks writes the same way: on freshly started servers it submits 38 browser
+writes to both, in order (messages, boosts, rooms, involvement, profile, account, bots, the bot API, push
+subscriptions, searches, bans, joining, signing out and in). It compares statuses, redirects, cookie names, Turbo
+Stream and JSON bodies, and above all each write's database effect: rows added, removed or changed per table,
+with times and random tokens compared only as changed or not. It reads both databases with `docker cp`, from the
+containers named by `RUST_CONTAINER` and `JAVA_CONTAINER` (default `cf-rust-parity`, `cf-java-parity`).
 
 Sign a session cookie for `parity.py` with `SignCookie.java` (see its header). The script writes it to
 `tools/parity/work/cookie.txt`.
@@ -179,3 +191,10 @@ None of these show up in the parity suite or the harness:
   still applies.
 - Header order on the wire can differ. Names are lowercase, as in Rust and Rack 3.
 - Thruster's per-request log line isn't reproduced.
+
+Deliberate:
+
+- No `X-Runtime`, `X-Request-Id` or `X-Request-Start` headers.
+- Active Storage direct uploads (`POST /rails/active_storage/direct_uploads`) get the app's Fetch Metadata check
+  instead of Rails' CSRF token. The app's pages carry no token, so in Rust only sessions Rails created can use
+  them; here any signed-in page can.

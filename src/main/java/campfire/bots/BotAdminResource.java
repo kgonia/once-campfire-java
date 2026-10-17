@@ -7,6 +7,7 @@ import campfire.web.CurrentRequest;
 import campfire.web.Formats;
 import campfire.web.Halt;
 import campfire.web.Paths;
+import campfire.web.Responses;
 import gg.jte.generated.precompiled.accounts.bots.JteeditGenerated;
 import gg.jte.generated.precompiled.accounts.bots.JteindexGenerated;
 import gg.jte.generated.precompiled.accounts.bots.JtenewGenerated;
@@ -58,7 +59,7 @@ public class BotAdminResource {
         requireAdministrator();
         Map<String, Object> params = botParams();
         bots.create(text(params, "name"), text(params, "webhook_url"), AttachmentChange.of(params, "avatar"));
-        return request.redirect(Paths.accountBots());
+        return Responses.redirect(request.url(Paths.accountBots()));
     }
 
     @GET
@@ -84,7 +85,7 @@ public class BotAdminResource {
         User bot = bots.bot(id);
         Map<String, Object> params = botParams();
         bots.update(bot, text(params, "name"), text(params, "webhook_url"), AttachmentChange.of(params, "avatar"));
-        return request.redirect(Paths.accountBots());
+        return Responses.redirect(request.url(Paths.accountBots()));
     }
 
     @DELETE
@@ -92,7 +93,7 @@ public class BotAdminResource {
     public Response destroy(@PathParam("id") String id) {
         requireAdministrator();
         bots.deactivate(bots.bot(id));
-        return request.redirect(Paths.accountBots());
+        return Responses.redirect(request.url(Paths.accountBots()));
     }
 
     @PUT
@@ -107,7 +108,7 @@ public class BotAdminResource {
     public Response updateKey(@PathParam("bot_id") String botId) {
         requireAdministrator();
         bots.resetKey(bots.bot(botId));
-        return request.redirect(Paths.accountBots());
+        return Responses.redirect(request.url(Paths.accountBots()));
     }
 
     /// The `user` attributes; a `user` that isn't a hash fails as Rails does.
@@ -123,6 +124,6 @@ public class BotAdminResource {
     }
 
     private void requireAdministrator() {
-        if (!request.user().canAdminister()) throw new Halt(request.head(403));
+        if (!request.user().canAdminister()) throw new Halt(Responses.head(403));
     }
 }

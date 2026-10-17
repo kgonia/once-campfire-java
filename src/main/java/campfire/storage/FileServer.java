@@ -9,7 +9,6 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -231,9 +230,5 @@ public final class FileServer {
             }
         }
         return negative ? -n : n;
-    }
-
-    static String httpDate(Instant time) {
-        return HTTP_DATE.format(time);
     }
 }

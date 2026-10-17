@@ -46,11 +46,6 @@ final class Subscription {
         return identifier;
     }
 
-    /// The decoded identifier, `channel` included.
-    Map<String, Object> params() {
-        return params;
-    }
-
     Object param(String key) {
         return params.get(key);
     }
@@ -77,21 +72,9 @@ final class Subscription {
         streamFrom(broadcastingFor(broadcastables));
     }
 
-    void stopStreamFrom(String broadcasting) {
-        streams.removeIf(listener -> {
-            if (!listener.stream.equals(broadcasting)) return false;
-            cable.hub().unsubscribe(listener);
-            return true;
-        });
-    }
-
     void stopAllStreams() {
         for (Hub.Listener listener : streams) cable.hub().unsubscribe(listener);
         streams.clear();
-    }
-
-    List<String> streams() {
-        return streams.stream().map(listener -> listener.stream).toList();
     }
 
     void reject() {

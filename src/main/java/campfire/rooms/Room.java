@@ -45,21 +45,12 @@ public record Room(long id, String name, String type, long creatorId, Instant cr
         return OPEN.equals(type);
     }
 
-    public boolean isClosed() {
-        return CLOSED.equals(type);
-    }
-
     public boolean isDirect() {
         return DIRECT.equals(type);
     }
 
     public String defaultInvolvement() {
         return isDirect() ? "everything" : "mentions";
-    }
-
-    /// The GlobalID model name: the STI class.
-    public String modelName() {
-        return type;
     }
 
     public Room withType(String newType) {
@@ -74,11 +65,8 @@ public record Room(long id, String name, String type, long creatorId, Instant cr
     }
 
     private static final String FIND = Sql.render(select(COLUMNS).from(ROOMS).where(ROOMS.ID.eq(param(ROOMS.ID))).limit(inline(1)));
-    private static final String ORIGINAL = Sql.render(select(COLUMNS).from(ROOMS).orderBy(ROOMS.CREATED_AT.asc()).limit(inline(1)));
     private static final String ORIGINAL_ID = Sql.render(select(ROOMS.ID).from(ROOMS).orderBy(ROOMS.CREATED_AT.asc()).limit(inline(1)));
     private static final String FIND_FOR_USER = Sql.render(forUser().and(ROOMS.ID.eq(param(ROOMS.ID))).limit(inline(1)));
-    private static final String FIND_SHARED_FOR_USER = Sql.render(forUser().and(ROOMS.TYPE.ne(inline(DIRECT))).and(ROOMS.ID.eq(param(ROOMS.ID))).limit(inline(1)));
-    private static final String FIND_DIRECT_FOR_USER = Sql.render(forUser().and(ROOMS.TYPE.eq(inline(DIRECT))).and(ROOMS.ID.eq(param(ROOMS.ID))).limit(inline(1)));
     private static final String ANY_FOR_USER = Sql.render(selectOne().from(MEMBERSHIPS).where(MEMBERSHIPS.USER_ID.eq(param(MEMBERSHIPS.USER_ID))).limit(inline(1)));
     private static final String ORIGINAL_FOR_USER = Sql.render(forUser().orderBy(ROOMS.CREATED_AT.asc()).limit(inline(1)));
     private static final String LAST_FOR_USER = Sql.render(forUser().orderBy(ROOMS.ID.desc()).limit(inline(1)));
@@ -93,10 +81,6 @@ public record Room(long id, String name, String type, long creatorId, Instant cr
     }
 
     /// `Room.original`: the first room created.
-    public static Room original(Conn conn) {
-        return conn.one(ORIGINAL, Room::from);
-    }
-
     public static Long originalId(Conn conn) {
         return conn.longValue(ORIGINAL_ID);
     }
@@ -104,16 +88,6 @@ public record Room(long id, String name, String type, long creatorId, Instant cr
     /// `user.rooms.find_by(id:)`
     public static Room findForUser(Conn conn, long userId, long roomId) {
         return conn.one(FIND_FOR_USER, Room::from, userId, roomId);
-    }
-
-    /// `user.rooms.without_directs.find_by(id:)`
-    public static Room findSharedForUser(Conn conn, long userId, long roomId) {
-        return conn.one(FIND_SHARED_FOR_USER, Room::from, userId, roomId);
-    }
-
-    /// `user.rooms.directs.find_by(id:)`
-    public static Room findDirectForUser(Conn conn, long userId, long roomId) {
-        return conn.one(FIND_DIRECT_FOR_USER, Room::from, userId, roomId);
     }
 
     public static boolean anyForUser(Conn conn, long userId) {
@@ -166,17 +140,19 @@ public record Room(long id, String name, String type, long creatorId, Instant cr
         long id = tx.insert(INSERT, now, creatorId, name, type, now);
         var room = new Room(id, name, type, creatorId, now, now);
         Membership.grantTo(tx, room, userIds);
-        if (room.isOpen()) Membership.grantTo(tx, room, User.activeOrdered(tx).stream().map(User::id).toList());
+        if (room.isOpen()) Membership.grantTo(tx, room, User.activeIds(tx));
         return room;
     }
 
     /// Updates name and type; a room that becomes open grants every active user access.
     public static Room update(Tx tx, Room room, String name, String type) {
         if (room.isDirect() && !DIRECT.equals(type)) throw new IllegalArgumentException("Type can't be changed for a direct room");
+        // Like Active Record's `update!`, an unchanged record isn't written, so `updated_at` stays.
+        if (java.util.Objects.equals(name, room.name()) && type.equals(room.type())) return room;
         Instant now = Times.now();
         tx.update(UPDATE, name, type, now, room.id());
         var updated = new Room(room.id(), name, type, room.creatorId(), room.createdAt(), now);
-        if (updated.isOpen() && !room.isOpen()) Membership.grantTo(tx, updated, User.activeOrdered(tx).stream().map(User::id).toList());
+        if (updated.isOpen() && !room.isOpen()) Membership.grantTo(tx, updated, User.activeIds(tx));
         return updated;
     }
 

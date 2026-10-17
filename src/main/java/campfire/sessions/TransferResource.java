@@ -5,6 +5,7 @@ import campfire.view.Pages;
 import campfire.web.Access;
 import campfire.web.CurrentRequest;
 import campfire.web.Formats;
+import campfire.web.Responses;
 import gg.jte.generated.precompiled.sessions.transfers.JteshowGenerated;
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import jakarta.inject.Inject;
@@ -48,8 +49,8 @@ public class TransferResource {
     @PATCH
     public Response update(@PathParam("id") String id) {
         User user = sessions.transferredUser(id);
-        if (user == null) return request.head(400);
+        if (user == null) return Responses.head(400);
         authentication.start(request, user);
-        return request.redirect(authentication.afterSignIn(request));
+        return Responses.redirect(authentication.afterSignIn(request));
     }
 }

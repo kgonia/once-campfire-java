@@ -7,6 +7,7 @@ import campfire.view.Pages;
 import campfire.web.CurrentRequest;
 import campfire.web.Formats;
 import campfire.web.Paths;
+import campfire.web.Responses;
 import gg.jte.generated.precompiled.users.profiles.JteshowGenerated;
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import jakarta.inject.Inject;
@@ -61,7 +62,8 @@ public class ProfileResource {
         AttachmentChange avatar = params.get("avatar") == null ? new AttachmentChange.Unchanged() : AttachmentChange.of(params, "avatar");
         users.updateProfile(user, string(params, "name"), string(params, "email_address"), string(params, "password"), string(params, "bio"), avatar);
         String notice = params.get("avatar") != null ? "It may take up to 30 minutes to change everywhere." : "✓";
-        return request.redirectWithNotice(request.url(Paths.USER_PROFILE), notice);
+        request.flash().set("notice", notice);
+        return Responses.redirect(request.url(Paths.USER_PROFILE));
     }
 
     private static @Nullable String string(Map<String, Object> params, String key) {

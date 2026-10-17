@@ -11,6 +11,7 @@ import campfire.web.Access;
 import campfire.web.CurrentRequest;
 import campfire.web.Formats;
 import campfire.web.Paths;
+import campfire.web.Responses;
 import gg.jte.generated.precompiled.users.JtenewGenerated;
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import jakarta.inject.Inject;
@@ -44,7 +45,7 @@ public class JoinResource {
     @GET
     public Response newUser(@PathParam("join_code") String joinCode) {
         Account account = verifiedAccount(joinCode);
-        if (account == null) return request.head(404);
+        if (account == null) return Responses.head(404);
         Formats.respondTo(request, "html");
         HelpContact helpContact = sessions.helpContact();
         return pages.page((out, v) -> JtenewGenerated.render(out, null, v, account.joinCode(), helpContact));
@@ -55,7 +56,7 @@ public class JoinResource {
     @POST
     @SuppressWarnings("unchecked")
     public Response create(@PathParam("join_code") String joinCode) {
-        if (verifiedAccount(joinCode) == null) return request.head(404);
+        if (verifiedAccount(joinCode) == null) return Responses.head(404);
         request.requireHash("user");
         var params = (Map<String, Object>) Objects.requireNonNull(request.params().get("user"));
         String email = params.get("email_address") instanceof String s ? s : null;
@@ -63,10 +64,10 @@ public class JoinResource {
             AttachmentChange.of(params, "avatar"));
         if (user == null) {
             String query = email == null ? "" : "?email_address=" + View.cgiEscape(email);
-            return request.redirect(request.url(Paths.NEW_SESSION + query));
+            return Responses.redirect(request.url(Paths.NEW_SESSION + query));
         }
         authentication.start(request, user);
-        return request.redirect(request.url(Paths.ROOT));
+        return Responses.redirect(request.url(Paths.ROOT));
     }
 
     /// The account, if `joinCode` is its current join code.

@@ -28,8 +28,4 @@ public final class FragmentCache {
     public static @Nullable Safe read(String key) {
         return STORE.getIfPresent(key);
     }
-
-    public static void clear() {
-        STORE.invalidateAll();
-    }
 }

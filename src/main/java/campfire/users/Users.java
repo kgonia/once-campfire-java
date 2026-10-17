@@ -9,7 +9,6 @@ import static org.jooq.impl.DSL.inline;
 import static org.jooq.impl.DSL.insertInto;
 import static org.jooq.impl.DSL.param;
 import static org.jooq.impl.DSL.select;
-import static org.jooq.impl.DSL.selectOne;
 
 import campfire.bots.Webhook;
 import campfire.push.PushSubscription;
@@ -17,7 +16,6 @@ import campfire.rooms.Room;
 import campfire.sessions.Session;
 import at.favre.lib.crypto.bcrypt.BCrypt;
 import at.favre.lib.crypto.bcrypt.LongPasswordStrategies;
-import campfire.db.Conn;
 import campfire.db.Database.Tx;
 import campfire.db.Sql;
 import campfire.db.Times;
@@ -42,9 +40,6 @@ public final class Users {
             MEMBERSHIPS.UPDATED_AT)
         .values(param(MEMBERSHIPS.ROOM_ID), param(MEMBERSHIPS.USER_ID), param(MEMBERSHIPS.CREATED_AT), param(MEMBERSHIPS.UPDATED_AT))
         .onConflictDoNothing());
-    private static final String UPDATE_PROFILE = Sql.render(DSL.update(USERS).set(USERS.NAME, param(USERS.NAME))
-        .set(USERS.EMAIL_ADDRESS, param(USERS.EMAIL_ADDRESS)).set(USERS.PASSWORD_DIGEST, param(USERS.PASSWORD_DIGEST)).set(USERS.BIO, param(USERS.BIO))
-        .set(USERS.UPDATED_AT, param(USERS.UPDATED_AT)).where(USERS.ID.eq(param(USERS.ID))));
     /// `update`'s statements, indexed by which of name (1), email address (2), password digest (4)
     /// and bio (8) change; `updated_at` and the id follow.
     private static final String[] UPDATE_CHANGED = IntStream.range(0, 16).mapToObj(changed -> {
@@ -56,11 +51,8 @@ public final class Users {
         assignments.put(USERS.UPDATED_AT, param(USERS.UPDATED_AT));
         return Sql.render(DSL.update(USERS).set(assignments).where(USERS.ID.eq(param(USERS.ID))));
     }).toArray(String[]::new);
-    private static final String UPDATE_NAME = Sql.render(DSL.update(USERS).set(USERS.NAME, param(USERS.NAME)).set(USERS.UPDATED_AT, param(USERS.UPDATED_AT))
-        .where(USERS.ID.eq(param(USERS.ID))));
     private static final String UPDATE_ROLE = Sql.render(DSL.update(USERS).set(USERS.ROLE, param(USERS.ROLE)).set(USERS.UPDATED_AT, param(USERS.UPDATED_AT))
         .where(USERS.ID.eq(param(USERS.ID))));
-    private static final String TOUCH = Sql.render(DSL.update(USERS).set(USERS.UPDATED_AT, param(USERS.UPDATED_AT)).where(USERS.ID.eq(param(USERS.ID))));
     private static final String SET_STATUS = Sql.render(DSL.update(USERS).set(USERS.STATUS, param(USERS.STATUS))
         .set(USERS.UPDATED_AT, param(USERS.UPDATED_AT)).where(USERS.ID.eq(param(USERS.ID))));
     private static final String LEAVE_SHARED_ROOMS = Sql.render(deleteFrom(MEMBERSHIPS).where(MEMBERSHIPS.USER_ID.eq(param(MEMBERSHIPS.USER_ID)))
@@ -70,9 +62,6 @@ public final class Users {
         .set(USERS.EMAIL_ADDRESS, param(USERS.EMAIL_ADDRESS)).set(USERS.UPDATED_AT, param(USERS.UPDATED_AT)).where(USERS.ID.eq(param(USERS.ID))));
     private static final String RESET_BOT_KEY = Sql.render(DSL.update(USERS).set(USERS.BOT_TOKEN, param(USERS.BOT_TOKEN))
         .set(USERS.UPDATED_AT, param(USERS.UPDATED_AT)).where(USERS.ID.eq(param(USERS.ID))));
-    private static final String EMAIL_TAKEN = Sql.render(selectOne().from(USERS).where(USERS.EMAIL_ADDRESS.eq(param(USERS.EMAIL_ADDRESS))));
-    private static final String EMAIL_TAKEN_BY_OTHER = Sql.render(selectOne().from(USERS).where(USERS.EMAIL_ADDRESS.eq(param(USERS.EMAIL_ADDRESS)))
-        .and(USERS.ID.ne(param(USERS.ID))));
 
     /// `BCrypt::Engine.cost` in production.
     public static volatile int bcryptCost = 12;
@@ -114,17 +103,6 @@ public final class Users {
         return User.find(tx, id);
     }
 
-    /// `user.update(name:, email_address:, password:, bio:)`; null leaves a field alone.
-    public static void updateProfile(Tx tx, long id, String name, String email, String password, String bio) {
-        var user = User.find(tx, id);
-        tx.update(UPDATE_PROFILE,
-            name != null ? name : user.name(),
-            email != null ? email : user.emailAddress(),
-            password != null && !password.isEmpty() ? digest(password) : user.passwordDigest(),
-            bio != null ? bio : user.bio(),
-            Times.now(), id);
-    }
-
     /// Profile fields to set; null leaves a field as it is.
     public record Changes(String name, String emailAddress, String passwordDigest, String bio) {}
 
@@ -155,16 +133,8 @@ public final class Users {
         tx.update(UPDATE_CHANGED[changed], values.toArray());
     }
 
-    public static void updateName(Tx tx, long id, String name) {
-        tx.update(UPDATE_NAME, name, Times.now(), id);
-    }
-
     public static void updateRole(Tx tx, long id, int role) {
         tx.update(UPDATE_ROLE, role, Times.now(), id);
-    }
-
-    public static void touch(Tx tx, long id) {
-        tx.update(TOUCH, Times.now(), id);
     }
 
     public static void setStatus(Tx tx, long id, int status) {
@@ -222,10 +192,5 @@ public final class Users {
 
     public static void resetBotKey(Tx tx, long id) {
         tx.update(RESET_BOT_KEY, generateBotToken(), Times.now(), id);
-    }
-
-    public static boolean emailTaken(Conn conn, String email, Long exceptId) {
-        if (email == null) return false;
-        return exceptId == null ? conn.exists(EMAIL_TAKEN, email) : conn.exists(EMAIL_TAKEN_BY_OTHER, email, exceptId);
     }
 }

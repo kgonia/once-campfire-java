@@ -58,10 +58,6 @@ public record Network(Resolver resolver, Dialer dialer, SSLContext tls) {
         return SystemHolder.SYSTEM;
     }
 
-    public Network withResolver(Resolver resolver) {
-        return new Network(resolver, dialer, tls);
-    }
-
     public Network withTls(SSLContext tls) {
         return new Network(resolver, dialer, tls);
     }

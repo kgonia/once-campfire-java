@@ -3,14 +3,13 @@ package campfire.view;
 import campfire.richtext.Html;
 import java.util.Locale;
 
-/// `form_with(url:, model:, method:, id:, class:, data:)` and its `FormBuilder` fields, in
+/// `form_with(url:, model:, method:, class:, data:)` and its `FormBuilder` fields, in
 /// ActionView's attribute order. The form tag is written last ({@link #wrap}) because a
 /// `file_field` makes it multipart. No `authenticity_token`: forgery protection is by Fetch Metadata.
 public final class Form {
     private final String action;
     private String method = "post";
     private String objectName;
-    private String id;
     private String cssClass;
     private final Attrs data = new Attrs();
     private boolean multipart;
@@ -28,11 +27,6 @@ public final class Form {
     /// `method:`; a persisted `model:` implies "patch", so pass it for those too.
     public Form method(String method) {
         this.method = method;
-        return this;
-    }
-
-    public Form id(String id) {
-        this.id = id;
         return this;
     }
 
@@ -54,15 +48,10 @@ public final class Form {
         return this;
     }
 
-    public Form multipart() {
-        multipart = true;
-        return this;
-    }
-
     /// `<form ...>` plus the `_method` field.
     public Safe open() {
         var html = new Attrs();
-        html.set("id", id).set("class", cssClass).merge(data);
+        html.set("class", cssClass).merge(data);
         if (multipart) html.set("enctype", "multipart/form-data");
         String m = method.toLowerCase(Locale.ROOT);
         html.set("action", action).set("accept-charset", "UTF-8").set("method", m.equals("get") ? "get" : "post");

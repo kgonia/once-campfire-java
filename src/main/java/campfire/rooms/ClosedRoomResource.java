@@ -5,6 +5,7 @@ import campfire.view.Pages;
 import campfire.view.View;
 import campfire.web.CurrentRequest;
 import campfire.web.Paths;
+import campfire.web.Responses;
 import gg.jte.generated.precompiled.rooms.closeds.JteeditGenerated;
 import gg.jte.generated.precompiled.rooms.closeds.JtenewGenerated;
 import io.smallrye.common.annotation.RunOnVirtualThread;
@@ -58,7 +59,7 @@ public class ClosedRoomResource {
         String name = RoomParams.name(request).name();
         List<Long> granteeIds = RoomParams.userIds(request);
         Room room = rooms.createClosed(pages.detachedView(), request.user(), name, granteeIds);
-        return request.redirect(Paths.room(room.id()));
+        return Responses.redirect(request.url(Paths.room(room.id())));
     }
 
     @GET
@@ -66,7 +67,7 @@ public class ClosedRoomResource {
     public Response show(@PathParam("id") String id) {
         Room room = access.room(id, RoomAccess.Scope.SHARED);
         access.rememberVisit(room.id());
-        return request.redirect(Paths.room(room.id()));
+        return Responses.redirect(request.url(Paths.room(room.id())));
     }
 
     @GET
@@ -93,7 +94,7 @@ public class ClosedRoomResource {
         RoomParams.Name name = RoomParams.name(request);
         List<Long> granteeIds = RoomParams.userIds(request);
         Room updated = rooms.updateClosed(pages.detachedView(), room, name.given() ? name.name() : room.name(), granteeIds);
-        return request.redirect(Paths.room(updated.id()));
+        return Responses.redirect(request.url(Paths.room(updated.id())));
     }
 
     /// Rails looks the room up for every action but this one, and then fails on the missing room.

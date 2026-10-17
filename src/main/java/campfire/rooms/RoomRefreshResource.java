@@ -5,6 +5,7 @@ import campfire.rails.RubyStrings;
 import campfire.view.Pages;
 import campfire.web.CurrentRequest;
 import campfire.web.Formats;
+import campfire.web.Responses;
 import gg.jte.generated.precompiled.rooms.refreshes.Jteshowturbo_streamGenerated;
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import jakarta.inject.Inject;
@@ -42,7 +43,7 @@ public class RoomRefreshResource {
         Formats.respondTo(request, "turbo_stream");
         var refresh = refreshes.since(pages.view(), room, since());
         String target = Broadcasts.roomDomId(room, Broadcasts.MESSAGES);
-        return CurrentRequest.turboStream(Pages.bytes(null,
+        return Responses.turboStream(Pages.bytes(null,
             (out, v) -> Jteshowturbo_streamGenerated.render(out, null, target, refresh.created(), refresh.updated())));
     }
 

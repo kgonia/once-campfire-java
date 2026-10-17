@@ -15,12 +15,6 @@ public final class Params {
     /// An uploaded file from a multipart form.
     public record Upload(String filename, String contentType, java.nio.file.Path path, long size) {}
 
-    public static Params parseQuery(String query) {
-        var params = new Params();
-        params.addQuery(query);
-        return params;
-    }
-
     public void addQuery(@Nullable String query) {
         if (query == null || query.isEmpty()) return;
         // Rack 3 splits on `/& */` only (`;` is no longer a separator).
@@ -99,10 +93,6 @@ public final class Params {
 
     private static boolean containsPath(Map<?, ?> map, String child, String rest) {
         return map.containsKey(child) && rest.isEmpty();
-    }
-
-    public Map<String, Object> asMap() {
-        return values;
     }
 
     public @Nullable Object get(String... path) {

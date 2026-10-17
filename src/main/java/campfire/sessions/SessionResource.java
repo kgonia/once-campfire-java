@@ -7,6 +7,7 @@ import campfire.web.Access;
 import campfire.web.CurrentRequest;
 import campfire.web.Formats;
 import campfire.web.Paths;
+import campfire.web.Responses;
 import gg.jte.generated.precompiled.sessions.JtenewGenerated;
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import jakarta.inject.Inject;
@@ -39,7 +40,7 @@ public class SessionResource {
     @Path("new")
     @Access.Public
     public Response newSession() {
-        if (sessions.noUsers()) return request.redirect(request.url(Paths.FIRST_RUN));
+        if (sessions.noUsers()) return Responses.redirect(request.url(Paths.FIRST_RUN));
         return signInPage(200);
     }
 
@@ -53,7 +54,7 @@ public class SessionResource {
         User user = email == null || password == null ? null : sessions.authenticate(email, password);
         if (user == null) return rejected(401);
         authentication.start(request, user);
-        return request.redirect(authentication.afterSignIn(request));
+        return Responses.redirect(authentication.afterSignIn(request));
     }
 
     /// Also forgets the push subscription of the device signing out, if it says which.
@@ -62,7 +63,7 @@ public class SessionResource {
         String endpoint = request.params().string("push_subscription_endpoint");
         if (endpoint != null) sessions.forgetPushSubscription(request.user().id(), endpoint);
         authentication.terminate(request);
-        return request.redirect(request.url(Paths.ROOT));
+        return Responses.redirect(request.url(Paths.ROOT));
     }
 
     private Response rejected(int status) {

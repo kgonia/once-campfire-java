@@ -3,6 +3,7 @@ package campfire.rooms;
 import campfire.view.Pages;
 import campfire.web.CurrentRequest;
 import campfire.web.Paths;
+import campfire.web.Responses;
 import gg.jte.generated.precompiled.rooms.involvements.JteshowGenerated;
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import jakarta.inject.Inject;
@@ -51,7 +52,7 @@ public class InvolvementResource {
     public Response update(@PathParam("room_id") String roomId) {
         Membership.WithRoom found = access.membership(roomId);
         involvements.update(pages.detachedView(), found, involvementParam());
-        return request.redirect(Paths.roomInvolvement(found.room().id()));
+        return Responses.redirect(request.url(Paths.roomInvolvement(found.room().id())));
     }
 
     /// `involvement` as the enum attribute casts it: blank (missing, "", spaces, an empty array or

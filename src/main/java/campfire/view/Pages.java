@@ -6,6 +6,7 @@ import campfire.useragent.Platform;
 import campfire.web.CurrentRequest;
 import campfire.web.Formats;
 import campfire.web.Params;
+import campfire.web.Responses;
 import gg.jte.TemplateOutput;
 import gg.jte.generated.precompiled.sessions.Jteincompatible_browserGenerated;
 import jakarta.enterprise.context.RequestScoped;
@@ -71,11 +72,6 @@ public class Pages {
         return render(status, v, template);
     }
 
-    /// Always the full layout, even for Turbo-Frame requests (the message pages).
-    public Response pageInFullLayout(int status, Template template) {
-        return render(status, view(), template);
-    }
-
     /// Pages whose format was picked from the `Accept` header say they vary on it.
     public Response render(int status, View v, Template template) {
         return response(status, bytes(v, template)).build();
@@ -83,7 +79,7 @@ public class Pages {
 
     /// An HTML response for an already rendered page.
     public Response.ResponseBuilder response(int status, byte[] body) {
-        var response = CurrentRequest.html(status, body);
+        var response = Responses.html(status, body);
         if (Formats.variesOnAccept(request)) response.header("Vary", "Accept");
         return response;
     }

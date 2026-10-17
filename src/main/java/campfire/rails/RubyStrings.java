@@ -1,7 +1,6 @@
 package campfire.rails;
 
 import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
 
 /// Ruby's `String` conversions as parameter handling sees them.
 @NullMarked
@@ -31,10 +30,5 @@ public final class RubyStrings {
             }
         }
         return negative ? (n == Long.MAX_VALUE ? Long.MIN_VALUE : -n) : n;
-    }
-
-    /// `blank?`: null, empty or only whitespace, Unicode spaces included.
-    public static boolean isBlank(@Nullable String s) {
-        return s == null || s.codePoints().allMatch(c -> Character.isWhitespace(c) || Character.isSpaceChar(c));
     }
 }

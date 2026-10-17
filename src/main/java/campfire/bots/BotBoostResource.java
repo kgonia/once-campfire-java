@@ -7,6 +7,7 @@ import campfire.view.Pages;
 import campfire.web.Access;
 import campfire.web.CurrentRequest;
 import campfire.web.Halt;
+import campfire.web.Responses;
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.DELETE;
@@ -38,7 +39,7 @@ public class BotBoostResource {
         request.defaultFormat("json");
         Message message = message(roomId, messageId);
         String content = new String(request.body(), StandardCharsets.UTF_8);
-        if (content.isBlank()) throw new Halt(request.head(422));
+        if (content.isBlank()) throw new Halt(Responses.head(422));
         Boost boost = boosts.create(pages.detachedView(), message, request.user(), content);
         return Response.status(201).entity(api.boostJson(pages.view(), boost, message, request.baseUrl()).getBytes(StandardCharsets.UTF_8))
             .header("Content-Type", "application/json; charset=utf-8").build();
@@ -51,13 +52,13 @@ public class BotBoostResource {
         request.defaultFormat("json");
         Message message = message(roomId, messageId);
         Boost boost = boosts.findOwn(message, request.user(), id);
-        if (boost == null) return request.head(404);
+        if (boost == null) return Responses.head(404);
         boosts.delete(message, boost);
         return Response.noContent().build();
     }
 
     /// The message in one of the bot's rooms, or an empty 404.
     private Message message(String roomId, String messageId) {
-        return api.messageInRoom(request.user(), roomId, messageId).orElseThrow(() -> new Halt(request.head(404)));
+        return api.messageInRoom(request.user(), roomId, messageId).orElseThrow(() -> new Halt(Responses.head(404)));
     }
 }

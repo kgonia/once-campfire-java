@@ -14,7 +14,6 @@ import campfire.messages.Message;
 import campfire.rooms.Room;
 import campfire.rails.Secrets;
 import campfire.storage.Storage;
-import campfire.web.ResponseCache;
 import campfire.sessions.SessionLookup;
 import jakarta.inject.Inject;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -31,7 +30,6 @@ public class App {
     private final Assets assets;
     private final Storage storage;
     private final SessionLookup sessions;
-    private final ResponseCache responses;
 
     /// The account, whether its logo is attached, and the data version they were read at.
     public record AccountState(Account account, boolean hasLogo) {}
@@ -41,14 +39,13 @@ public class App {
     private volatile Versioned account = new Versioned(-1, null);
 
     @Inject
-    public App(Config config, Secrets secrets, Database db, Assets assets, Storage storage, SessionLookup sessions, ResponseCache responses) {
+    public App(Config config, Secrets secrets, Database db, Assets assets, Storage storage, SessionLookup sessions) {
         this.config = config;
         this.secrets = secrets;
         this.db = db;
         this.assets = assets;
         this.storage = storage;
         this.sessions = sessions;
-        this.responses = responses;
         // Analysing an upload changes its blob, which touches the message it's attached to and,
         // through the message, its room; both feed cache keys and the clients' refresh checks.
         storage.onTouch((tx, recordType, recordId) -> {
@@ -82,10 +79,6 @@ public class App {
 
     public SessionLookup sessions() {
         return sessions;
-    }
-
-    public ResponseCache responses() {
-        return responses;
     }
 
     /// Read at most once per data version: every page needs it and it changes rarely.

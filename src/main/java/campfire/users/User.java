@@ -17,8 +17,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.IntFunction;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import org.jooq.Condition;
 import org.jooq.Field;
 import org.jooq.SelectJoinStep;
@@ -49,10 +47,6 @@ public record User(long id, String name, String emailAddress, String passwordDig
 
     public boolean isBot() {
         return role == BOT;
-    }
-
-    public boolean isMember() {
-        return role == MEMBER;
     }
 
     public boolean isActive() {
@@ -118,11 +112,6 @@ public record User(long id, String name, String emailAddress, String passwordDig
         return id + "-" + botToken;
     }
 
-    /// `to_param`, as the avatar color hash uses.
-    public String toParam() {
-        return Long.toString(id);
-    }
-
     // -- Queries -------------------------------------------------------------------------------
 
     private static SelectJoinStep<?> users() {
@@ -142,10 +131,10 @@ public record User(long id, String name, String emailAddress, String passwordDig
     private static final IntFunction<String> FIND_ALL = Sql.perCount(n -> users().where(USERS.ID.in(Sql.params(USERS.ID, n))));
     private static final String FIND_ACTIVE_BY_EMAIL = Sql.render(users().where(ACTIVE_ONLY).and(USERS.EMAIL_ADDRESS.eq(param(USERS.EMAIL_ADDRESS)))
         .limit(inline(1)));
-    private static final String FIND_BY_EMAIL = Sql.render(users().where(USERS.EMAIL_ADDRESS.eq(param(USERS.EMAIL_ADDRESS))).limit(inline(1)));
     private static final String ANY = Sql.render(selectOne().from(USERS).limit(inline(1)));
     private static final String FIRST_ADMINISTRATOR = Sql.render(users().where(USERS.ROLE.eq(inline(ADMINISTRATOR))).orderBy(USERS.ID.asc())
         .limit(inline(1)));
+    private static final String ACTIVE_IDS = Sql.render(select(USERS.ID).from(USERS).where(ACTIVE_ONLY).orderBy(USERS.ID));
     private static final String ACTIVE_ORDERED = Sql.render(users().where(ACTIVE_ONLY).orderBy(lower(USERS.NAME)));
     private static final String ACTIVE_ORDERED_WITHOUT_BOTS = Sql.render(users().where(ACTIVE_ONLY).and(USERS.ROLE.ne(inline(BOT)))
         .orderBy(lower(USERS.NAME)));
@@ -189,16 +178,18 @@ public record User(long id, String name, String emailAddress, String passwordDig
         return conn.one(FIND_ACTIVE_BY_EMAIL, User::from, email);
     }
 
-    public static User findByEmail(Conn conn, String email) {
-        return conn.one(FIND_BY_EMAIL, User::from, email);
-    }
-
     public static boolean none(Conn conn) {
         return !conn.exists(ANY);
     }
 
     public static User firstAdministrator(Conn conn) {
         return conn.one(FIRST_ADMINISTRATOR, User::from);
+    }
+
+    /// `User.active.ids`: unordered in Rails, which SQLite answers in id order. Memberships granted
+    /// from it get ids in that order.
+    public static List<Long> activeIds(Conn conn) {
+        return conn.longs(ACTIVE_IDS);
     }
 
     /// `User.active.ordered`

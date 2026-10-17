@@ -60,10 +60,6 @@ public final class Assets {
         return d == null ? "/" + logical : PREFIX + "/" + d;
     }
 
-    public boolean exists(String logical) {
-        return digested.containsKey(logical);
-    }
-
     /// `javascript_importmap_tags`
     public String importmapTags() {
         return importmapTags;

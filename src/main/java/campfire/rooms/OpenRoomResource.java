@@ -5,6 +5,7 @@ import campfire.view.Pages;
 import campfire.view.View;
 import campfire.web.CurrentRequest;
 import campfire.web.Paths;
+import campfire.web.Responses;
 import gg.jte.generated.precompiled.rooms.opens.JteeditGenerated;
 import gg.jte.generated.precompiled.rooms.opens.JtenewGenerated;
 import io.smallrye.common.annotation.RunOnVirtualThread;
@@ -56,7 +57,7 @@ public class OpenRoomResource {
         access.requireRoomCreation();
         String name = RoomParams.name(request).name();
         Room room = rooms.createOpen(pages.detachedView(), request.user(), name);
-        return request.redirect(Paths.room(room.id()));
+        return Responses.redirect(request.url(Paths.room(room.id())));
     }
 
     @GET
@@ -64,7 +65,7 @@ public class OpenRoomResource {
     public Response show(@PathParam("id") String id) {
         Room room = access.room(id, RoomAccess.Scope.SHARED);
         access.rememberVisit(room.id());
-        return request.redirect(Paths.room(room.id()));
+        return Responses.redirect(request.url(Paths.room(room.id())));
     }
 
     @GET
@@ -90,7 +91,7 @@ public class OpenRoomResource {
         access.requireAdministrator(room.creatorId());
         RoomParams.Name name = RoomParams.name(request);
         Room updated = rooms.updateOpen(pages.detachedView(), room, name.given() ? name.name() : room.name());
-        return request.redirect(Paths.room(updated.id()));
+        return Responses.redirect(request.url(Paths.room(updated.id())));
     }
 
     /// Rails looks the room up for every action but this one, and then fails on the missing room.

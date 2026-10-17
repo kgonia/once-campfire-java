@@ -88,7 +88,7 @@ public class MessageService {
             Created created = db.write(tx -> {
                 Blob blob = staged == null ? null : storage.insert(tx, staged);
                 Message m = Message.create(tx, room.id(), creator.id(), clientMessageId, prepared.body(), blob == null ? null : blob.id(),
-                    prepared.plainText());
+                    searchText(prepared.plainText(), blob));
                 return new Created(m, blob);
             });
             message = created.message();
@@ -117,7 +117,7 @@ public class MessageService {
             try (file) {
                 blob = db.write(tx -> storage.insert(tx, file));
             }
-            message = db.write(tx -> Message.create(tx, room.id(), bot.id(), null, null, blob.id(), ""));
+            message = db.write(tx -> Message.create(tx, room.id(), bot.id(), null, null, blob.id(), searchText("", blob)));
             storage.processAttachment(blob);
             long id = message.id();
             message = db.read(conn -> Message.find(conn, id));
@@ -188,6 +188,12 @@ public class MessageService {
     /// A body ready to store: canonical Action Text HTML and the plain text the search index gets.
     /// `body` null keeps the existing message's.
     private record Prepared(@Nullable String body, String plainText) {}
+
+    /// What the search index holds for a new message (`Message#plain_text_body`): its text, else
+    /// its attachment's file name, so attachment-only messages are found by name.
+    private static String searchText(String plainText, @Nullable Blob blob) {
+        return !plainText.isBlank() || blob == null ? plainText : blob.filename();
+    }
 
     private Prepared prepare(View v, @Nullable String body, @Nullable Message existing) {
         return db.read(conn -> {

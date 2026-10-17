@@ -1,17 +1,14 @@
 package campfire.view;
 
 import campfire.App;
-import campfire.db.Times;
 import campfire.accounts.Account;
 import campfire.users.User;
-import campfire.richtext.Html;
 import campfire.web.Paths;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -185,10 +182,6 @@ public final class View {
         return imageTag(source, Attrs.of().aria("hidden", "true").set("size", size));
     }
 
-    public Safe icon(String source, int size, String cssClass) {
-        return imageTag(source, Attrs.of().aria("hidden", "true").set("size", size).set("class", cssClass));
-    }
-
     // -- Users -------------------------------------------------------------------------------------
 
     private static final ConcurrentHashMap<Long, String> AVATAR_TOKENS = new ConcurrentHashMap<>();
@@ -209,10 +202,6 @@ public final class View {
         if (imageOptions != null) image.merge(imageOptions);
         return linkTo(Paths.user(u.id()), Attrs.of("title", u.title(), "class", "btn avatar").data("turbo_frame", "_top"),
             imageTag(avatarPath(u), image));
-    }
-
-    public Safe avatarTag(User u) {
-        return avatarTag(u, null);
     }
 
     /// `Users::AvatarsHelper::AVATAR_COLORS`
@@ -359,11 +348,6 @@ public final class View {
         return Tag.content("a", attrs, content);
     }
 
-    /// `link_to_if(condition, name, url, options)`
-    public static Safe linkToIf(boolean condition, String text, String url, Attrs options) {
-        return condition ? linkTo(url, options, text) : Safe.text(text);
-    }
-
     /// `mail_to(email)`
     public static Safe mailTo(String email) {
         String encoded = java.net.URLEncoder.encode(email, StandardCharsets.UTF_8).replace("+", "%20").replace("%40", "@");
@@ -480,13 +464,6 @@ public final class View {
             "web_share_url_value", url, "web_share_text_value", text, "web_share_title_value", title), content);
     }
 
-    /// `local_datetime_tag(time, style:)`
-    public static Safe localDatetimeTag(Instant time, String style, Attrs options) {
-        Attrs attrs = options == null ? new Attrs() : options.copy();
-        attrs.set("datetime", Times.iso8601(time)).data("local_time_target", style);
-        return Tag.content("time", attrs, Safe.EMPTY);
-    }
-
     /// `turbo_frame_tag(id, src:, target:, **attributes) { content }`: attributes, then id, src, target.
     public static Safe turboFrameTag(String id, String src, String target, Attrs attributes, Object content) {
         Attrs attrs = attributes == null ? new Attrs() : attributes.copy();
@@ -509,13 +486,6 @@ public final class View {
     }
 
     // -- Text --------------------------------------------------------------------------------------
-
-    /// `truncate(text, length:, omission:)`
-    public static String truncate(String text, int length, String omission) {
-        if (text.codePointCount(0, text.length()) <= length) return text;
-        int keep = Math.max(0, length - omission.codePointCount(0, omission.length()));
-        return text.substring(0, text.offsetByCodePoints(0, keep)) + omission;
-    }
 
     /// `String#capitalize`
     public static String capitalize(String text) {

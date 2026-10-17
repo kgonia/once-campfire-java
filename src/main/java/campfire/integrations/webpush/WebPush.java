@@ -149,12 +149,6 @@ public final class WebPush implements AutoCloseable {
         this.vapid = parsed;
     }
 
-    /// From `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` and `VAPID_SUBJECT`
-    /// (config/initializers/vapid.rb reads the first two).
-    public static WebPush fromEnv() {
-        return new WebPush(System.getenv("VAPID_PUBLIC_KEY"), System.getenv("VAPID_PRIVATE_KEY"), System.getenv("VAPID_SUBJECT"));
-    }
-
     /// Whether the VAPID key pair is usable.
     public boolean enabled() {
         return vapid != null;
@@ -222,14 +216,7 @@ public final class WebPush implements AutoCloseable {
     // --- Endpoint checks (Push::Subscription) ------------------------------------------------
 
     /// `Push::Subscription#validate_endpoint_url` (with `validates :endpoint, presence: true`):
-    /// the first error message for `endpoint` (to follow "Endpoint "), or null when it's valid.
-    /// Resolves the host with the system resolver.
-    public static String validateEndpoint(String endpoint) {
-        var errors = endpointErrors(endpoint, Network.system().resolver());
-        return errors.isEmpty() ? null : errors.getFirst();
-    }
-
-    /// Every validation error for `endpoint`, in the order Rails adds them.
+    /// every validation error for `endpoint`, in the order Rails adds them.
     public static List<String> endpointErrors(String endpoint, Network.Resolver resolver) {
         var errors = new ArrayList<String>();
         if (endpoint == null || campfire.richtext.Html.isBlank(endpoint)) errors.add("can't be blank");
