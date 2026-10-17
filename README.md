@@ -87,7 +87,7 @@ byte for byte, or a measured performance loss. Each deviation is listed below wi
 | The client's address for bans: the last untrusted `X-Forwarded-For` hop (`web.RequestOrigin`) | Quarkus' forwarded remote address | Quarkus takes the first hop, which the client writes. Rails takes the last one a trusted proxy didn't add, and Quarkus 3.40 has no hook to choose. |
 | Response cookies as Vert.x `Cookie`s (`web.Cookies`), the Rails session decrypted and written back by `web.RailsSession` | JAX-RS `NewCookie` | Quarkus REST writes a `NewCookie` with RFC 2109's `Version=1`, and Java's cookie jar then sends it back as `$Version="1"; session_token="…"`. Values stay Rack-escaped and the session stays Rails' encrypted JSON, so a Rails install's cookies keep working. |
 | `web.Formats.respondTo` for endpoints that offer several types, a Turbo Stream, or JavaScript or JSON at a plain URL | `@Produces` | Rails ignores a browser's `Accept` once it lists `*/*`, and answers those 406. `@Produces` would match the `*/*` and serve the stream. HTML-only pages use `@Produces`, and the `.json` suffix and `format` parameter replace `Accept` before matching. |
-| Its own JSON writer (`rails.Json`) | Jackson | Historical: it matched Rails byte for byte (`<` escapes, Ruby number formats) for parity with the Rust port, which is no longer a goal. Being replaced. |
+| Its own JSON writer (`rails.Json`) | Jackson | Historical: it escaped `<`, `>` and `&` and formatted numbers as Ruby does, for byte parity with the Rust port, which is no longer a goal. Being replaced. |
 
 What the datasources need for SQLite (in `application.properties`):
 - `db-kind=other` with the SQLite driver.
@@ -210,6 +210,10 @@ None of these show up in the parity suite or the harness:
   from `Accept`.
 - An HTML-only page answers an unacceptable `Accept` with 406 before sign-in and its own checks run. Rails
   redirects to sign-in, or answers 404 or 403, first.
+- A `Range` with several ranges gets the whole file with a 200, not a `multipart/byteranges` 206. RFC 9110 lets a
+  server ignore ranges; single ranges get a 206 as before.
+- No built-in TLS. Thruster, and the Rust port after it, obtain a Let's Encrypt certificate for `TLS_DOMAIN`
+  and serve HTTPS themselves; Java ignores `TLS_DOMAIN` and needs a TLS-terminating proxy in front.
 
 Deliberate:
 
