@@ -1,0 +1,35 @@
+{
+  "receiver_private_key": "Y1H_BKvKi4Ht2cE4HZ8AgD0nn8chE3zhgBtEODTn4I4=",
+  "p256dh": "BDaRUn_gvMok9AhEo1soNNypgpMDfe2K0hz6RMEIxxULWKfVUqodLAxtX1mrUMC4PGgk1RkZJTut7vJ2RMrxowo=",
+  "auth": "BCuqPYqblNIL9NEJ4WT1Yw==",
+  "message": "{\"title\":\"Designers <&> \\\"quotes\\\" é 😀\",\"options\":{\"body\":\"Kevin: line\\nbreak\\ttab   \\u001f / \\\\ \",\"icon\":\"/account/logo\",\"data\":{\"path\":\"/rooms/1\",\"badge\":3}}}",
+  "ciphertext": "aDE1uz32M2tQ2YYPv8YaFgAAALhBBFV0pWPjdGKwrY1oz2-NmLXT5SR0UqYQ03iA6_A8Y31sv1ypadCShWimwnH_k6x4pD3AEDyG2_dw_9St5Q6lcifhHkDdS_zMiD9jb3UQ2Fhzj8ruG1JMPaT6hhcbqokvY9mqIgQLqcTIWnDqjzYHt8Cw9l-pQzTsWan6M6njekeeDAdf09ietcPM2AU4kSJh59AD3sCJfxW8s_fSQYGUbbw7TitE1FfklTZ9fGxwME3KBDqqhIoCJr4W9F22sk22eMtmQwMN90xo2nP0Sb59Yurptd3_erpzfKknE5iAYpQeID4IF1qXYQ6O-G0jg8scfCtzxtaXqlT4",
+  "vapid_subject": "mailto:support@37signals.com",
+  "now": 1700000000,
+  "headers": [
+    [
+      "Content-Type",
+      "application/octet-stream"
+    ],
+    [
+      "Ttl",
+      "2419200"
+    ],
+    [
+      "Urgency",
+      "high"
+    ],
+    [
+      "Content-Encoding",
+      "aes128gcm"
+    ],
+    [
+      "Content-Length",
+      "270"
+    ]
+  ],
+  "authorization_k": "BEYXTBB5_jNhNzXDmx5KEU55Vbbd-u--Lk9rM5OFQvUkPIBwZJ9QzAq0zdEzFw6yTV8cTriz_qYBVicY02_VxTQ",
+  "jwt_header_segment": "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9",
+  "jwt_payload_segment": "eyJhdWQiOiJodHRwczovL2ZjbS5nb29nbGVhcGlzLmNvbSIsImV4cCI6MTcwMDA0MzIwMCwic3ViIjoibWFpbHRvOnN1cHBvcnRAMzdzaWduYWxzLmNvbSJ9",
+  "test_notification_title": "Campfire Test"
+}

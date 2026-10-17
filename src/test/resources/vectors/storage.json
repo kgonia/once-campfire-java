@@ -1,0 +1,1786 @@
+{
+  "verifier": {
+    "expiring": "eyJfcmFpbHMiOnsiZGF0YSI6IngiLCJleHAiOiIyMDMwLTAxLTAyVDAzOjA0OjA1LjY3OFoiLCJwdXIiOiJwIn19--f2bc5d6ee697c0d4399537f02b5c0949bb910a2c",
+    "disk_url_path": "/rails/active_storage/disk/eyJfcmFpbHMiOnsiZGF0YSI6eyJrZXkiOiJhYmNkZWZnaGlqa2xtbm9wcXJzdHV2d3h5ejEyIiwiZGlzcG9zaXRpb24iOiJpbmxpbmU7IGZpbGVuYW1lPVwid2VpcmQgJTI2IC1uYW1lLSB1bmkucG5nXCI7IGZpbGVuYW1lKj1VVEYtOCcnd2VpcmQlMjBcdTAwMjYlMjAtbmFtZS0lMjAlQzMlQkNuJUMzJUFGLnBuZyIsImNvbnRlbnRfdHlwZSI6ImltYWdlL3BuZyIsInNlcnZpY2VfbmFtZSI6ImxvY2FsIn0sInB1ciI6ImJsb2Jfa2V5In19--4a510794cf22dc00a9095912edcd08dd377bd67c/weird%20&%20-name-%20%C3%BCn%C3%AF.png",
+    "disk_url_path_nil_type": "/rails/active_storage/disk/eyJfcmFpbHMiOnsiZGF0YSI6eyJrZXkiOiJhYmNkZWZnaGlqa2xtbm9wcXJzdHV2d3h5ejEyIiwiZGlzcG9zaXRpb24iOiJhdHRhY2htZW50OyBmaWxlbmFtZT1cIndlaXJkICUyNiAtbmFtZS0gdW5pLnBuZ1wiOyBmaWxlbmFtZSo9VVRGLTgnJ3dlaXJkJTIwXHUwMDI2JTIwLW5hbWUtJTIwJUMzJUJDbiVDMyVBRi5wbmciLCJjb250ZW50X3R5cGUiOm51bGwsInNlcnZpY2VfbmFtZSI6ImxvY2FsIn0sInB1ciI6ImJsb2Jfa2V5In19--63806b2c5bbab17414ddb557ae68b56ba4341534/weird%20&%20-name-%20%C3%BCn%C3%AF.png",
+    "direct_upload_path": "/rails/active_storage/disk/eyJfcmFpbHMiOnsiZGF0YSI6eyJrZXkiOiJhYmNkZWZnaGlqa2xtbm9wcXJzdHV2d3h5ejEyIiwiY29udGVudF90eXBlIjoiaW1hZ2UvcG5nIiwiY29udGVudF9sZW5ndGgiOjQyLCJjaGVja3N1bSI6ImFiYz09Iiwic2VydmljZV9uYW1lIjoibG9jYWwifSwiZXhwIjoiMjAyNi0wOS0yNlQxMjo0NToxNC44NDFaIiwicHVyIjoiYmxvYl90b2tlbiJ9fQ==--9d9b9835609952345e8fd1748144aeffd7a41269"
+  },
+  "generated_by": "reference-tools/storage/generate.rb",
+  "versions": {
+    "libvips": "8.16.1",
+    "ruby_vips": "2.2.5",
+    "image_processing": "1.14.0",
+    "marcel": "1.1.0",
+    "ffmpeg": "ffmpeg version 7.1.5-0+deb13u1 Copyright (c) 2000-2026 the FFmpeg developers",
+    "ffprobe": "ffprobe version 7.1.5-0+deb13u1 Copyright (c) 2007-2026 the FFmpeg developers",
+    "rails": "8.2.0.alpha",
+    "ruby": "3.4.10"
+  },
+  "video_preview_arguments": "-vf 'select=eq(n\\,0)+eq(key\\,1)+gt(scene\\,0.015),loop=loop=-1:size=2,trim=start_frame=1' -frames:v 1 -f image2",
+  "secret_key_base_prefix": "5335c3b1ad35b4ad",
+  "variations": [
+    {
+      "inspect": "{format: :webp, resize_to_limit: [512, 512]}",
+      "typed": {
+        "hash": [
+          [
+            "format",
+            {
+              "sym": "webp"
+            }
+          ],
+          [
+            "resize_to_limit",
+            [
+              512,
+              512
+            ]
+          ]
+        ]
+      },
+      "decoded_typed": {
+        "hash": [
+          [
+            "format",
+            {
+              "str": "webp"
+            }
+          ],
+          [
+            "resize_to_limit",
+            [
+              512,
+              512
+            ]
+          ]
+        ]
+      },
+      "marshal_hex": "04087b073a0b666f726d61743a09776562703a14726573697a655f746f5f6c696d69745b076902000269020002",
+      "digest": "6gwfjNKv9eUy9jNUtEZvQFLU0hQ=",
+      "key": "eyJfcmFpbHMiOnsiZGF0YSI6eyJmb3JtYXQiOiJ3ZWJwIiwicmVzaXplX3RvX2xpbWl0IjpbNTEyLDUxMl19LCJwdXIiOiJ2YXJpYXRpb24ifX0=--fdaf7fb16189b7c943c4e2dcf1589b6be23516de",
+      "decoded_inspect": "{format: \"webp\", resize_to_limit: [512, 512]}",
+      "decoded_marshal_hex": "04087b073a0b666f726d617449220977656270063a0645543a14726573697a655f746f5f6c696d69745b076902000269020002",
+      "decoded_digest": "3xm5qtUwCk3YQHQ55FXsVFKT908="
+    },
+    {
+      "inspect": "{format: :png, resize_to_limit: [512, 512]}",
+      "typed": {
+        "hash": [
+          [
+            "format",
+            {
+              "sym": "png"
+            }
+          ],
+          [
+            "resize_to_limit",
+            [
+              512,
+              512
+            ]
+          ]
+        ]
+      },
+      "decoded_typed": {
+        "hash": [
+          [
+            "format",
+            {
+              "str": "png"
+            }
+          ],
+          [
+            "resize_to_limit",
+            [
+              512,
+              512
+            ]
+          ]
+        ]
+      },
+      "marshal_hex": "04087b073a0b666f726d61743a08706e673a14726573697a655f746f5f6c696d69745b076902000269020002",
+      "digest": "ksXvpLsa7BuCVyHOwmQOKedbIbM=",
+      "key": "eyJfcmFpbHMiOnsiZGF0YSI6eyJmb3JtYXQiOiJwbmciLCJyZXNpemVfdG9fbGltaXQiOls1MTIsNTEyXX0sInB1ciI6InZhcmlhdGlvbiJ9fQ==--112bd901bdf14f562e7c8aec3550e9fb70c7c0f8",
+      "decoded_inspect": "{format: \"png\", resize_to_limit: [512, 512]}",
+      "decoded_marshal_hex": "04087b073a0b666f726d6174492208706e67063a0645543a14726573697a655f746f5f6c696d69745b076902000269020002",
+      "decoded_digest": "1IHlyI9hGC89qU5BLFobIUWcNlY="
+    },
+    {
+      "inspect": "{format: :png, resize_to_limit: [192, 192]}",
+      "typed": {
+        "hash": [
+          [
+            "format",
+            {
+              "sym": "png"
+            }
+          ],
+          [
+            "resize_to_limit",
+            [
+              192,
+              192
+            ]
+          ]
+        ]
+      },
+      "decoded_typed": {
+        "hash": [
+          [
+            "format",
+            {
+              "str": "png"
+            }
+          ],
+          [
+            "resize_to_limit",
+            [
+              192,
+              192
+            ]
+          ]
+        ]
+      },
+      "marshal_hex": "04087b073a0b666f726d61743a08706e673a14726573697a655f746f5f6c696d69745b076901c06901c0",
+      "digest": "EXATZfM7OVVC86CDh85TOsa8ZSw=",
+      "key": "eyJfcmFpbHMiOnsiZGF0YSI6eyJmb3JtYXQiOiJwbmciLCJyZXNpemVfdG9fbGltaXQiOlsxOTIsMTkyXX0sInB1ciI6InZhcmlhdGlvbiJ9fQ==--4598198319d89f0bc3abcd7daa7746e22411703b",
+      "decoded_inspect": "{format: \"png\", resize_to_limit: [192, 192]}",
+      "decoded_marshal_hex": "04087b073a0b666f726d6174492208706e67063a0645543a14726573697a655f746f5f6c696d69745b076901c06901c0",
+      "decoded_digest": "mbzpjsoDLqwSpa2bWYg2RV9IXB8="
+    },
+    {
+      "inspect": "{format: \"jpg\", resize_to_limit: [1200, 800]}",
+      "typed": {
+        "hash": [
+          [
+            "format",
+            {
+              "str": "jpg"
+            }
+          ],
+          [
+            "resize_to_limit",
+            [
+              1200,
+              800
+            ]
+          ]
+        ]
+      },
+      "decoded_typed": {
+        "hash": [
+          [
+            "format",
+            {
+              "str": "jpg"
+            }
+          ],
+          [
+            "resize_to_limit",
+            [
+              1200,
+              800
+            ]
+          ]
+        ]
+      },
+      "marshal_hex": "04087b073a0b666f726d61744922086a7067063a0645543a14726573697a655f746f5f6c696d69745b076902b00469022003",
+      "digest": "IBhrLAIapu+NCId+2Kz6EqUWRKY=",
+      "key": "eyJfcmFpbHMiOnsiZGF0YSI6eyJmb3JtYXQiOiJqcGciLCJyZXNpemVfdG9fbGltaXQiOlsxMjAwLDgwMF19LCJwdXIiOiJ2YXJpYXRpb24ifX0=--28426ca1e33b0fea71b8b10b7f52a844de5886cf",
+      "decoded_inspect": "{format: \"jpg\", resize_to_limit: [1200, 800]}",
+      "decoded_marshal_hex": "04087b073a0b666f726d61744922086a7067063a0645543a14726573697a655f746f5f6c696d69745b076902b00469022003",
+      "decoded_digest": "IBhrLAIapu+NCId+2Kz6EqUWRKY="
+    },
+    {
+      "inspect": "{format: \"png\", resize_to_limit: [1200, 800]}",
+      "typed": {
+        "hash": [
+          [
+            "format",
+            {
+              "str": "png"
+            }
+          ],
+          [
+            "resize_to_limit",
+            [
+              1200,
+              800
+            ]
+          ]
+        ]
+      },
+      "decoded_typed": {
+        "hash": [
+          [
+            "format",
+            {
+              "str": "png"
+            }
+          ],
+          [
+            "resize_to_limit",
+            [
+              1200,
+              800
+            ]
+          ]
+        ]
+      },
+      "marshal_hex": "04087b073a0b666f726d6174492208706e67063a0645543a14726573697a655f746f5f6c696d69745b076902b00469022003",
+      "digest": "aFrmZ9PxOH5XKtnRmopvClCmS1g=",
+      "key": "eyJfcmFpbHMiOnsiZGF0YSI6eyJmb3JtYXQiOiJwbmciLCJyZXNpemVfdG9fbGltaXQiOlsxMjAwLDgwMF19LCJwdXIiOiJ2YXJpYXRpb24ifX0=--d85268fba402efde8dbac959a2b2775d27e6b9af",
+      "decoded_inspect": "{format: \"png\", resize_to_limit: [1200, 800]}",
+      "decoded_marshal_hex": "04087b073a0b666f726d6174492208706e67063a0645543a14726573697a655f746f5f6c696d69745b076902b00469022003",
+      "decoded_digest": "aFrmZ9PxOH5XKtnRmopvClCmS1g="
+    },
+    {
+      "inspect": "{format: \"gif\", resize_to_limit: [1200, 800]}",
+      "typed": {
+        "hash": [
+          [
+            "format",
+            {
+              "str": "gif"
+            }
+          ],
+          [
+            "resize_to_limit",
+            [
+              1200,
+              800
+            ]
+          ]
+        ]
+      },
+      "decoded_typed": {
+        "hash": [
+          [
+            "format",
+            {
+              "str": "gif"
+            }
+          ],
+          [
+            "resize_to_limit",
+            [
+              1200,
+              800
+            ]
+          ]
+        ]
+      },
+      "marshal_hex": "04087b073a0b666f726d6174492208676966063a0645543a14726573697a655f746f5f6c696d69745b076902b00469022003",
+      "digest": "QhvxvYWo0o2axWU0l3EW8VQDYbM=",
+      "key": "eyJfcmFpbHMiOnsiZGF0YSI6eyJmb3JtYXQiOiJnaWYiLCJyZXNpemVfdG9fbGltaXQiOlsxMjAwLDgwMF19LCJwdXIiOiJ2YXJpYXRpb24ifX0=--e91a330f8d562a89c9d04eda3f699d5911d66747",
+      "decoded_inspect": "{format: \"gif\", resize_to_limit: [1200, 800]}",
+      "decoded_marshal_hex": "04087b073a0b666f726d6174492208676966063a0645543a14726573697a655f746f5f6c696d69745b076902b00469022003",
+      "decoded_digest": "QhvxvYWo0o2axWU0l3EW8VQDYbM="
+    },
+    {
+      "inspect": "{format: :png, resize_to_limit: [1200, 800]}",
+      "typed": {
+        "hash": [
+          [
+            "format",
+            {
+              "sym": "png"
+            }
+          ],
+          [
+            "resize_to_limit",
+            [
+              1200,
+              800
+            ]
+          ]
+        ]
+      },
+      "decoded_typed": {
+        "hash": [
+          [
+            "format",
+            {
+              "str": "png"
+            }
+          ],
+          [
+            "resize_to_limit",
+            [
+              1200,
+              800
+            ]
+          ]
+        ]
+      },
+      "marshal_hex": "04087b073a0b666f726d61743a08706e673a14726573697a655f746f5f6c696d69745b076902b00469022003",
+      "digest": "E5GdheK2KKwpmZTUH1L2aXvHokU=",
+      "key": "eyJfcmFpbHMiOnsiZGF0YSI6eyJmb3JtYXQiOiJwbmciLCJyZXNpemVfdG9fbGltaXQiOlsxMjAwLDgwMF19LCJwdXIiOiJ2YXJpYXRpb24ifX0=--d85268fba402efde8dbac959a2b2775d27e6b9af",
+      "decoded_inspect": "{format: \"png\", resize_to_limit: [1200, 800]}",
+      "decoded_marshal_hex": "04087b073a0b666f726d6174492208706e67063a0645543a14726573697a655f746f5f6c696d69745b076902b00469022003",
+      "decoded_digest": "aFrmZ9PxOH5XKtnRmopvClCmS1g="
+    },
+    {
+      "inspect": "{format: :webp}",
+      "typed": {
+        "hash": [
+          [
+            "format",
+            {
+              "sym": "webp"
+            }
+          ]
+        ]
+      },
+      "decoded_typed": {
+        "hash": [
+          [
+            "format",
+            {
+              "str": "webp"
+            }
+          ]
+        ]
+      },
+      "marshal_hex": "04087b063a0b666f726d61743a0977656270",
+      "digest": "IrCln/Mml8kDmpMni9j4/WNB7Uo=",
+      "key": "eyJfcmFpbHMiOnsiZGF0YSI6eyJmb3JtYXQiOiJ3ZWJwIn0sInB1ciI6InZhcmlhdGlvbiJ9fQ==--b8634e00ce24592a11bf9c5caf4675d890fa5f45",
+      "decoded_inspect": "{format: \"webp\"}",
+      "decoded_marshal_hex": "04087b063a0b666f726d617449220977656270063a064554",
+      "decoded_digest": "xOmba/xbWDCWCW1OFccttgK9Cr4="
+    },
+    {
+      "inspect": "{format: :webp, resize_to_limit: [1200, 800]}",
+      "typed": {
+        "hash": [
+          [
+            "format",
+            {
+              "sym": "webp"
+            }
+          ],
+          [
+            "resize_to_limit",
+            [
+              1200,
+              800
+            ]
+          ]
+        ]
+      },
+      "decoded_typed": {
+        "hash": [
+          [
+            "format",
+            {
+              "str": "webp"
+            }
+          ],
+          [
+            "resize_to_limit",
+            [
+              1200,
+              800
+            ]
+          ]
+        ]
+      },
+      "marshal_hex": "04087b073a0b666f726d61743a09776562703a14726573697a655f746f5f6c696d69745b076902b00469022003",
+      "digest": "WRV0qldsxKR5cZNFjQ/qrXUXKAs=",
+      "key": "eyJfcmFpbHMiOnsiZGF0YSI6eyJmb3JtYXQiOiJ3ZWJwIiwicmVzaXplX3RvX2xpbWl0IjpbMTIwMCw4MDBdfSwicHVyIjoidmFyaWF0aW9uIn19--132e54230de6ddc9c41e0118730416f2e3d3127f",
+      "decoded_inspect": "{format: \"webp\", resize_to_limit: [1200, 800]}",
+      "decoded_marshal_hex": "04087b073a0b666f726d617449220977656270063a0645543a14726573697a655f746f5f6c696d69745b076902b00469022003",
+      "decoded_digest": "u0TSbUypNLiezYYkiqbZ8jAyVv0="
+    },
+    {
+      "inspect": "{format: \"webp\", resize_to_limit: [1200, 800]}",
+      "typed": {
+        "hash": [
+          [
+            "format",
+            {
+              "str": "webp"
+            }
+          ],
+          [
+            "resize_to_limit",
+            [
+              1200,
+              800
+            ]
+          ]
+        ]
+      },
+      "decoded_typed": {
+        "hash": [
+          [
+            "format",
+            {
+              "str": "webp"
+            }
+          ],
+          [
+            "resize_to_limit",
+            [
+              1200,
+              800
+            ]
+          ]
+        ]
+      },
+      "marshal_hex": "04087b073a0b666f726d617449220977656270063a0645543a14726573697a655f746f5f6c696d69745b076902b00469022003",
+      "digest": "u0TSbUypNLiezYYkiqbZ8jAyVv0=",
+      "key": "eyJfcmFpbHMiOnsiZGF0YSI6eyJmb3JtYXQiOiJ3ZWJwIiwicmVzaXplX3RvX2xpbWl0IjpbMTIwMCw4MDBdfSwicHVyIjoidmFyaWF0aW9uIn19--132e54230de6ddc9c41e0118730416f2e3d3127f",
+      "decoded_inspect": "{format: \"webp\", resize_to_limit: [1200, 800]}",
+      "decoded_marshal_hex": "04087b073a0b666f726d617449220977656270063a0645543a14726573697a655f746f5f6c696d69745b076902b00469022003",
+      "decoded_digest": "u0TSbUypNLiezYYkiqbZ8jAyVv0="
+    },
+    {
+      "inspect": "{resize_to_limit: [100, nil], saver: {quality: 80, strip: true}, rotate: -90, format: \"jpeg\"}",
+      "typed": {
+        "hash": [
+          [
+            "resize_to_limit",
+            [
+              100,
+              null
+            ]
+          ],
+          [
+            "saver",
+            {
+              "hash": [
+                [
+                  "quality",
+                  80
+                ],
+                [
+                  "strip",
+                  true
+                ]
+              ]
+            }
+          ],
+          [
+            "rotate",
+            -90
+          ],
+          [
+            "format",
+            {
+              "str": "jpeg"
+            }
+          ]
+        ]
+      },
+      "decoded_typed": {
+        "hash": [
+          [
+            "resize_to_limit",
+            [
+              100,
+              null
+            ]
+          ],
+          [
+            "saver",
+            {
+              "hash": [
+                [
+                  "quality",
+                  80
+                ],
+                [
+                  "strip",
+                  true
+                ]
+              ]
+            }
+          ],
+          [
+            "rotate",
+            -90
+          ],
+          [
+            "format",
+            {
+              "str": "jpeg"
+            }
+          ]
+        ]
+      },
+      "marshal_hex": "04087b093a14726573697a655f746f5f6c696d69745b076969303a0a73617665727b073a0c7175616c69747969553a0a7374726970543a0b726f7461746569a13a0b666f726d61744922096a706567063a064554",
+      "digest": "k87huoFjx1rwqYykr9U8ItY3+SY=",
+      "key": "eyJfcmFpbHMiOnsiZGF0YSI6eyJyZXNpemVfdG9fbGltaXQiOlsxMDAsbnVsbF0sInNhdmVyIjp7InF1YWxpdHkiOjgwLCJzdHJpcCI6dHJ1ZX0sInJvdGF0ZSI6LTkwLCJmb3JtYXQiOiJqcGVnIn0sInB1ciI6InZhcmlhdGlvbiJ9fQ==--4ebf4320d92c445a51cf7c5267c3cd654b1375ec",
+      "decoded_inspect": "{resize_to_limit: [100, nil], saver: {quality: 80, strip: true}, rotate: -90, format: \"jpeg\"}",
+      "decoded_marshal_hex": "04087b093a14726573697a655f746f5f6c696d69745b076969303a0a73617665727b073a0c7175616c69747969553a0a7374726970543a0b726f7461746569a13a0b666f726d61744922096a706567063a064554",
+      "decoded_digest": "k87huoFjx1rwqYykr9U8ItY3+SY="
+    },
+    {
+      "inspect": "{resize_to_limit: [0, 1, 121, 122, 123, 255, 256, 65535, 65536, 16777216, 1073741823, 1073741824, -1, -123, -124, -256, -257, -65536, -65537], format: :png}",
+      "typed": {
+        "hash": [
+          [
+            "resize_to_limit",
+            [
+              0,
+              1,
+              121,
+              122,
+              123,
+              255,
+              256,
+              65535,
+              65536,
+              16777216,
+              1073741823,
+              1073741824,
+              -1,
+              -123,
+              -124,
+              -256,
+              -257,
+              -65536,
+              -65537
+            ]
+          ],
+          [
+            "format",
+            {
+              "sym": "png"
+            }
+          ]
+        ]
+      },
+      "decoded_typed": {
+        "hash": [
+          [
+            "resize_to_limit",
+            [
+              0,
+              1,
+              121,
+              122,
+              123,
+              255,
+              256,
+              65535,
+              65536,
+              16777216,
+              1073741823,
+              1073741824,
+              -1,
+              -123,
+              -124,
+              -256,
+              -257,
+              -65536,
+              -65537
+            ]
+          ],
+          [
+            "format",
+            {
+              "str": "png"
+            }
+          ]
+        ]
+      },
+      "marshal_hex": "04087b073a14726573697a655f746f5f6c696d69745b1869006906697e697f69017b6901ff690200016902ffff69030000016904000000016904ffffff3f6c2b070000004069fa698069ff8469ff0069fefffe69fe000069fdfffffe3a0b666f726d61743a08706e67",
+      "digest": "ux+iVOj7EuVut3cVa1xmBkI5U/k=",
+      "key": "eyJfcmFpbHMiOnsiZGF0YSI6eyJyZXNpemVfdG9fbGltaXQiOlswLDEsMTIxLDEyMiwxMjMsMjU1LDI1Niw2NTUzNSw2NTUzNiwxNjc3NzIxNiwxMDczNzQxODIzLDEwNzM3NDE4MjQsLTEsLTEyMywtMTI0LC0yNTYsLTI1NywtNjU1MzYsLTY1NTM3XSwiZm9ybWF0IjoicG5nIn0sInB1ciI6InZhcmlhdGlvbiJ9fQ==--9263d44032a345a51611e1338de871e184fa77b4",
+      "decoded_inspect": "{resize_to_limit: [0, 1, 121, 122, 123, 255, 256, 65535, 65536, 16777216, 1073741823, 1073741824, -1, -123, -124, -256, -257, -65536, -65537], format: \"png\"}",
+      "decoded_marshal_hex": "04087b073a14726573697a655f746f5f6c696d69745b1869006906697e697f69017b6901ff690200016902ffff69030000016904000000016904ffffff3f6c2b070000004069fa698069ff8469ff0069fefffe69fe000069fdfffffe3a0b666f726d6174492208706e67063a064554",
+      "decoded_digest": "ATYfiU5fLc9l4PxfYYVz/WB5qjs="
+    }
+  ],
+  "marcel": [
+    {
+      "name": ".keep",
+      "data_hex": null,
+      "fixture": ".keep",
+      "declared_type": null,
+      "content_type": "application/octet-stream"
+    },
+    {
+      "name": ".keep",
+      "data_hex": null,
+      "fixture": ".keep",
+      "declared_type": "application/octet-stream",
+      "content_type": "application/octet-stream"
+    },
+    {
+      "name": "renamed.txt",
+      "data_hex": null,
+      "fixture": ".keep",
+      "declared_type": null,
+      "content_type": "text/plain"
+    },
+    {
+      "name": "noext",
+      "data_hex": null,
+      "fixture": ".keep",
+      "declared_type": null,
+      "content_type": "application/octet-stream"
+    },
+    {
+      "name": ".keep",
+      "data_hex": null,
+      "fixture": ".keep",
+      "declared_type": "image/png",
+      "content_type": "image/png"
+    },
+    {
+      "name": ".keep",
+      "data_hex": null,
+      "fixture": ".keep",
+      "declared_type": "video/mp4",
+      "content_type": "video/mp4"
+    },
+    {
+      "name": "alpha-centuri.mov",
+      "data_hex": null,
+      "fixture": "alpha-centuri.mov",
+      "declared_type": null,
+      "content_type": "video/quicktime"
+    },
+    {
+      "name": "alpha-centuri.mov",
+      "data_hex": null,
+      "fixture": "alpha-centuri.mov",
+      "declared_type": "application/octet-stream",
+      "content_type": "video/quicktime"
+    },
+    {
+      "name": "renamed.txt",
+      "data_hex": null,
+      "fixture": "alpha-centuri.mov",
+      "declared_type": null,
+      "content_type": "video/quicktime"
+    },
+    {
+      "name": "noext",
+      "data_hex": null,
+      "fixture": "alpha-centuri.mov",
+      "declared_type": null,
+      "content_type": "video/quicktime"
+    },
+    {
+      "name": "alpha-centuri.mov",
+      "data_hex": null,
+      "fixture": "alpha-centuri.mov",
+      "declared_type": "image/png",
+      "content_type": "video/quicktime"
+    },
+    {
+      "name": "alpha-centuri.mov",
+      "data_hex": null,
+      "fixture": "alpha-centuri.mov",
+      "declared_type": "video/mp4",
+      "content_type": "video/mp4"
+    },
+    {
+      "name": "black_hole.jpg",
+      "data_hex": null,
+      "fixture": "black_hole.jpg",
+      "declared_type": null,
+      "content_type": "image/jpeg"
+    },
+    {
+      "name": "black_hole.jpg",
+      "data_hex": null,
+      "fixture": "black_hole.jpg",
+      "declared_type": "application/octet-stream",
+      "content_type": "image/jpeg"
+    },
+    {
+      "name": "renamed.txt",
+      "data_hex": null,
+      "fixture": "black_hole.jpg",
+      "declared_type": null,
+      "content_type": "image/jpeg"
+    },
+    {
+      "name": "noext",
+      "data_hex": null,
+      "fixture": "black_hole.jpg",
+      "declared_type": null,
+      "content_type": "image/jpeg"
+    },
+    {
+      "name": "black_hole.jpg",
+      "data_hex": null,
+      "fixture": "black_hole.jpg",
+      "declared_type": "image/png",
+      "content_type": "image/jpeg"
+    },
+    {
+      "name": "black_hole.jpg",
+      "data_hex": null,
+      "fixture": "black_hole.jpg",
+      "declared_type": "video/mp4",
+      "content_type": "image/jpeg"
+    },
+    {
+      "name": "earth.png",
+      "data_hex": null,
+      "fixture": "earth.png",
+      "declared_type": null,
+      "content_type": "image/png"
+    },
+    {
+      "name": "earth.png",
+      "data_hex": null,
+      "fixture": "earth.png",
+      "declared_type": "application/octet-stream",
+      "content_type": "image/png"
+    },
+    {
+      "name": "renamed.txt",
+      "data_hex": null,
+      "fixture": "earth.png",
+      "declared_type": null,
+      "content_type": "image/png"
+    },
+    {
+      "name": "noext",
+      "data_hex": null,
+      "fixture": "earth.png",
+      "declared_type": null,
+      "content_type": "image/png"
+    },
+    {
+      "name": "earth.png",
+      "data_hex": null,
+      "fixture": "earth.png",
+      "declared_type": "image/png",
+      "content_type": "image/png"
+    },
+    {
+      "name": "earth.png",
+      "data_hex": null,
+      "fixture": "earth.png",
+      "declared_type": "video/mp4",
+      "content_type": "image/png"
+    },
+    {
+      "name": "moon.jpg",
+      "data_hex": null,
+      "fixture": "moon.jpg",
+      "declared_type": null,
+      "content_type": "image/jpeg"
+    },
+    {
+      "name": "moon.jpg",
+      "data_hex": null,
+      "fixture": "moon.jpg",
+      "declared_type": "application/octet-stream",
+      "content_type": "image/jpeg"
+    },
+    {
+      "name": "renamed.txt",
+      "data_hex": null,
+      "fixture": "moon.jpg",
+      "declared_type": null,
+      "content_type": "image/jpeg"
+    },
+    {
+      "name": "noext",
+      "data_hex": null,
+      "fixture": "moon.jpg",
+      "declared_type": null,
+      "content_type": "image/jpeg"
+    },
+    {
+      "name": "moon.jpg",
+      "data_hex": null,
+      "fixture": "moon.jpg",
+      "declared_type": "image/png",
+      "content_type": "image/jpeg"
+    },
+    {
+      "name": "moon.jpg",
+      "data_hex": null,
+      "fixture": "moon.jpg",
+      "declared_type": "video/mp4",
+      "content_type": "image/jpeg"
+    },
+    {
+      "name": "pixel.bmp",
+      "data_hex": null,
+      "fixture": "pixel.bmp",
+      "declared_type": null,
+      "content_type": "image/bmp"
+    },
+    {
+      "name": "pixel.bmp",
+      "data_hex": null,
+      "fixture": "pixel.bmp",
+      "declared_type": "application/octet-stream",
+      "content_type": "image/bmp"
+    },
+    {
+      "name": "renamed.txt",
+      "data_hex": null,
+      "fixture": "pixel.bmp",
+      "declared_type": null,
+      "content_type": "image/bmp"
+    },
+    {
+      "name": "noext",
+      "data_hex": null,
+      "fixture": "pixel.bmp",
+      "declared_type": null,
+      "content_type": "image/bmp"
+    },
+    {
+      "name": "pixel.bmp",
+      "data_hex": null,
+      "fixture": "pixel.bmp",
+      "declared_type": "image/png",
+      "content_type": "image/bmp"
+    },
+    {
+      "name": "pixel.bmp",
+      "data_hex": null,
+      "fixture": "pixel.bmp",
+      "declared_type": "video/mp4",
+      "content_type": "image/bmp"
+    },
+    {
+      "name": "notes.txt",
+      "data_hex": "68656c6c6f20776f726c64",
+      "fixture": null,
+      "declared_type": "text/plain",
+      "content_type": "text/plain"
+    },
+    {
+      "name": "page.html",
+      "data_hex": "3c21444f43545950452068746d6c3e3c68746d6c3e3c2f68746d6c3e",
+      "fixture": null,
+      "declared_type": null,
+      "content_type": "text/html"
+    },
+    {
+      "name": "image.svg",
+      "data_hex": "3c73766720786d6c6e733d22687474703a2f2f7777772e77332e6f72672f323030302f737667223e3c2f7376673e",
+      "fixture": null,
+      "declared_type": "image/svg+xml",
+      "content_type": "image/svg+xml"
+    },
+    {
+      "name": "doc.pdf",
+      "data_hex": "255044462d312e340a",
+      "fixture": null,
+      "declared_type": null,
+      "content_type": "application/pdf"
+    },
+    {
+      "name": "archive.zip",
+      "data_hex": "504b030472657374",
+      "fixture": null,
+      "declared_type": null,
+      "content_type": "application/zip"
+    },
+    {
+      "name": "report.docx",
+      "data_hex": "504b030472657374",
+      "fixture": null,
+      "declared_type": null,
+      "content_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    },
+    {
+      "name": "clip.mp4",
+      "data_hex": "000000186674797069736f6d00000200",
+      "fixture": null,
+      "declared_type": null,
+      "content_type": "video/mp4"
+    },
+    {
+      "name": "clip.webm",
+      "data_hex": "1a45dfa39f4286810142f7810142f2810442f381084282847765626d",
+      "fixture": null,
+      "declared_type": null,
+      "content_type": "video/webm"
+    },
+    {
+      "name": "photo.heic",
+      "data_hex": "000000186674797068656963",
+      "fixture": null,
+      "declared_type": null,
+      "content_type": "image/heic"
+    },
+    {
+      "name": "sound.mp3",
+      "data_hex": "494433040000",
+      "fixture": null,
+      "declared_type": null,
+      "content_type": "audio/mpeg"
+    },
+    {
+      "name": "empty.bin",
+      "data_hex": "",
+      "fixture": null,
+      "declared_type": null,
+      "content_type": "application/octet-stream"
+    },
+    {
+      "name": "UPPER.JPG",
+      "data_hex": "",
+      "fixture": null,
+      "declared_type": null,
+      "content_type": "image/jpeg"
+    },
+    {
+      "name": "data.json",
+      "data_hex": "7b7d",
+      "fixture": null,
+      "declared_type": "application/json; charset=utf-8",
+      "content_type": "application/json"
+    },
+    {
+      "name": "file",
+      "data_hex": "706c61696e",
+      "fixture": null,
+      "declared_type": "Text/Plain",
+      "content_type": "text/plain"
+    },
+    {
+      "name": "gif.gif",
+      "data_hex": "474946383961",
+      "fixture": null,
+      "declared_type": "image/jpeg",
+      "content_type": "image/gif"
+    }
+  ],
+  "filenames": [
+    {
+      "input_hex": "6d6f6f6e2e6a7067",
+      "sanitized": "moon.jpg",
+      "base_hex": "6d6f6f6e",
+      "extension_hex": "6a7067",
+      "inline": "inline; filename=\"moon.jpg\"; filename*=UTF-8''moon.jpg",
+      "attachment": "attachment; filename=\"moon.jpg\"; filename*=UTF-8''moon.jpg",
+      "escaped_path": "moon.jpg"
+    },
+    {
+      "input_hex": "2020737061636564206e616d65202e706e6720",
+      "sanitized": "spaced name .png",
+      "base_hex": "2020737061636564206e616d6520",
+      "extension_hex": "706e6720",
+      "inline": "inline; filename=\"spaced name .png\"; filename*=UTF-8''spaced%20name%20.png",
+      "attachment": "attachment; filename=\"spaced name .png\"; filename*=UTF-8''spaced%20name%20.png",
+      "escaped_path": "spaced%20name%20.png"
+    },
+    {
+      "input_hex": "612f625c633a643b657c66256724683c693e6a3f6b2a6c226d096e0d6f0a2e747874",
+      "sanitized": "a-b-c-d-e-f-g-h-i-j-k-l-m-n-o-.txt",
+      "base_hex": "625c633a643b657c66256724683c693e6a3f6b2a6c226d096e0d6f0a",
+      "extension_hex": "747874",
+      "inline": "inline; filename=\"a-b-c-d-e-f-g-h-i-j-k-l-m-n-o-.txt\"; filename*=UTF-8''a-b-c-d-e-f-g-h-i-j-k-l-m-n-o-.txt",
+      "attachment": "attachment; filename=\"a-b-c-d-e-f-g-h-i-j-k-l-m-n-o-.txt\"; filename*=UTF-8''a-b-c-d-e-f-g-h-i-j-k-l-m-n-o-.txt",
+      "escaped_path": "a-b-c-d-e-f-g-h-i-j-k-l-m-n-o-.txt"
+    },
+    {
+      "input_hex": "e280ae6576696c2e657865",
+      "sanitized": "-evil.exe",
+      "base_hex": "e280ae6576696c",
+      "extension_hex": "657865",
+      "inline": "inline; filename=\"-evil.exe\"; filename*=UTF-8''-evil.exe",
+      "attachment": "attachment; filename=\"-evil.exe\"; filename*=UTF-8''-evil.exe",
+      "escaped_path": "-evil.exe"
+    },
+    {
+      "input_hex": "72c3a973756dc3a92e706466",
+      "sanitized": "résumé.pdf",
+      "base_hex": "72c3a973756dc3a9",
+      "extension_hex": "706466",
+      "inline": "inline; filename=\"resume.pdf\"; filename*=UTF-8''r%C3%A9sum%C3%A9.pdf",
+      "attachment": "attachment; filename=\"resume.pdf\"; filename*=UTF-8''r%C3%A9sum%C3%A9.pdf",
+      "escaped_path": "r%C3%A9sum%C3%A9.pdf"
+    },
+    {
+      "input_hex": "2e626173687263",
+      "sanitized": ".bashrc",
+      "base_hex": "2e626173687263",
+      "extension_hex": "",
+      "inline": "inline; filename=\".bashrc\"; filename*=UTF-8''.bashrc",
+      "attachment": "attachment; filename=\".bashrc\"; filename*=UTF-8''.bashrc",
+      "escaped_path": ".bashrc"
+    },
+    {
+      "input_hex": "617263686976652e7461722e677a",
+      "sanitized": "archive.tar.gz",
+      "base_hex": "617263686976652e746172",
+      "extension_hex": "677a",
+      "inline": "inline; filename=\"archive.tar.gz\"; filename*=UTF-8''archive.tar.gz",
+      "attachment": "attachment; filename=\"archive.tar.gz\"; filename*=UTF-8''archive.tar.gz",
+      "escaped_path": "archive.tar.gz"
+    },
+    {
+      "input_hex": "6e6f657874",
+      "sanitized": "noext",
+      "base_hex": "6e6f657874",
+      "extension_hex": "",
+      "inline": "inline; filename=\"noext\"; filename*=UTF-8''noext",
+      "attachment": "attachment; filename=\"noext\"; filename*=UTF-8''noext",
+      "escaped_path": "noext"
+    },
+    {
+      "input_hex": "747261696c696e672e",
+      "sanitized": "trailing.",
+      "base_hex": "747261696c696e67",
+      "extension_hex": "",
+      "inline": "inline; filename=\"trailing.\"; filename*=UTF-8''trailing.",
+      "attachment": "attachment; filename=\"trailing.\"; filename*=UTF-8''trailing.",
+      "escaped_path": "trailing."
+    },
+    {
+      "input_hex": "2e2e",
+      "sanitized": "..",
+      "base_hex": "2e2e",
+      "extension_hex": "",
+      "inline": "inline; filename=\"..\"; filename*=UTF-8''..",
+      "attachment": "attachment; filename=\"..\"; filename*=UTF-8''..",
+      "escaped_path": ".."
+    },
+    {
+      "input_hex": "e697a5e69cace8aa9e2e706e67",
+      "sanitized": "日本語.png",
+      "base_hex": "e697a5e69cace8aa9e",
+      "extension_hex": "706e67",
+      "inline": "inline; filename=\"%3F%3F%3F.png\"; filename*=UTF-8''%E6%97%A5%E6%9C%AC%E8%AA%9E.png",
+      "attachment": "attachment; filename=\"%3F%3F%3F.png\"; filename*=UTF-8''%E6%97%A5%E6%9C%AC%E8%AA%9E.png",
+      "escaped_path": "%E6%97%A5%E6%9C%AC%E8%AA%9E.png"
+    },
+    {
+      "input_hex": "656d6f6a6920f09f98802e676966",
+      "sanitized": "emoji 😀.gif",
+      "base_hex": "656d6f6a6920f09f9880",
+      "extension_hex": "676966",
+      "inline": "inline; filename=\"emoji %3F.gif\"; filename*=UTF-8''emoji%20%F0%9F%98%80.gif",
+      "attachment": "attachment; filename=\"emoji %3F.gif\"; filename*=UTF-8''emoji%20%F0%9F%98%80.gif",
+      "escaped_path": "emoji%20%F0%9F%98%80.gif"
+    },
+    {
+      "input_hex": "cea96d65676120c39f2e747874",
+      "sanitized": "Ωmega ß.txt",
+      "base_hex": "cea96d65676120c39f",
+      "extension_hex": "747874",
+      "inline": "inline; filename=\"%3Fmega ss.txt\"; filename*=UTF-8''%CE%A9mega%20%C3%9F.txt",
+      "attachment": "attachment; filename=\"%3Fmega ss.txt\"; filename*=UTF-8''%CE%A9mega%20%C3%9F.txt",
+      "escaped_path": "%CE%A9mega%20%C3%9F.txt"
+    },
+    {
+      "input_hex": "776974682771756f746520262028706172656e73292023312b7e2e747874",
+      "sanitized": "with'quote & (parens) #1+~.txt",
+      "base_hex": "776974682771756f746520262028706172656e73292023312b7e",
+      "extension_hex": "747874",
+      "inline": "inline; filename=\"with%27quote %26 %28parens%29 #1+~.txt\"; filename*=UTF-8''with%27quote%20&%20%28parens%29%20#1+~.txt",
+      "attachment": "attachment; filename=\"with%27quote %26 %28parens%29 #1+~.txt\"; filename*=UTF-8''with%27quote%20&%20%28parens%29%20#1+~.txt",
+      "escaped_path": "with'quote%20&%20(parens)%20%231+~.txt"
+    },
+    {
+      "input_hex": "c3867468657220c593757672652e6a7067",
+      "sanitized": "Æther œuvre.jpg",
+      "base_hex": "c3867468657220c59375767265",
+      "extension_hex": "6a7067",
+      "inline": "inline; filename=\"AEther oeuvre.jpg\"; filename*=UTF-8''%C3%86ther%20%C5%93uvre.jpg",
+      "attachment": "attachment; filename=\"AEther oeuvre.jpg\"; filename*=UTF-8''%C3%86ther%20%C5%93uvre.jpg",
+      "escaped_path": "%C3%86ther%20%C5%93uvre.jpg"
+    },
+    {
+      "input_hex": "626164ff627974652e6a7067",
+      "sanitized": "bad�byte.jpg",
+      "base_hex": "626164ff62797465",
+      "extension_hex": "6a7067",
+      "inline": "inline; filename=\"bad%3Fbyte.jpg\"; filename*=UTF-8''bad%EF%BF%BDbyte.jpg",
+      "attachment": "attachment; filename=\"bad%3Fbyte.jpg\"; filename*=UTF-8''bad%EF%BF%BDbyte.jpg",
+      "escaped_path": "bad%EF%BF%BDbyte.jpg"
+    }
+  ],
+  "messages": [
+    {
+      "fixture": "moon.jpg",
+      "declared_type": "image/jpeg",
+      "blob": {
+        "id": 1,
+        "key": "1ykrknnn9r4youv0f71wrntkzilx",
+        "filename": "moon.jpg",
+        "content_type": "image/jpeg",
+        "metadata": "{\"identified\":true,\"width\":640,\"height\":640,\"analyzed\":true}",
+        "service_name": "local",
+        "byte_size": 12794,
+        "checksum": "j65kKv2abaidraFRfGAQlg==",
+        "path": "1y/kr/1ykrknnn9r4youv0f71wrntkzilx"
+      },
+      "attachment": {
+        "name": "attachment",
+        "record_type": "Message",
+        "record_id": 1,
+        "blob_id": 1
+      },
+      "variable": true,
+      "previewable": false,
+      "rails_blob_path": "/rails/active_storage/blobs/redirect/eyJfcmFpbHMiOnsiZGF0YSI6MSwicHVyIjoiYmxvYl9pZCJ9fQ==--c71a3525fa5389ac29b174e9ac015974d7de3cec/moon.jpg",
+      "rails_blob_download_path": "/rails/active_storage/blobs/redirect/eyJfcmFpbHMiOnsiZGF0YSI6MSwicHVyIjoiYmxvYl9pZCJ9fQ==--c71a3525fa5389ac29b174e9ac015974d7de3cec/moon.jpg?disposition=attachment",
+      "rails_blob_proxy_path": "/rails/active_storage/blobs/proxy/eyJfcmFpbHMiOnsiZGF0YSI6MSwicHVyIjoiYmxvYl9pZCJ9fQ==--c71a3525fa5389ac29b174e9ac015974d7de3cec/moon.jpg",
+      "service_url": "http://campfire.test/rails/active_storage/disk/eyJfcmFpbHMiOnsiZGF0YSI6eyJrZXkiOiIxeWtya25ubjlyNHlvdXYwZjcxd3JudGt6aWx4IiwiZGlzcG9zaXRpb24iOiJpbmxpbmU7IGZpbGVuYW1lPVwibW9vbi5qcGdcIjsgZmlsZW5hbWUqPVVURi04Jydtb29uLmpwZyIsImNvbnRlbnRfdHlwZSI6ImltYWdlL2pwZWciLCJzZXJ2aWNlX25hbWUiOiJsb2NhbCJ9LCJwdXIiOiJibG9iX2tleSJ9fQ==--af0dcb0fd8a245c6d4cc0f432a18b7f1fc002647/moon.jpg",
+      "service_url_attachment": "http://campfire.test/rails/active_storage/disk/eyJfcmFpbHMiOnsiZGF0YSI6eyJrZXkiOiIxeWtya25ubjlyNHlvdXYwZjcxd3JudGt6aWx4IiwiZGlzcG9zaXRpb24iOiJhdHRhY2htZW50OyBmaWxlbmFtZT1cIm1vb24uanBnXCI7IGZpbGVuYW1lKj1VVEYtOCcnbW9vbi5qcGciLCJjb250ZW50X3R5cGUiOiJpbWFnZS9qcGVnIiwic2VydmljZV9uYW1lIjoibG9jYWwifSwicHVyIjoiYmxvYl9rZXkifX0=--61b423904b5ad6284e50ee5d6a7f56dd76c3f26f/moon.jpg",
+      "thumb_path": "/rails/active_storage/representations/redirect/eyJfcmFpbHMiOnsiZGF0YSI6MSwicHVyIjoiYmxvYl9pZCJ9fQ==--c71a3525fa5389ac29b174e9ac015974d7de3cec/eyJfcmFpbHMiOnsiZGF0YSI6eyJmb3JtYXQiOiJqcGciLCJyZXNpemVfdG9fbGltaXQiOlsxMjAwLDgwMF19LCJwdXIiOiJ2YXJpYXRpb24ifX0=--28426ca1e33b0fea71b8b10b7f52a844de5886cf/moon.jpg",
+      "thumb_proxy_path": "/rails/active_storage/representations/proxy/eyJfcmFpbHMiOnsiZGF0YSI6MSwicHVyIjoiYmxvYl9pZCJ9fQ==--c71a3525fa5389ac29b174e9ac015974d7de3cec/eyJfcmFpbHMiOnsiZGF0YSI6eyJmb3JtYXQiOiJqcGciLCJyZXNpemVfdG9fbGltaXQiOlsxMjAwLDgwMF19LCJwdXIiOiJ2YXJpYXRpb24ifX0=--28426ca1e33b0fea71b8b10b7f52a844de5886cf/moon.jpg",
+      "variants": [
+        {
+          "label": "moon-thumb",
+          "source_blob_id": 1,
+          "transformations_inspect": "{format: \"jpg\", resize_to_limit: [1200, 800]}",
+          "transformations_typed": {
+            "hash": [
+              [
+                "format",
+                {
+                  "str": "jpg"
+                }
+              ],
+              [
+                "resize_to_limit",
+                [
+                  1200,
+                  800
+                ]
+              ]
+            ]
+          },
+          "variation_digest": "IBhrLAIapu+NCId+2Kz6EqUWRKY=",
+          "variant_record": [
+            1,
+            1,
+            "IBhrLAIapu+NCId+2Kz6EqUWRKY="
+          ],
+          "blob": {
+            "id": 2,
+            "key": "3mcj1cldyy124k8sh94ysvj6rwf6",
+            "filename": "moon.jpg",
+            "content_type": "image/jpeg",
+            "metadata": "{\"identified\":true,\"width\":640,\"height\":640,\"analyzed\":true}",
+            "service_name": "local",
+            "byte_size": 13036,
+            "checksum": "p7Xvr8seqToD36kDFhsGng==",
+            "path": "3m/cj/3mcj1cldyy124k8sh94ysvj6rwf6"
+          },
+          "attachment": {
+            "name": "image",
+            "record_type": "ActiveStorage::VariantRecord",
+            "record_id": 1,
+            "blob_id": 2
+          },
+          "file": "moon-thumb.jpg"
+        }
+      ]
+    },
+    {
+      "fixture": "earth.png",
+      "declared_type": "image/png",
+      "blob": {
+        "id": 3,
+        "key": "jy2fkruqqkbwljhsk9sy7rycm0f0",
+        "filename": "earth.png",
+        "content_type": "image/png",
+        "metadata": "{\"identified\":true,\"width\":8877,\"height\":11096,\"analyzed\":true}",
+        "service_name": "local",
+        "byte_size": 48537726,
+        "checksum": "GhYkTjk3MAqBrg0ZokLrsg==",
+        "path": "jy/2f/jy2fkruqqkbwljhsk9sy7rycm0f0"
+      },
+      "attachment": {
+        "name": "attachment",
+        "record_type": "Message",
+        "record_id": 2,
+        "blob_id": 3
+      },
+      "variable": true,
+      "previewable": false,
+      "rails_blob_path": "/rails/active_storage/blobs/redirect/eyJfcmFpbHMiOnsiZGF0YSI6MywicHVyIjoiYmxvYl9pZCJ9fQ==--5d8ce7a7b60f3d6acdf38dc4515b7b4e188bec14/earth.png",
+      "rails_blob_download_path": "/rails/active_storage/blobs/redirect/eyJfcmFpbHMiOnsiZGF0YSI6MywicHVyIjoiYmxvYl9pZCJ9fQ==--5d8ce7a7b60f3d6acdf38dc4515b7b4e188bec14/earth.png?disposition=attachment",
+      "rails_blob_proxy_path": "/rails/active_storage/blobs/proxy/eyJfcmFpbHMiOnsiZGF0YSI6MywicHVyIjoiYmxvYl9pZCJ9fQ==--5d8ce7a7b60f3d6acdf38dc4515b7b4e188bec14/earth.png",
+      "service_url": "http://campfire.test/rails/active_storage/disk/eyJfcmFpbHMiOnsiZGF0YSI6eyJrZXkiOiJqeTJma3J1cXFrYndsamhzazlzeTdyeWNtMGYwIiwiZGlzcG9zaXRpb24iOiJpbmxpbmU7IGZpbGVuYW1lPVwiZWFydGgucG5nXCI7IGZpbGVuYW1lKj1VVEYtOCcnZWFydGgucG5nIiwiY29udGVudF90eXBlIjoiaW1hZ2UvcG5nIiwic2VydmljZV9uYW1lIjoibG9jYWwifSwicHVyIjoiYmxvYl9rZXkifX0=--a765cbec579cc9c570e867eb15896e6e1e43e60e/earth.png",
+      "service_url_attachment": "http://campfire.test/rails/active_storage/disk/eyJfcmFpbHMiOnsiZGF0YSI6eyJrZXkiOiJqeTJma3J1cXFrYndsamhzazlzeTdyeWNtMGYwIiwiZGlzcG9zaXRpb24iOiJhdHRhY2htZW50OyBmaWxlbmFtZT1cImVhcnRoLnBuZ1wiOyBmaWxlbmFtZSo9VVRGLTgnJ2VhcnRoLnBuZyIsImNvbnRlbnRfdHlwZSI6ImltYWdlL3BuZyIsInNlcnZpY2VfbmFtZSI6ImxvY2FsIn0sInB1ciI6ImJsb2Jfa2V5In19--5958258ad2f7825d18180ddeb03b8a04306b01e4/earth.png",
+      "thumb_path": "/rails/active_storage/representations/redirect/eyJfcmFpbHMiOnsiZGF0YSI6MywicHVyIjoiYmxvYl9pZCJ9fQ==--5d8ce7a7b60f3d6acdf38dc4515b7b4e188bec14/eyJfcmFpbHMiOnsiZGF0YSI6eyJmb3JtYXQiOiJwbmciLCJyZXNpemVfdG9fbGltaXQiOlsxMjAwLDgwMF19LCJwdXIiOiJ2YXJpYXRpb24ifX0=--d85268fba402efde8dbac959a2b2775d27e6b9af/earth.png",
+      "thumb_proxy_path": "/rails/active_storage/representations/proxy/eyJfcmFpbHMiOnsiZGF0YSI6MywicHVyIjoiYmxvYl9pZCJ9fQ==--5d8ce7a7b60f3d6acdf38dc4515b7b4e188bec14/eyJfcmFpbHMiOnsiZGF0YSI6eyJmb3JtYXQiOiJwbmciLCJyZXNpemVfdG9fbGltaXQiOlsxMjAwLDgwMF19LCJwdXIiOiJ2YXJpYXRpb24ifX0=--d85268fba402efde8dbac959a2b2775d27e6b9af/earth.png",
+      "variants": [
+        {
+          "label": "earth-thumb",
+          "source_blob_id": 3,
+          "transformations_inspect": "{format: \"png\", resize_to_limit: [1200, 800]}",
+          "transformations_typed": {
+            "hash": [
+              [
+                "format",
+                {
+                  "str": "png"
+                }
+              ],
+              [
+                "resize_to_limit",
+                [
+                  1200,
+                  800
+                ]
+              ]
+            ]
+          },
+          "variation_digest": "aFrmZ9PxOH5XKtnRmopvClCmS1g=",
+          "variant_record": [
+            2,
+            3,
+            "aFrmZ9PxOH5XKtnRmopvClCmS1g="
+          ],
+          "blob": {
+            "id": 4,
+            "key": "kn12ef69u9dgtqjioetplrhr28a6",
+            "filename": "earth.png",
+            "content_type": "image/png",
+            "metadata": "{\"identified\":true,\"width\":640,\"height\":800,\"analyzed\":true}",
+            "service_name": "local",
+            "byte_size": 321370,
+            "checksum": "9hGCiz4V0SyGWqYPUhlXGQ==",
+            "path": "kn/12/kn12ef69u9dgtqjioetplrhr28a6"
+          },
+          "attachment": {
+            "name": "image",
+            "record_type": "ActiveStorage::VariantRecord",
+            "record_id": 2,
+            "blob_id": 4
+          },
+          "file": "earth-thumb.png"
+        }
+      ]
+    },
+    {
+      "fixture": "black_hole.jpg",
+      "declared_type": "image/jpeg",
+      "blob": {
+        "id": 5,
+        "key": "3q7i3ij6m5wb3bajta1v4o4jzjpz",
+        "filename": "black_hole.jpg",
+        "content_type": "image/jpeg",
+        "metadata": "{\"identified\":true,\"width\":3840,\"height\":2160,\"analyzed\":true}",
+        "service_name": "local",
+        "byte_size": 505420,
+        "checksum": "K2B3FRAPz7nL/zBaO4TR6Q==",
+        "path": "3q/7i/3q7i3ij6m5wb3bajta1v4o4jzjpz"
+      },
+      "attachment": {
+        "name": "attachment",
+        "record_type": "Message",
+        "record_id": 3,
+        "blob_id": 5
+      },
+      "variable": true,
+      "previewable": false,
+      "rails_blob_path": "/rails/active_storage/blobs/redirect/eyJfcmFpbHMiOnsiZGF0YSI6NSwicHVyIjoiYmxvYl9pZCJ9fQ==--4ceb3a7460a929db324ca5fd0dffee9c8527bfad/black_hole.jpg",
+      "rails_blob_download_path": "/rails/active_storage/blobs/redirect/eyJfcmFpbHMiOnsiZGF0YSI6NSwicHVyIjoiYmxvYl9pZCJ9fQ==--4ceb3a7460a929db324ca5fd0dffee9c8527bfad/black_hole.jpg?disposition=attachment",
+      "rails_blob_proxy_path": "/rails/active_storage/blobs/proxy/eyJfcmFpbHMiOnsiZGF0YSI6NSwicHVyIjoiYmxvYl9pZCJ9fQ==--4ceb3a7460a929db324ca5fd0dffee9c8527bfad/black_hole.jpg",
+      "service_url": "http://campfire.test/rails/active_storage/disk/eyJfcmFpbHMiOnsiZGF0YSI6eyJrZXkiOiIzcTdpM2lqNm01d2IzYmFqdGExdjRvNGp6anB6IiwiZGlzcG9zaXRpb24iOiJpbmxpbmU7IGZpbGVuYW1lPVwiYmxhY2tfaG9sZS5qcGdcIjsgZmlsZW5hbWUqPVVURi04JydibGFja19ob2xlLmpwZyIsImNvbnRlbnRfdHlwZSI6ImltYWdlL2pwZWciLCJzZXJ2aWNlX25hbWUiOiJsb2NhbCJ9LCJwdXIiOiJibG9iX2tleSJ9fQ==--75b5c437d5427585c99b0ef288fa1d917a8f109d/black_hole.jpg",
+      "service_url_attachment": "http://campfire.test/rails/active_storage/disk/eyJfcmFpbHMiOnsiZGF0YSI6eyJrZXkiOiIzcTdpM2lqNm01d2IzYmFqdGExdjRvNGp6anB6IiwiZGlzcG9zaXRpb24iOiJhdHRhY2htZW50OyBmaWxlbmFtZT1cImJsYWNrX2hvbGUuanBnXCI7IGZpbGVuYW1lKj1VVEYtOCcnYmxhY2tfaG9sZS5qcGciLCJjb250ZW50X3R5cGUiOiJpbWFnZS9qcGVnIiwic2VydmljZV9uYW1lIjoibG9jYWwifSwicHVyIjoiYmxvYl9rZXkifX0=--b1d32fc4e40a1db2a19548ae35e2775ea1c74cf5/black_hole.jpg",
+      "thumb_path": "/rails/active_storage/representations/redirect/eyJfcmFpbHMiOnsiZGF0YSI6NSwicHVyIjoiYmxvYl9pZCJ9fQ==--4ceb3a7460a929db324ca5fd0dffee9c8527bfad/eyJfcmFpbHMiOnsiZGF0YSI6eyJmb3JtYXQiOiJqcGciLCJyZXNpemVfdG9fbGltaXQiOlsxMjAwLDgwMF19LCJwdXIiOiJ2YXJpYXRpb24ifX0=--28426ca1e33b0fea71b8b10b7f52a844de5886cf/black_hole.jpg",
+      "thumb_proxy_path": "/rails/active_storage/representations/proxy/eyJfcmFpbHMiOnsiZGF0YSI6NSwicHVyIjoiYmxvYl9pZCJ9fQ==--4ceb3a7460a929db324ca5fd0dffee9c8527bfad/eyJfcmFpbHMiOnsiZGF0YSI6eyJmb3JtYXQiOiJqcGciLCJyZXNpemVfdG9fbGltaXQiOlsxMjAwLDgwMF19LCJwdXIiOiJ2YXJpYXRpb24ifX0=--28426ca1e33b0fea71b8b10b7f52a844de5886cf/black_hole.jpg",
+      "variants": [
+        {
+          "label": "black_hole-thumb",
+          "source_blob_id": 5,
+          "transformations_inspect": "{format: \"jpg\", resize_to_limit: [1200, 800]}",
+          "transformations_typed": {
+            "hash": [
+              [
+                "format",
+                {
+                  "str": "jpg"
+                }
+              ],
+              [
+                "resize_to_limit",
+                [
+                  1200,
+                  800
+                ]
+              ]
+            ]
+          },
+          "variation_digest": "IBhrLAIapu+NCId+2Kz6EqUWRKY=",
+          "variant_record": [
+            3,
+            5,
+            "IBhrLAIapu+NCId+2Kz6EqUWRKY="
+          ],
+          "blob": {
+            "id": 6,
+            "key": "igukj0039612fmuibsnrbrv1do6z",
+            "filename": "black_hole.jpg",
+            "content_type": "image/jpeg",
+            "metadata": "{\"identified\":true,\"width\":1200,\"height\":675,\"analyzed\":true}",
+            "service_name": "local",
+            "byte_size": 84296,
+            "checksum": "ZCnGUhfWIQBG5CTXik2pUg==",
+            "path": "ig/uk/igukj0039612fmuibsnrbrv1do6z"
+          },
+          "attachment": {
+            "name": "image",
+            "record_type": "ActiveStorage::VariantRecord",
+            "record_id": 3,
+            "blob_id": 6
+          },
+          "file": "black_hole-thumb.jpg"
+        }
+      ]
+    },
+    {
+      "fixture": "alpha-centuri.mov",
+      "declared_type": "video/quicktime",
+      "blob": {
+        "id": 7,
+        "key": "1uisutasky2m0hiohng4sezeqrj5",
+        "filename": "alpha-centuri.mov",
+        "content_type": "video/quicktime",
+        "metadata": "{\"identified\":true,\"width\":320.0,\"height\":180.0,\"duration\":65.84,\"display_aspect_ratio\":[16,9],\"audio\":false,\"video\":true,\"analyzed\":true}",
+        "service_name": "local",
+        "byte_size": 3945267,
+        "checksum": "uBpNcgufEylNjFfte1x5LQ==",
+        "path": "1u/is/1uisutasky2m0hiohng4sezeqrj5"
+      },
+      "attachment": {
+        "name": "attachment",
+        "record_type": "Message",
+        "record_id": 4,
+        "blob_id": 7
+      },
+      "variable": false,
+      "previewable": true,
+      "rails_blob_path": "/rails/active_storage/blobs/redirect/eyJfcmFpbHMiOnsiZGF0YSI6NywicHVyIjoiYmxvYl9pZCJ9fQ==--5c78c39b893e0551bfd62ea8510c19582cc61b35/alpha-centuri.mov",
+      "rails_blob_download_path": "/rails/active_storage/blobs/redirect/eyJfcmFpbHMiOnsiZGF0YSI6NywicHVyIjoiYmxvYl9pZCJ9fQ==--5c78c39b893e0551bfd62ea8510c19582cc61b35/alpha-centuri.mov?disposition=attachment",
+      "rails_blob_proxy_path": "/rails/active_storage/blobs/proxy/eyJfcmFpbHMiOnsiZGF0YSI6NywicHVyIjoiYmxvYl9pZCJ9fQ==--5c78c39b893e0551bfd62ea8510c19582cc61b35/alpha-centuri.mov",
+      "service_url": "http://campfire.test/rails/active_storage/disk/eyJfcmFpbHMiOnsiZGF0YSI6eyJrZXkiOiIxdWlzdXRhc2t5Mm0waGlvaG5nNHNlemVxcmo1IiwiZGlzcG9zaXRpb24iOiJhdHRhY2htZW50OyBmaWxlbmFtZT1cImFscGhhLWNlbnR1cmkubW92XCI7IGZpbGVuYW1lKj1VVEYtOCcnYWxwaGEtY2VudHVyaS5tb3YiLCJjb250ZW50X3R5cGUiOiJ2aWRlby9xdWlja3RpbWUiLCJzZXJ2aWNlX25hbWUiOiJsb2NhbCJ9LCJwdXIiOiJibG9iX2tleSJ9fQ==--c30f8a371db02ad69bbe2cce97aa9989d2854863/alpha-centuri.mov",
+      "service_url_attachment": "http://campfire.test/rails/active_storage/disk/eyJfcmFpbHMiOnsiZGF0YSI6eyJrZXkiOiIxdWlzdXRhc2t5Mm0waGlvaG5nNHNlemVxcmo1IiwiZGlzcG9zaXRpb24iOiJhdHRhY2htZW50OyBmaWxlbmFtZT1cImFscGhhLWNlbnR1cmkubW92XCI7IGZpbGVuYW1lKj1VVEYtOCcnYWxwaGEtY2VudHVyaS5tb3YiLCJjb250ZW50X3R5cGUiOiJ2aWRlby9xdWlja3RpbWUiLCJzZXJ2aWNlX25hbWUiOiJsb2NhbCJ9LCJwdXIiOiJibG9iX2tleSJ9fQ==--c30f8a371db02ad69bbe2cce97aa9989d2854863/alpha-centuri.mov",
+      "preview_image": {
+        "blob": {
+          "id": 8,
+          "key": "0ykvb8hyzj3g8btuq61vsnlv5g2d",
+          "filename": "alpha-centuri.jpg",
+          "content_type": "image/jpeg",
+          "metadata": "{\"identified\":true,\"width\":320,\"height\":180,\"analyzed\":true}",
+          "service_name": "local",
+          "byte_size": 11788,
+          "checksum": "untJ1VKBeYvbPA/dvRXh9A==",
+          "path": "0y/kv/0ykvb8hyzj3g8btuq61vsnlv5g2d"
+        },
+        "attachment": {
+          "name": "preview_image",
+          "record_type": "ActiveStorage::Blob",
+          "record_id": 7,
+          "blob_id": 8
+        },
+        "file": "alpha-centuri-preview_image.jpg"
+      },
+      "variants": [
+        {
+          "label": "alpha-centuri-preview-webp",
+          "source_blob_id": 8,
+          "transformations_inspect": "{format: :webp}",
+          "transformations_typed": {
+            "hash": [
+              [
+                "format",
+                {
+                  "sym": "webp"
+                }
+              ]
+            ]
+          },
+          "variation_digest": "IrCln/Mml8kDmpMni9j4/WNB7Uo=",
+          "variant_record": [
+            4,
+            8,
+            "IrCln/Mml8kDmpMni9j4/WNB7Uo="
+          ],
+          "blob": {
+            "id": 9,
+            "key": "0iyicn0rjunw4strsvajhhn42af0",
+            "filename": "alpha-centuri.webp",
+            "content_type": "image/webp",
+            "metadata": "{\"identified\":true,\"width\":320,\"height\":180,\"analyzed\":true}",
+            "service_name": "local",
+            "byte_size": 3326,
+            "checksum": "f41i6Z376J8tfJGLMf6SEw==",
+            "path": "0i/yi/0iyicn0rjunw4strsvajhhn42af0"
+          },
+          "attachment": {
+            "name": "image",
+            "record_type": "ActiveStorage::VariantRecord",
+            "record_id": 4,
+            "blob_id": 9
+          },
+          "file": "alpha-centuri-preview-webp.webp"
+        },
+        {
+          "label": "alpha-centuri-poster",
+          "source_blob_id": 8,
+          "transformations_inspect": "{format: :webp, resize_to_limit: [1200, 800]}",
+          "transformations_typed": {
+            "hash": [
+              [
+                "format",
+                {
+                  "sym": "webp"
+                }
+              ],
+              [
+                "resize_to_limit",
+                [
+                  1200,
+                  800
+                ]
+              ]
+            ]
+          },
+          "variation_digest": "WRV0qldsxKR5cZNFjQ/qrXUXKAs=",
+          "variant_record": [
+            5,
+            8,
+            "WRV0qldsxKR5cZNFjQ/qrXUXKAs="
+          ],
+          "blob": {
+            "id": 10,
+            "key": "ohd8pw5fy8zlu120o3ghfiq001jh",
+            "filename": "alpha-centuri.webp",
+            "content_type": "image/webp",
+            "metadata": "{\"identified\":true,\"width\":320,\"height\":180,\"analyzed\":true}",
+            "service_name": "local",
+            "byte_size": 4962,
+            "checksum": "XtJzWPB2ohtXI1XdqZll1A==",
+            "path": "oh/d8/ohd8pw5fy8zlu120o3ghfiq001jh"
+          },
+          "attachment": {
+            "name": "image",
+            "record_type": "ActiveStorage::VariantRecord",
+            "record_id": 5,
+            "blob_id": 10
+          },
+          "file": "alpha-centuri-poster.webp"
+        },
+        {
+          "label": "alpha-centuri-poster-from-key",
+          "source_blob_id": 8,
+          "transformations_inspect": "{format: \"webp\", resize_to_limit: [1200, 800]}",
+          "transformations_typed": {
+            "hash": [
+              [
+                "format",
+                {
+                  "str": "webp"
+                }
+              ],
+              [
+                "resize_to_limit",
+                [
+                  1200,
+                  800
+                ]
+              ]
+            ]
+          },
+          "variation_digest": "u0TSbUypNLiezYYkiqbZ8jAyVv0=",
+          "variant_record": [
+            6,
+            8,
+            "u0TSbUypNLiezYYkiqbZ8jAyVv0="
+          ],
+          "blob": {
+            "id": 11,
+            "key": "nvfjhf7bgoxs6qi5y05dt4fakytf",
+            "filename": "alpha-centuri.webp",
+            "content_type": "image/webp",
+            "metadata": "{\"identified\":true,\"width\":320,\"height\":180,\"analyzed\":true}",
+            "service_name": "local",
+            "byte_size": 4962,
+            "checksum": "XtJzWPB2ohtXI1XdqZll1A==",
+            "path": "nv/fj/nvfjhf7bgoxs6qi5y05dt4fakytf"
+          },
+          "attachment": {
+            "name": "image",
+            "record_type": "ActiveStorage::VariantRecord",
+            "record_id": 6,
+            "blob_id": 11
+          },
+          "file": "alpha-centuri-poster-from-key.webp"
+        }
+      ],
+      "poster_path": "/rails/active_storage/representations/redirect/eyJfcmFpbHMiOnsiZGF0YSI6NywicHVyIjoiYmxvYl9pZCJ9fQ==--5c78c39b893e0551bfd62ea8510c19582cc61b35/eyJfcmFpbHMiOnsiZGF0YSI6eyJmb3JtYXQiOiJ3ZWJwIiwicmVzaXplX3RvX2xpbWl0IjpbMTIwMCw4MDBdfSwicHVyIjoidmFyaWF0aW9uIn19--132e54230de6ddc9c41e0118730416f2e3d3127f/alpha-centuri.mov",
+      "poster_proxy_path": "/rails/active_storage/representations/proxy/eyJfcmFpbHMiOnsiZGF0YSI6NywicHVyIjoiYmxvYl9pZCJ9fQ==--5c78c39b893e0551bfd62ea8510c19582cc61b35/eyJfcmFpbHMiOnsiZGF0YSI6eyJmb3JtYXQiOiJ3ZWJwIiwicmVzaXplX3RvX2xpbWl0IjpbMTIwMCw4MDBdfSwicHVyIjoidmFyaWF0aW9uIn19--132e54230de6ddc9c41e0118730416f2e3d3127f/alpha-centuri.mov"
+    },
+    {
+      "fixture": "pixel.bmp",
+      "declared_type": "image/bmp",
+      "blob": {
+        "id": 12,
+        "key": "nzvqs08oqsoaog0s7wkrs1x9kt0k",
+        "filename": "pixel.bmp",
+        "content_type": "image/bmp",
+        "metadata": "{\"identified\":true,\"analyzed\":true}",
+        "service_name": "local",
+        "byte_size": 58,
+        "checksum": "E2dhqa6f8Un1oZCuUR/YMw==",
+        "path": "nz/vq/nzvqs08oqsoaog0s7wkrs1x9kt0k"
+      },
+      "attachment": {
+        "name": "attachment",
+        "record_type": "Message",
+        "record_id": 5,
+        "blob_id": 12
+      },
+      "variable": false,
+      "previewable": false,
+      "rails_blob_path": "/rails/active_storage/blobs/redirect/eyJfcmFpbHMiOnsiZGF0YSI6MTIsInB1ciI6ImJsb2JfaWQifX0=--cbfb5f344d3ff02d4e561cb624f60546d495a5b9/pixel.bmp",
+      "rails_blob_download_path": "/rails/active_storage/blobs/redirect/eyJfcmFpbHMiOnsiZGF0YSI6MTIsInB1ciI6ImJsb2JfaWQifX0=--cbfb5f344d3ff02d4e561cb624f60546d495a5b9/pixel.bmp?disposition=attachment",
+      "rails_blob_proxy_path": "/rails/active_storage/blobs/proxy/eyJfcmFpbHMiOnsiZGF0YSI6MTIsInB1ciI6ImJsb2JfaWQifX0=--cbfb5f344d3ff02d4e561cb624f60546d495a5b9/pixel.bmp",
+      "service_url": "http://campfire.test/rails/active_storage/disk/eyJfcmFpbHMiOnsiZGF0YSI6eyJrZXkiOiJuenZxczA4b3Fzb2FvZzBzN3drcnMxeDlrdDBrIiwiZGlzcG9zaXRpb24iOiJpbmxpbmU7IGZpbGVuYW1lPVwicGl4ZWwuYm1wXCI7IGZpbGVuYW1lKj1VVEYtOCcncGl4ZWwuYm1wIiwiY29udGVudF90eXBlIjoiaW1hZ2UvYm1wIiwic2VydmljZV9uYW1lIjoibG9jYWwifSwicHVyIjoiYmxvYl9rZXkifX0=--2c8e695442bf4b3a9fe62e738fda75f34238abd8/pixel.bmp",
+      "service_url_attachment": "http://campfire.test/rails/active_storage/disk/eyJfcmFpbHMiOnsiZGF0YSI6eyJrZXkiOiJuenZxczA4b3Fzb2FvZzBzN3drcnMxeDlrdDBrIiwiZGlzcG9zaXRpb24iOiJhdHRhY2htZW50OyBmaWxlbmFtZT1cInBpeGVsLmJtcFwiOyBmaWxlbmFtZSo9VVRGLTgnJ3BpeGVsLmJtcCIsImNvbnRlbnRfdHlwZSI6ImltYWdlL2JtcCIsInNlcnZpY2VfbmFtZSI6ImxvY2FsIn0sInB1ciI6ImJsb2Jfa2V5In19--49fcd3b507997c844c272c298caddb0e328299a0/pixel.bmp"
+    }
+  ],
+  "avatars": [
+    {
+      "fixture": "earth.png",
+      "blob": {
+        "id": 13,
+        "key": "fzsc4esn66b8w2jtvfi9430db6sp",
+        "filename": "earth.png",
+        "content_type": "image/png",
+        "metadata": "{\"identified\":true,\"width\":8877,\"height\":11096,\"analyzed\":true}",
+        "service_name": "local",
+        "byte_size": 48537726,
+        "checksum": "GhYkTjk3MAqBrg0ZokLrsg==",
+        "path": "fz/sc/fzsc4esn66b8w2jtvfi9430db6sp"
+      },
+      "variants": [
+        {
+          "label": "earth-avatar",
+          "source_blob_id": 13,
+          "transformations_inspect": "{format: :webp, resize_to_limit: [512, 512]}",
+          "transformations_typed": {
+            "hash": [
+              [
+                "format",
+                {
+                  "sym": "webp"
+                }
+              ],
+              [
+                "resize_to_limit",
+                [
+                  512,
+                  512
+                ]
+              ]
+            ]
+          },
+          "variation_digest": "6gwfjNKv9eUy9jNUtEZvQFLU0hQ=",
+          "variant_record": [
+            7,
+            13,
+            "6gwfjNKv9eUy9jNUtEZvQFLU0hQ="
+          ],
+          "blob": {
+            "id": 14,
+            "key": "ykhwuz22kv0c3b3a5z1fkv6gdhdu",
+            "filename": "earth.webp",
+            "content_type": "image/webp",
+            "metadata": "{\"identified\":true,\"width\":410,\"height\":512,\"analyzed\":true}",
+            "service_name": "local",
+            "byte_size": 9288,
+            "checksum": "F3ZJatFWsVQOKK7b7igCLw==",
+            "path": "yk/hw/ykhwuz22kv0c3b3a5z1fkv6gdhdu"
+          },
+          "attachment": {
+            "name": "image",
+            "record_type": "ActiveStorage::VariantRecord",
+            "record_id": 7,
+            "blob_id": 14
+          },
+          "file": "earth-avatar.webp"
+        }
+      ],
+      "path": "/rails/active_storage/representations/redirect/eyJfcmFpbHMiOnsiZGF0YSI6MTMsInB1ciI6ImJsb2JfaWQifX0=--ec01704dc07d2fc78abbfa05a6bc0ed07efeccd9/eyJfcmFpbHMiOnsiZGF0YSI6eyJmb3JtYXQiOiJ3ZWJwIiwicmVzaXplX3RvX2xpbWl0IjpbNTEyLDUxMl19LCJwdXIiOiJ2YXJpYXRpb24ifX0=--fdaf7fb16189b7c943c4e2dcf1589b6be23516de/earth.png"
+    },
+    {
+      "fixture": "moon.jpg",
+      "blob": {
+        "id": 15,
+        "key": "wx4g0km1ov5xw65oyp95ow8p3ww9",
+        "filename": "moon.jpg",
+        "content_type": "image/jpeg",
+        "metadata": "{\"identified\":true,\"width\":640,\"height\":640,\"analyzed\":true}",
+        "service_name": "local",
+        "byte_size": 12794,
+        "checksum": "j65kKv2abaidraFRfGAQlg==",
+        "path": "wx/4g/wx4g0km1ov5xw65oyp95ow8p3ww9"
+      },
+      "variants": [
+        {
+          "label": "moon-avatar",
+          "source_blob_id": 15,
+          "transformations_inspect": "{format: :webp, resize_to_limit: [512, 512]}",
+          "transformations_typed": {
+            "hash": [
+              [
+                "format",
+                {
+                  "sym": "webp"
+                }
+              ],
+              [
+                "resize_to_limit",
+                [
+                  512,
+                  512
+                ]
+              ]
+            ]
+          },
+          "variation_digest": "6gwfjNKv9eUy9jNUtEZvQFLU0hQ=",
+          "variant_record": [
+            8,
+            15,
+            "6gwfjNKv9eUy9jNUtEZvQFLU0hQ="
+          ],
+          "blob": {
+            "id": 16,
+            "key": "xo27qmha7972787ki5kk4eh4jo9g",
+            "filename": "moon.webp",
+            "content_type": "image/webp",
+            "metadata": "{\"identified\":true,\"width\":512,\"height\":512,\"analyzed\":true}",
+            "service_name": "local",
+            "byte_size": 3364,
+            "checksum": "T3zvDOR6l1l+tR5Khy9rgA==",
+            "path": "xo/27/xo27qmha7972787ki5kk4eh4jo9g"
+          },
+          "attachment": {
+            "name": "image",
+            "record_type": "ActiveStorage::VariantRecord",
+            "record_id": 8,
+            "blob_id": 16
+          },
+          "file": "moon-avatar.webp"
+        }
+      ]
+    }
+  ],
+  "logos": [
+    {
+      "fixture": "black_hole.jpg",
+      "blob": {
+        "id": 17,
+        "key": "fhixdrd55h4if9f6hcoafgc8isqz",
+        "filename": "black_hole.jpg",
+        "content_type": "image/jpeg",
+        "metadata": "{\"identified\":true,\"width\":3840,\"height\":2160,\"analyzed\":true}",
+        "service_name": "local",
+        "byte_size": 505420,
+        "checksum": "K2B3FRAPz7nL/zBaO4TR6Q==",
+        "path": "fh/ix/fhixdrd55h4if9f6hcoafgc8isqz"
+      },
+      "variants": [
+        {
+          "label": "black_hole-logo-large",
+          "source_blob_id": 17,
+          "transformations_inspect": "{format: :png, resize_to_limit: [512, 512]}",
+          "transformations_typed": {
+            "hash": [
+              [
+                "format",
+                {
+                  "sym": "png"
+                }
+              ],
+              [
+                "resize_to_limit",
+                [
+                  512,
+                  512
+                ]
+              ]
+            ]
+          },
+          "variation_digest": "ksXvpLsa7BuCVyHOwmQOKedbIbM=",
+          "variant_record": [
+            9,
+            17,
+            "ksXvpLsa7BuCVyHOwmQOKedbIbM="
+          ],
+          "blob": {
+            "id": 18,
+            "key": "3iprs5kvx1wdq4sbu098k3mfpopl",
+            "filename": "black_hole.png",
+            "content_type": "image/png",
+            "metadata": "{\"identified\":true,\"width\":512,\"height\":288,\"analyzed\":true}",
+            "service_name": "local",
+            "byte_size": 245127,
+            "checksum": "qcnNS0ZkuHY9O1pokA1NbA==",
+            "path": "3i/pr/3iprs5kvx1wdq4sbu098k3mfpopl"
+          },
+          "attachment": {
+            "name": "image",
+            "record_type": "ActiveStorage::VariantRecord",
+            "record_id": 9,
+            "blob_id": 18
+          },
+          "file": "black_hole-logo-large.png"
+        },
+        {
+          "label": "black_hole-logo-small",
+          "source_blob_id": 17,
+          "transformations_inspect": "{format: :png, resize_to_limit: [192, 192]}",
+          "transformations_typed": {
+            "hash": [
+              [
+                "format",
+                {
+                  "sym": "png"
+                }
+              ],
+              [
+                "resize_to_limit",
+                [
+                  192,
+                  192
+                ]
+              ]
+            ]
+          },
+          "variation_digest": "EXATZfM7OVVC86CDh85TOsa8ZSw=",
+          "variant_record": [
+            10,
+            17,
+            "EXATZfM7OVVC86CDh85TOsa8ZSw="
+          ],
+          "blob": {
+            "id": 19,
+            "key": "co2gfyh81ookk2o158fq4306xrgj",
+            "filename": "black_hole.png",
+            "content_type": "image/png",
+            "metadata": "{\"identified\":true,\"width\":192,\"height\":108,\"analyzed\":true}",
+            "service_name": "local",
+            "byte_size": 38830,
+            "checksum": "nhu9yYtgH7rlyWhzKOmF9w==",
+            "path": "co/2g/co2gfyh81ookk2o158fq4306xrgj"
+          },
+          "attachment": {
+            "name": "image",
+            "record_type": "ActiveStorage::VariantRecord",
+            "record_id": 10,
+            "blob_id": 19
+          },
+          "file": "black_hole-logo-small.png"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "sessions": [
+    {
+      "session_id": 481019661,
+      "user_id": 127326141,
+      "user_name": "David",
+      "token": "AxJs94fteQ5Autv2VrKsH68c",
+      "cookie_value": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IklrRjRTbk01TkdaMFpWRTFRWFYwZGpKV2NrdHpTRFk0WXlJPSIsImV4cCI6IjIwNDYtMDktMjZUMTM6MTQ6NTIuODc3WiIsInB1ciI6ImNvb2tpZS5zZXNzaW9uX3Rva2VuIn19--958d9639acf62d4748990cd880ea1af466dd10f0",
+      "cookie_header": "session_token=eyJfcmFpbHMiOnsibWVzc2FnZSI6IklrRjRTbk01TkdaMFpWRTFRWFYwZGpKV2NrdHpTRFk0WXlJPSIsImV4cCI6IjIwNDYtMDktMjZUMTM6MTQ6NTIuODc3WiIsInB1ciI6ImNvb2tpZS5zZXNzaW9uX3Rva2VuIn19--958d9639acf62d4748990cd880ea1af466dd10f0"
+    }
+  ],
+  "blobs": [
+    {
+      "blob_id": 5,
+      "signed_id": "eyJfcmFpbHMiOnsiZGF0YSI6NSwicHVyIjoiYmxvYl9pZCJ9fQ==--4ceb3a7460a929db324ca5fd0dffee9c8527bfad",
+      "redirect_path": "/rails/active_storage/blobs/redirect/eyJfcmFpbHMiOnsiZGF0YSI6NSwicHVyIjoiYmxvYl9pZCJ9fQ==--4ceb3a7460a929db324ca5fd0dffee9c8527bfad/moon.jpg"
+    }
+  ],
+  "forged": {
+    "cookie_value": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IkltNXZkQzFoTFhObGMzTnBiMjR0ZEc5clpXNGkiLCJleHAiOiIyMDQ2LTA5LTI2VDEzOjE0OjUyLjg4NFoiLCJwdXIiOiJjb29raWUuc2Vzc2lvbl90b2tlbiJ9fQ==--b2ad571ae515f00423f55aea97bea1d6846ed075",
+    "cookie_header": "session_token=eyJfcmFpbHMiOnsibWVzc2FnZSI6IkltNXZkQzFoTFhObGMzTnBiMjR0ZEc5clpXNGkiLCJleHAiOiIyMDQ2LTA5LTI2VDEzOjE0OjUyLjg4NFoiLCJwdXIiOiJjb29raWUuc2Vzc2lvbl90b2tlbiJ9fQ%3D%3D--b2ad571ae515f00423f55aea97bea1d6846ed075"
+  }
+}

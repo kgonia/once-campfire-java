@@ -1,0 +1,54 @@
+# syntax = docker/dockerfile:1
+#
+# Production image for the Java port as a GraalVM native image. Same contract as ./Dockerfile.
+#
+#   docker build -f Dockerfile.native -t once-campfire-java:native --build-arg APP_VERSION=... .
+
+ARG DEBIAN_RELEASE=trixie
+
+FROM ghcr.io/graalvm/native-image-community:25 AS build
+RUN microdnf install -y tar gzip findutils && microdnf clean all
+ARG MAVEN_VERSION=3.9.11
+RUN curl -fsSL https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz \
+      | tar -xz -C /opt && ln -s /opt/apache-maven-${MAVEN_VERSION}/bin/mvn /usr/local/bin/mvn
+WORKDIR /src
+COPY pom.xml ./
+COPY .mvn .mvn
+RUN --mount=type=cache,id=campfire-java-m2,target=/root/.m2 mvn -q -B dependency:go-offline
+COPY assets assets
+COPY reference reference
+COPY src src
+RUN --mount=type=cache,id=campfire-java-m2,target=/root/.m2 mvn -q -B package -Dnative -DskipTests && \
+    install -D -m 755 target/*-runner /out/campfire
+
+
+FROM docker.io/library/debian:${DEBIAN_RELEASE}-slim
+
+RUN apt-get update -qq && \
+    apt-get install --no-install-recommends -y ca-certificates libvips-tools ffmpeg zlib1g && \
+    rm -rf /var/lib/apt/lists /var/cache/apt/archives
+
+RUN groupadd --system --gid 1000 rails && \
+    useradd rails --uid 1000 --gid 1000 --create-home --shell /bin/bash
+
+WORKDIR /rails
+COPY --from=build /out/campfire /usr/local/bin/campfire
+
+COPY --chmod=755 <<'EOF' /rails/bin/boot
+#!/bin/sh
+exec /usr/local/bin/campfire -Dquarkus.http.port="${HTTP_PORT:-80}"
+EOF
+
+RUN mkdir -p /rails/storage/db /rails/storage/files /rails/storage/backups && \
+    chown -R 1000:1000 /rails
+
+USER 1000:1000
+
+ENV RAILS_ENV="production"
+ARG APP_VERSION
+ENV APP_VERSION=$APP_VERSION
+ARG GIT_REVISION
+ENV GIT_REVISION=$GIT_REVISION
+
+EXPOSE 80
+CMD ["bin/boot"]

@@ -1,0 +1,2256 @@
+[
+  {
+    "name": "success",
+    "url": "http://www.example.com/",
+    "response": {
+      "status": 200,
+      "body": "{\"title\":\"Hey!\",\"url\":\"https://example.com\",\"image\":\"http://example.com/image.png\",\"description\":\"desc..\",\"context_for_validation\":{\"context\":null},\"errors\":{}}"
+    },
+    "lookups": [
+      "www.example.com",
+      "example.com",
+      "example.com",
+      "example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "www.example.com",
+        "/",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ],
+      [
+        "HEAD",
+        "example.com",
+        "/image.png",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "name attribute",
+    "url": "http://www.example.com/name",
+    "response": {
+      "status": 200,
+      "body": "{\"title\":\"Hey!\",\"url\":\"https://example.com\",\"image\":\"http://example.com/image.png\",\"description\":\"desc..\",\"context_for_validation\":{\"context\":null},\"errors\":{}}"
+    },
+    "lookups": [
+      "www.example.com",
+      "example.com",
+      "example.com",
+      "example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "www.example.com",
+        "/name",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ],
+      [
+        "HEAD",
+        "example.com",
+        "/image.png",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "missing tags",
+    "url": "http://www.example.com/empty",
+    "response": {
+      "status": 204
+    },
+    "lookups": [
+      "www.example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "www.example.com",
+        "/empty",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "relative og:url falls back",
+    "url": "http://www.example.com/relative-og-url",
+    "response": {
+      "status": 200,
+      "body": "{\"title\":\"Hey!\",\"url\":\"http://www.example.com/relative-og-url\",\"image\":\"http://example.com/image.png\",\"description\":\"desc..\",\"context_for_validation\":{\"context\":null},\"errors\":{}}"
+    },
+    "lookups": [
+      "www.example.com",
+      "example.com",
+      "example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "www.example.com",
+        "/relative-og-url",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ],
+      [
+        "HEAD",
+        "example.com",
+        "/image.png",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "missing og:url falls back",
+    "url": "http://www.example.com/no-og-url",
+    "response": {
+      "status": 200,
+      "body": "{\"title\":\"Hey!\",\"image\":\"http://example.com/image.png\",\"description\":\"desc..\",\"url\":\"http://www.example.com/no-og-url\",\"context_for_validation\":{\"context\":null},\"errors\":{}}"
+    },
+    "lookups": [
+      "www.example.com",
+      "example.com",
+      "example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "www.example.com",
+        "/no-og-url",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ],
+      [
+        "HEAD",
+        "example.com",
+        "/image.png",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "private og:url falls back",
+    "url": "http://www.example.com/private-og-url",
+    "response": {
+      "status": 200,
+      "body": "{\"title\":\"Hey!\",\"url\":\"http://www.example.com/private-og-url\",\"image\":\"http://example.com/image.png\",\"description\":\"desc..\",\"context_for_validation\":{\"context\":null},\"errors\":{}}"
+    },
+    "lookups": [
+      "www.example.com",
+      "private.example",
+      "example.com",
+      "example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "www.example.com",
+        "/private-og-url",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ],
+      [
+        "HEAD",
+        "example.com",
+        "/image.png",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "svg image dropped",
+    "url": "http://www.example.com/svg",
+    "response": {
+      "status": 200,
+      "body": "{\"title\":\"Hey!\",\"url\":\"https://example.com\",\"image\":null,\"description\":\"desc..\",\"context_for_validation\":{\"context\":null},\"errors\":{}}"
+    },
+    "lookups": [
+      "www.example.com",
+      "example.com",
+      "example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "www.example.com",
+        "/svg",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ],
+      [
+        "HEAD",
+        "example.com",
+        "/image.svg",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "image content type with params dropped",
+    "url": "http://www.example.com/charset-image",
+    "response": {
+      "status": 200,
+      "body": "{\"title\":\"Hey!\",\"url\":\"https://example.com\",\"image\":null,\"description\":\"desc..\",\"context_for_validation\":{\"context\":null},\"errors\":{}}"
+    },
+    "lookups": [
+      "www.example.com",
+      "example.com",
+      "example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "www.example.com",
+        "/charset-image",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ],
+      [
+        "HEAD",
+        "example.com",
+        "/charset.png",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "uppercase image content type accepted",
+    "url": "http://www.example.com/upper-image",
+    "response": {
+      "status": 200,
+      "body": "{\"title\":\"Hey!\",\"url\":\"https://example.com\",\"image\":\"http://example.com/upper.png\",\"description\":\"desc..\",\"context_for_validation\":{\"context\":null},\"errors\":{}}"
+    },
+    "lookups": [
+      "www.example.com",
+      "example.com",
+      "example.com",
+      "example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "www.example.com",
+        "/upper-image",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ],
+      [
+        "HEAD",
+        "example.com",
+        "/upper.png",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "image HEAD status is not checked",
+    "url": "http://www.example.com/404-image",
+    "response": {
+      "status": 200,
+      "body": "{\"title\":\"Hey!\",\"url\":\"https://example.com\",\"image\":\"http://example.com/missing.png\",\"description\":\"desc..\",\"context_for_validation\":{\"context\":null},\"errors\":{}}"
+    },
+    "lookups": [
+      "www.example.com",
+      "example.com",
+      "example.com",
+      "example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "www.example.com",
+        "/404-image",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ],
+      [
+        "HEAD",
+        "example.com",
+        "/missing.png",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "image HEAD follows redirects",
+    "url": "http://www.example.com/redirected-image",
+    "response": {
+      "status": 200,
+      "body": "{\"title\":\"Hey!\",\"url\":\"https://example.com\",\"image\":\"http://example.com/redirected.png\",\"description\":\"desc..\",\"context_for_validation\":{\"context\":null},\"errors\":{}}"
+    },
+    "lookups": [
+      "www.example.com",
+      "example.com",
+      "example.com",
+      "example.com",
+      "example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "www.example.com",
+        "/redirected-image",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ],
+      [
+        "HEAD",
+        "example.com",
+        "/redirected.png",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ],
+      [
+        "HEAD",
+        "example.com",
+        "/image.png",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "image redirect to private network dropped",
+    "url": "http://www.example.com/private-redirect-image",
+    "response": {
+      "status": 200,
+      "body": "{\"title\":\"Hey!\",\"url\":\"https://example.com\",\"image\":null,\"description\":\"desc..\",\"context_for_validation\":{\"context\":null},\"errors\":{}}"
+    },
+    "lookups": [
+      "www.example.com",
+      "example.com",
+      "example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "www.example.com",
+        "/private-redirect-image",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ],
+      [
+        "HEAD",
+        "example.com",
+        "/private-redirect.png",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "invalid image url /image.png",
+    "url": "http://www.example.com/bad-image-0",
+    "response": {
+      "status": 200,
+      "body": "{\"title\":\"Hey!\",\"url\":\"https://example.com\",\"image\":null,\"description\":\"desc..\",\"context_for_validation\":{\"context\":null},\"errors\":{}}"
+    },
+    "lookups": [
+      "www.example.com",
+      "example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "www.example.com",
+        "/bad-image-0",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "invalid image url foo",
+    "url": "http://www.example.com/bad-image-1",
+    "response": {
+      "status": 200,
+      "body": "{\"title\":\"Hey!\",\"url\":\"https://example.com\",\"image\":null,\"description\":\"desc..\",\"context_for_validation\":{\"context\":null},\"errors\":{}}"
+    },
+    "lookups": [
+      "www.example.com",
+      "example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "www.example.com",
+        "/bad-image-1",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "invalid image url https/incorrect",
+    "url": "http://www.example.com/bad-image-2",
+    "response": {
+      "status": 200,
+      "body": "{\"title\":\"Hey!\",\"url\":\"https://example.com\",\"image\":null,\"description\":\"desc..\",\"context_for_validation\":{\"context\":null},\"errors\":{}}"
+    },
+    "lookups": [
+      "www.example.com",
+      "example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "www.example.com",
+        "/bad-image-2",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "invalid image url ~/etc/password",
+    "url": "http://www.example.com/bad-image-3",
+    "response": {
+      "status": 200,
+      "body": "{\"title\":\"Hey!\",\"url\":\"https://example.com\",\"image\":null,\"description\":\"desc..\",\"context_for_validation\":{\"context\":null},\"errors\":{}}"
+    },
+    "lookups": [
+      "www.example.com",
+      "example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "www.example.com",
+        "/bad-image-3",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "invalid image url http://10.0.0.1/image.png",
+    "url": "http://www.example.com/bad-image-4",
+    "response": {
+      "status": 200,
+      "body": "{\"title\":\"Hey!\",\"url\":\"https://example.com\",\"image\":null,\"description\":\"desc..\",\"context_for_validation\":{\"context\":null},\"errors\":{}}"
+    },
+    "lookups": [
+      "www.example.com",
+      "example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "www.example.com",
+        "/bad-image-4",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "invalid image url ftp://example.com/x.png",
+    "url": "http://www.example.com/bad-image-5",
+    "response": {
+      "status": 200,
+      "body": "{\"title\":\"Hey!\",\"url\":\"https://example.com\",\"image\":null,\"description\":\"desc..\",\"context_for_validation\":{\"context\":null},\"errors\":{}}"
+    },
+    "lookups": [
+      "www.example.com",
+      "example.com",
+      "example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "www.example.com",
+        "/bad-image-5",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "invalid image url http://example.com/a b.png",
+    "url": "http://www.example.com/bad-image-6",
+    "response": {
+      "status": 200,
+      "body": "{\"title\":\"Hey!\",\"url\":\"https://example.com\",\"image\":null,\"description\":\"desc..\",\"context_for_validation\":{\"context\":null},\"errors\":{}}"
+    },
+    "lookups": [
+      "www.example.com",
+      "example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "www.example.com",
+        "/bad-image-6",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "no image",
+    "url": "http://www.example.com/no-image",
+    "response": {
+      "status": 200,
+      "body": "{\"title\":\"Hey!\",\"url\":\"https://example.com\",\"description\":\"desc..\",\"image\":null,\"context_for_validation\":{\"context\":null},\"errors\":{}}"
+    },
+    "lookups": [
+      "www.example.com",
+      "example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "www.example.com",
+        "/no-image",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "script stripped",
+    "url": "http://www.example.com/script",
+    "response": {
+      "status": 200,
+      "body": "{\"title\":\"Hey!alert('hi')\",\"url\":\"https://example.com\",\"image\":\"http://example.com/image.png\",\"description\":\"Helloalert('hi')\",\"context_for_validation\":{\"context\":null},\"errors\":{}}"
+    },
+    "lookups": [
+      "www.example.com",
+      "example.com",
+      "example.com",
+      "example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "www.example.com",
+        "/script",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ],
+      [
+        "HEAD",
+        "example.com",
+        "/image.png",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "encoded tags removed",
+    "url": "http://www.example.com/encoded",
+    "response": {
+      "status": 200,
+      "body": "{\"title\":\"Hey!\",\"url\":\"https://example.com\",\"image\":\"http://example.com/image.png\",\"description\":\"desc..\",\"context_for_validation\":{\"context\":null},\"errors\":{}}"
+    },
+    "lookups": [
+      "www.example.com",
+      "example.com",
+      "example.com",
+      "example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "www.example.com",
+        "/encoded",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ],
+      [
+        "HEAD",
+        "example.com",
+        "/image.png",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "only markup is blank",
+    "url": "http://www.example.com/only-markup",
+    "response": {
+      "status": 204
+    },
+    "lookups": [
+      "www.example.com",
+      "example.com",
+      "example.com",
+      "example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "www.example.com",
+        "/only-markup",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ],
+      [
+        "HEAD",
+        "example.com",
+        "/image.png",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "entities are escaped",
+    "url": "http://www.example.com/entities",
+    "response": {
+      "status": 200,
+      "body": "{\"title\":\"Tom \\u0026amp; Jerry \\u0026lt;3 x\",\"url\":\"https://example.com\",\"image\":\"http://example.com/image.png\",\"description\":\"a \\u0026gt; b \",\"context_for_validation\":{\"context\":null},\"errors\":{}}"
+    },
+    "lookups": [
+      "www.example.com",
+      "example.com",
+      "example.com",
+      "example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "www.example.com",
+        "/entities",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ],
+      [
+        "HEAD",
+        "example.com",
+        "/image.png",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "whitespace title skipped",
+    "url": "http://www.example.com/whitespace",
+    "response": {
+      "status": 204
+    },
+    "lookups": [
+      "www.example.com",
+      "example.com",
+      "example.com",
+      "example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "www.example.com",
+        "/whitespace",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ],
+      [
+        "HEAD",
+        "example.com",
+        "/image.png",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "non html",
+    "url": "http://www.example.com/plain",
+    "response": {
+      "status": 204
+    },
+    "lookups": [
+      "www.example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "www.example.com",
+        "/plain",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "missing content type",
+    "url": "http://www.example.com/no-content-type",
+    "response": {
+      "status": 204
+    },
+    "lookups": [
+      "www.example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "www.example.com",
+        "/no-content-type",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "403",
+    "url": "http://www.example.com/forbidden",
+    "response": {
+      "status": 204
+    },
+    "lookups": [
+      "www.example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "www.example.com",
+        "/forbidden",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "201 is not OK",
+    "url": "http://www.example.com/created",
+    "response": {
+      "status": 204
+    },
+    "lookups": [
+      "www.example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "www.example.com",
+        "/created",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "content type params and case",
+    "url": "http://www.example.com/html-charset",
+    "response": {
+      "status": 204
+    },
+    "lookups": [
+      "www.example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "www.example.com",
+        "/html-charset",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "redirect followed",
+    "url": "http://www.example.com/redirect",
+    "response": {
+      "status": 200,
+      "body": "{\"title\":\"Other\",\"url\":\"https://example.com\",\"image\":\"http://example.com/image.png\",\"description\":\"desc..\",\"context_for_validation\":{\"context\":null},\"errors\":{}}"
+    },
+    "lookups": [
+      "www.example.com",
+      "www.other.com",
+      "example.com",
+      "example.com",
+      "example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "www.example.com",
+        "/redirect",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ],
+      [
+        "GET",
+        "www.other.com",
+        "/",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ],
+      [
+        "HEAD",
+        "example.com",
+        "/image.png",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "relative redirect denied",
+    "url": "http://www.example.com/relative-redirect",
+    "response": {
+      "status": 204
+    },
+    "lookups": [
+      "www.example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "www.example.com",
+        "/relative-redirect",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "redirect without location",
+    "url": "http://www.example.com/redirect-no-location",
+    "response": {
+      "status": 204
+    },
+    "lookups": [
+      "www.example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "www.example.com",
+        "/redirect-no-location",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "304 is a redirection",
+    "url": "http://www.example.com/not-modified",
+    "response": {
+      "status": 204
+    },
+    "lookups": [
+      "www.example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "www.example.com",
+        "/not-modified",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "redirect to private host",
+    "url": "http://www.example.com/redirect-private-host",
+    "response": {
+      "status": 204
+    },
+    "lookups": [
+      "www.example.com",
+      "private.example"
+    ],
+    "requests": [
+      [
+        "GET",
+        "www.example.com",
+        "/redirect-private-host",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "redirect to link-local ip",
+    "url": "http://www.example.com/redirect-private-ip",
+    "response": {
+      "status": 204
+    },
+    "lookups": [
+      "www.example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "www.example.com",
+        "/redirect-private-ip",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "redirect to localhost",
+    "url": "http://www.example.com/redirect-localhost",
+    "response": {
+      "status": 204
+    },
+    "lookups": [
+      "www.example.com",
+      "localhost"
+    ],
+    "requests": [
+      [
+        "GET",
+        "www.example.com",
+        "/redirect-localhost",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "redirect to ftp",
+    "url": "http://www.example.com/redirect-ftp",
+    "response": {
+      "status": 204
+    },
+    "lookups": [
+      "www.example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "www.example.com",
+        "/redirect-ftp",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "redirect loop",
+    "url": "http://www.example.com/loop",
+    "response": {
+      "status": 204
+    },
+    "lookups": [
+      "www.example.com",
+      "www.example.com",
+      "www.example.com",
+      "www.example.com",
+      "www.example.com",
+      "www.example.com",
+      "www.example.com",
+      "www.example.com",
+      "www.example.com",
+      "www.example.com",
+      "www.example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "www.example.com",
+        "/loop",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ],
+      [
+        "GET",
+        "www.example.com",
+        "/loop",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ],
+      [
+        "GET",
+        "www.example.com",
+        "/loop",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ],
+      [
+        "GET",
+        "www.example.com",
+        "/loop",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ],
+      [
+        "GET",
+        "www.example.com",
+        "/loop",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ],
+      [
+        "GET",
+        "www.example.com",
+        "/loop",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ],
+      [
+        "GET",
+        "www.example.com",
+        "/loop",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ],
+      [
+        "GET",
+        "www.example.com",
+        "/loop",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ],
+      [
+        "GET",
+        "www.example.com",
+        "/loop",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ],
+      [
+        "GET",
+        "www.example.com",
+        "/loop",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "nine redirects are followed",
+    "url": "http://www.example.com/chain/1",
+    "response": {
+      "status": 200,
+      "body": "{\"title\":\"Chain end\",\"url\":\"https://example.com\",\"image\":\"http://example.com/image.png\",\"description\":\"desc..\",\"context_for_validation\":{\"context\":null},\"errors\":{}}"
+    },
+    "lookups": [
+      "www.example.com",
+      "www.example.com",
+      "www.example.com",
+      "www.example.com",
+      "www.example.com",
+      "www.example.com",
+      "www.example.com",
+      "www.example.com",
+      "www.example.com",
+      "www.example.com",
+      "example.com",
+      "example.com",
+      "example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "www.example.com",
+        "/chain/1",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ],
+      [
+        "GET",
+        "www.example.com",
+        "/chain/2",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ],
+      [
+        "GET",
+        "www.example.com",
+        "/chain/3",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ],
+      [
+        "GET",
+        "www.example.com",
+        "/chain/4",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ],
+      [
+        "GET",
+        "www.example.com",
+        "/chain/5",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ],
+      [
+        "GET",
+        "www.example.com",
+        "/chain/6",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ],
+      [
+        "GET",
+        "www.example.com",
+        "/chain/7",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ],
+      [
+        "GET",
+        "www.example.com",
+        "/chain/8",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ],
+      [
+        "GET",
+        "www.example.com",
+        "/chain/9",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ],
+      [
+        "GET",
+        "www.example.com",
+        "/chain/10",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ],
+      [
+        "HEAD",
+        "example.com",
+        "/image.png",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "ten redirects are too many",
+    "url": "http://www.example.com/chain/0",
+    "response": {
+      "status": 204
+    },
+    "lookups": [
+      "www.example.com",
+      "www.example.com",
+      "www.example.com",
+      "www.example.com",
+      "www.example.com",
+      "www.example.com",
+      "www.example.com",
+      "www.example.com",
+      "www.example.com",
+      "www.example.com",
+      "www.example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "www.example.com",
+        "/chain/0",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ],
+      [
+        "GET",
+        "www.example.com",
+        "/chain/1",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ],
+      [
+        "GET",
+        "www.example.com",
+        "/chain/2",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ],
+      [
+        "GET",
+        "www.example.com",
+        "/chain/3",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ],
+      [
+        "GET",
+        "www.example.com",
+        "/chain/4",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ],
+      [
+        "GET",
+        "www.example.com",
+        "/chain/5",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ],
+      [
+        "GET",
+        "www.example.com",
+        "/chain/6",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ],
+      [
+        "GET",
+        "www.example.com",
+        "/chain/7",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ],
+      [
+        "GET",
+        "www.example.com",
+        "/chain/8",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ],
+      [
+        "GET",
+        "www.example.com",
+        "/chain/9",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "dns rebinding after redirect is pinned",
+    "url": "http://www.example.com/rebind-redirect",
+    "response": {
+      "status": 200,
+      "body": "{\"title\":\"Pinned\",\"url\":\"https://example.com\",\"image\":\"http://example.com/image.png\",\"description\":\"desc..\",\"context_for_validation\":{\"context\":null},\"errors\":{}}"
+    },
+    "lookups": [
+      "www.example.com",
+      "rebind.example",
+      "example.com",
+      "example.com",
+      "example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "www.example.com",
+        "/rebind-redirect",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ],
+      [
+        "GET",
+        "rebind.example",
+        "/",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ],
+      [
+        "HEAD",
+        "example.com",
+        "/image.png",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "dns rebinding is pinned",
+    "url": "http://rebind.example/",
+    "response": {
+      "status": 200,
+      "body": "{\"title\":\"Pinned\",\"url\":\"https://example.com\",\"image\":\"http://example.com/image.png\",\"description\":\"desc..\",\"context_for_validation\":{\"context\":null},\"errors\":{}}"
+    },
+    "lookups": [
+      "rebind.example",
+      "example.com",
+      "example.com",
+      "example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "rebind.example",
+        "/",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ],
+      [
+        "HEAD",
+        "example.com",
+        "/image.png",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "large chunked body",
+    "url": "http://www.example.com/big",
+    "response": {
+      "status": 204
+    },
+    "lookups": [
+      "www.example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "www.example.com",
+        "/big",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "large content length",
+    "url": "http://www.example.com/big-length",
+    "response": {
+      "status": 204
+    },
+    "lookups": [
+      "www.example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "www.example.com",
+        "/big-length",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "body of exactly 5MB",
+    "url": "http://www.example.com/exact",
+    "response": {
+      "status": 200,
+      "body": "{\"title\":\"Exact\",\"url\":\"https://example.com\",\"image\":\"http://example.com/image.png\",\"description\":\"desc..\",\"context_for_validation\":{\"context\":null},\"errors\":{}}"
+    },
+    "lookups": [
+      "www.example.com",
+      "example.com",
+      "example.com",
+      "example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "www.example.com",
+        "/exact",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ],
+      [
+        "HEAD",
+        "example.com",
+        "/image.png",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "gzip body",
+    "url": "http://www.example.com/gzip",
+    "response": {
+      "status": 200,
+      "body": "{\"title\":\"Zipped\",\"url\":\"https://example.com\",\"image\":\"http://example.com/image.png\",\"description\":\"desc..\",\"context_for_validation\":{\"context\":null},\"errors\":{}}"
+    },
+    "lookups": [
+      "www.example.com",
+      "example.com",
+      "example.com",
+      "example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "www.example.com",
+        "/gzip",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ],
+      [
+        "HEAD",
+        "example.com",
+        "/image.png",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "private host",
+    "url": "http://private.example/",
+    "response": {
+      "status": 204
+    },
+    "lookups": [
+      "private.example"
+    ],
+    "requests": []
+  },
+  {
+    "name": "localhost",
+    "url": "http://localhost/",
+    "response": {
+      "status": 204
+    },
+    "lookups": [
+      "localhost"
+    ],
+    "requests": []
+  },
+  {
+    "name": "loopback literal",
+    "url": "http://127.0.0.1/",
+    "response": {
+      "status": 204
+    },
+    "lookups": [],
+    "requests": []
+  },
+  {
+    "name": "10/8 literal",
+    "url": "http://10.1.2.3/",
+    "response": {
+      "status": 204
+    },
+    "lookups": [],
+    "requests": []
+  },
+  {
+    "name": "link-local metadata",
+    "url": "http://169.254.169.254/latest/meta-data/",
+    "response": {
+      "status": 204
+    },
+    "lookups": [],
+    "requests": []
+  },
+  {
+    "name": "ipv6 loopback",
+    "url": "http://[::1]/",
+    "response": {
+      "status": 204
+    },
+    "lookups": [],
+    "requests": []
+  },
+  {
+    "name": "ipv6 ula",
+    "url": "http://[fd00::1]/",
+    "response": {
+      "status": 204
+    },
+    "lookups": [],
+    "requests": []
+  },
+  {
+    "name": "ipv4 mapped ipv6",
+    "url": "http://[::ffff:192.168.1.1]/",
+    "response": {
+      "status": 204
+    },
+    "lookups": [],
+    "requests": []
+  },
+  {
+    "name": "decimal ip",
+    "url": "http://2130706433/",
+    "response": {
+      "status": 204
+    },
+    "lookups": [],
+    "requests": []
+  },
+  {
+    "name": "hex ip",
+    "url": "http://0x7f.1/",
+    "response": {
+      "status": 204
+    },
+    "lookups": [],
+    "requests": []
+  },
+  {
+    "name": "unresolvable",
+    "url": "http://nowhere.example/",
+    "response": {
+      "status": 204
+    },
+    "lookups": [
+      "nowhere.example"
+    ],
+    "requests": []
+  },
+  {
+    "name": "mapped private dns answer",
+    "url": "http://mapped.example/",
+    "response": {
+      "status": 204
+    },
+    "lookups": [
+      "mapped.example"
+    ],
+    "requests": []
+  },
+  {
+    "name": "mixed dns answers use the public one",
+    "url": "http://mixed.example/",
+    "response": {
+      "status": 200,
+      "body": "{\"title\":\"Mixed\",\"url\":\"https://example.com\",\"image\":\"http://example.com/image.png\",\"description\":\"desc..\",\"context_for_validation\":{\"context\":null},\"errors\":{}}"
+    },
+    "lookups": [
+      "mixed.example",
+      "example.com",
+      "example.com",
+      "example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "mixed.example",
+        "/",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ],
+      [
+        "HEAD",
+        "example.com",
+        "/image.png",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "ipv6 public host",
+    "url": "http://ipv6.example/",
+    "response": {
+      "status": 200,
+      "body": "{\"title\":\"IPv6\",\"url\":\"https://example.com\",\"image\":\"http://example.com/image.png\",\"description\":\"desc..\",\"context_for_validation\":{\"context\":null},\"errors\":{}}"
+    },
+    "lookups": [
+      "ipv6.example",
+      "example.com",
+      "example.com",
+      "example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "ipv6.example",
+        "/",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ],
+      [
+        "HEAD",
+        "example.com",
+        "/image.png",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "underscore host",
+    "url": "http://under_score.example/",
+    "response": {
+      "status": 204
+    },
+    "lookups": [],
+    "requests": []
+  },
+  {
+    "name": "media url not fetched",
+    "url": "http://www.example.com/video.mp4",
+    "response": {
+      "status": 204
+    },
+    "lookups": [
+      "www.example.com"
+    ],
+    "requests": []
+  },
+  {
+    "name": "archive url not fetched",
+    "url": "http://www.example.com/archive.tar.gz?x=1",
+    "response": {
+      "status": 204
+    },
+    "lookups": [
+      "www.example.com"
+    ],
+    "requests": []
+  },
+  {
+    "name": "extension needs a word boundary",
+    "url": "http://www.example.com/archive.tar.gzip",
+    "response": {
+      "status": 204
+    },
+    "lookups": [
+      "www.example.com"
+    ],
+    "requests": []
+  },
+  {
+    "name": "extension match is case sensitive",
+    "url": "http://www.example.com/UPPER.MP4",
+    "response": {
+      "status": 200,
+      "body": "{\"title\":\"Upper\",\"url\":\"https://example.com\",\"image\":\"http://example.com/image.png\",\"description\":\"desc..\",\"context_for_validation\":{\"context\":null},\"errors\":{}}"
+    },
+    "lookups": [
+      "www.example.com",
+      "example.com",
+      "example.com",
+      "example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "www.example.com",
+        "/UPPER.MP4",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ],
+      [
+        "HEAD",
+        "example.com",
+        "/image.png",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "ftp url",
+    "url": "ftp://www.example.com/",
+    "response": {
+      "status": 204
+    },
+    "lookups": [
+      "www.example.com"
+    ],
+    "requests": []
+  },
+  {
+    "name": "not a url",
+    "url": "httpfake",
+    "response": {
+      "status": 204
+    },
+    "lookups": [],
+    "requests": []
+  },
+  {
+    "name": "space",
+    "url": " foo",
+    "response": {
+      "status": 204
+    },
+    "lookups": [],
+    "requests": []
+  },
+  {
+    "name": "non ascii url",
+    "url": "http://www.example.com/é",
+    "response": {
+      "status": 204
+    },
+    "lookups": [],
+    "requests": []
+  },
+  {
+    "name": "mailto raises",
+    "url": "mailto:foo",
+    "response": {
+      "status": 500,
+      "error": "URI::InvalidComponentError"
+    },
+    "lookups": [],
+    "requests": []
+  },
+  {
+    "name": "uppercase scheme",
+    "url": "HTTP://www.example.com/",
+    "response": {
+      "status": 200,
+      "body": "{\"title\":\"Hey!\",\"url\":\"https://example.com\",\"image\":\"http://example.com/image.png\",\"description\":\"desc..\",\"context_for_validation\":{\"context\":null},\"errors\":{}}"
+    },
+    "lookups": [
+      "www.example.com",
+      "example.com",
+      "example.com",
+      "example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "www.example.com",
+        "/",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ],
+      [
+        "HEAD",
+        "example.com",
+        "/image.png",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "explicit port",
+    "url": "http://www.example.com:8080/port",
+    "response": {
+      "status": 200,
+      "body": "{\"title\":\"Port\",\"url\":\"https://example.com\",\"image\":\"http://example.com/image.png\",\"description\":\"desc..\",\"context_for_validation\":{\"context\":null},\"errors\":{}}"
+    },
+    "lookups": [
+      "www.example.com",
+      "example.com",
+      "example.com",
+      "example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "www.example.com:8080",
+        "/port",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ],
+      [
+        "HEAD",
+        "example.com",
+        "/image.png",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "query string and fragment",
+    "url": "http://www.example.com/query?a=1&b=2#frag",
+    "response": {
+      "status": 200,
+      "body": "{\"title\":\"Query\",\"url\":\"https://example.com\",\"image\":\"http://example.com/image.png\",\"description\":\"desc..\",\"context_for_validation\":{\"context\":null},\"errors\":{}}"
+    },
+    "lookups": [
+      "www.example.com",
+      "example.com",
+      "example.com",
+      "example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "www.example.com",
+        "/query?a=1&b=2",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ],
+      [
+        "HEAD",
+        "example.com",
+        "/image.png",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "twitter",
+    "url": "http://twitter.com/dhh/status/1",
+    "response": {
+      "status": 200,
+      "body": "{\"title\":\"DHH  quoted\",\"description\":\"tweet \",\"url\":\"http://twitter.com/dhh/status/1\",\"image\":null,\"context_for_validation\":{\"context\":null},\"errors\":{}}"
+    },
+    "lookups": [
+      "fxtwitter.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "fxtwitter.com",
+        "/dhh/status/1",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "x.com",
+    "url": "http://x.com/dhh/status/1",
+    "response": {
+      "status": 200,
+      "body": "{\"title\":\"DHH  quoted\",\"description\":\"tweet \",\"url\":\"http://x.com/dhh/status/1\",\"image\":null,\"context_for_validation\":{\"context\":null},\"errors\":{}}"
+    },
+    "lookups": [
+      "fxtwitter.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "fxtwitter.com",
+        "/dhh/status/1",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "www.x.com",
+    "url": "http://www.x.com/dhh/status/1",
+    "response": {
+      "status": 200,
+      "body": "{\"title\":\"DHH  quoted\",\"description\":\"tweet \",\"url\":\"http://www.x.com/dhh/status/1\",\"image\":null,\"context_for_validation\":{\"context\":null},\"errors\":{}}"
+    },
+    "lookups": [
+      "fxtwitter.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "fxtwitter.com",
+        "/dhh/status/1",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "twitter root is not a tweet",
+    "url": "http://twitter.com/",
+    "response": {
+      "status": 200,
+      "body": "{\"title\":\"Twitter root\",\"url\":\"https://example.com\",\"image\":\"http://example.com/image.png\",\"description\":\"desc..\",\"context_for_validation\":{\"context\":null},\"errors\":{}}"
+    },
+    "lookups": [
+      "twitter.com",
+      "example.com",
+      "example.com",
+      "example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "twitter.com",
+        "/",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ],
+      [
+        "HEAD",
+        "example.com",
+        "/image.png",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "fxtwitter failure raises",
+    "url": "http://twitter.com/missing/status/2",
+    "response": {
+      "status": 500,
+      "error": "NoMethodError"
+    },
+    "lookups": [
+      "fxtwitter.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "fxtwitter.com",
+        "/missing/status/2",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "non-ascii stripped without meta charset",
+    "url": "http://www.example.com/utf8-no-meta",
+    "response": {
+      "status": 200,
+      "body": "{\"title\":\"Caf  ok\",\"description\":\"nave   x\",\"url\":\"http://www.example.com/utf8-no-meta\",\"image\":null,\"context_for_validation\":{\"context\":null},\"errors\":{}}"
+    },
+    "lookups": [
+      "www.example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "www.example.com",
+        "/utf8-no-meta",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "non-ascii kept with meta charset",
+    "url": "http://www.example.com/utf8-meta",
+    "response": {
+      "status": 200,
+      "body": "{\"title\":\"Café 😀 ok\",\"description\":\"naïve é x\",\"url\":\"http://www.example.com/utf8-meta\",\"image\":null,\"context_for_validation\":{\"context\":null},\"errors\":{}}"
+    },
+    "lookups": [
+      "www.example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "www.example.com",
+        "/utf8-meta",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "http-equiv charset",
+    "url": "http://www.example.com/http-equiv",
+    "response": {
+      "status": 200,
+      "body": "{\"title\":\"Café\",\"description\":\"d\",\"url\":\"http://www.example.com/http-equiv\",\"image\":null,\"context_for_validation\":{\"context\":null},\"errors\":{}}"
+    },
+    "lookups": [
+      "www.example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "www.example.com",
+        "/http-equiv",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "latin-1 with meta charset",
+    "url": "http://www.example.com/latin1",
+    "response": {
+      "status": 200,
+      "body": "{\"title\":\"Café\",\"description\":\"d\",\"url\":\"http://www.example.com/latin1\",\"image\":null,\"context_for_validation\":{\"context\":null},\"errors\":{}}"
+    },
+    "lookups": [
+      "www.example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "www.example.com",
+        "/latin1",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "invalid utf-8 with meta charset",
+    "url": "http://www.example.com/invalid-utf8",
+    "response": {
+      "status": 200,
+      "body": "{\"title\":\"Bad ÿþ bytes\",\"description\":\"d\",\"url\":\"http://www.example.com/invalid-utf8\",\"image\":null,\"context_for_validation\":{\"context\":null},\"errors\":{}}"
+    },
+    "lookups": [
+      "www.example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "www.example.com",
+        "/invalid-utf8",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "duplicates and key order",
+    "url": "http://www.example.com/duplicates",
+    "response": {
+      "status": 200,
+      "body": "{\"title\":\"Second\",\"image\":\"http://example.com/image.png\",\"description\":\"d\",\"url\":\"http://www.example.com/duplicates\",\"context_for_validation\":{\"context\":null},\"errors\":{}}"
+    },
+    "lookups": [
+      "www.example.com",
+      "example.com",
+      "example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "www.example.com",
+        "/duplicates",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ],
+      [
+        "HEAD",
+        "example.com",
+        "/image.png",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "property wins over name",
+    "url": "http://www.example.com/mixed-attrs",
+    "response": {
+      "status": 200,
+      "body": "{\"title\":\"Right\",\"description\":\"d\",\"url\":\"http://www.example.com/mixed-attrs\",\"image\":null,\"context_for_validation\":{\"context\":null},\"errors\":{}}"
+    },
+    "lookups": [
+      "www.example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "www.example.com",
+        "/mixed-attrs",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "meta in body",
+    "url": "http://www.example.com/body-meta",
+    "response": {
+      "status": 200,
+      "body": "{\"title\":\"In body\",\"description\":\"d\",\"url\":\"http://www.example.com/body-meta\",\"image\":null,\"context_for_validation\":{\"context\":null},\"errors\":{}}"
+    },
+    "lookups": [
+      "www.example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "www.example.com",
+        "/body-meta",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "og: removed everywhere",
+    "url": "http://www.example.com/og-og",
+    "response": {
+      "status": 200,
+      "body": "{\"title\":\"Doubled\",\"description\":\"d\",\"url\":\"http://www.example.com/og-og\",\"image\":null,\"context_for_validation\":{\"context\":null},\"errors\":{}}"
+    },
+    "lookups": [
+      "www.example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "www.example.com",
+        "/og-og",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "unicode space title with meta charset",
+    "url": "http://www.example.com/unicode-space",
+    "response": {
+      "status": 204
+    },
+    "lookups": [
+      "www.example.com",
+      "example.com",
+      "example.com",
+      "example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "www.example.com",
+        "/unicode-space",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ],
+      [
+        "HEAD",
+        "example.com",
+        "/image.png",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  },
+  {
+    "name": "json escapes",
+    "url": "http://www.example.com/json-escapes",
+    "response": {
+      "status": 200,
+      "body": "{\"title\":\"a b  c\",\"url\":\"http://example.com/?a=1\\u0026b=\\u003c2\\u003e\",\"description\":\"line\\nbreak\\ttab\",\"image\":null,\"context_for_validation\":{\"context\":null},\"errors\":{}}"
+    },
+    "lookups": [
+      "www.example.com",
+      "example.com"
+    ],
+    "requests": [
+      [
+        "GET",
+        "www.example.com",
+        "/json-escapes",
+        "*/*",
+        "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+        "Ruby"
+      ]
+    ]
+  }
+]

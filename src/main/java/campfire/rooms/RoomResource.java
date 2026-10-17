@@ -1,0 +1,82 @@
+package campfire.rooms;
+
+import campfire.view.Pages;
+import campfire.view.View;
+import campfire.web.CurrentRequest;
+import campfire.web.Params;
+import campfire.web.Paths;
+import campfire.web.ResponseCache;
+import gg.jte.generated.precompiled.rooms.JteshowGenerated;
+import io.smallrye.common.annotation.RunOnVirtualThread;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.core.Response;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
+
+/// A room's page, the first page after sign-in.
+@Path("/rooms")
+@RunOnVirtualThread
+@NullMarked
+public class RoomResource {
+    @Inject
+    CurrentRequest request;
+    @Inject
+    RoomAccess access;
+    @Inject
+    RoomService rooms;
+    @Inject
+    Pages pages;
+    @Inject
+    ResponseCache cache;
+
+    /// The user's newest room. Rails fails on a user without rooms, and so does this.
+    @GET
+    public Response index() {
+        Room room = rooms.newestForUser(request.user().id()).orElseThrow(() -> new IllegalStateException("No route matches room_url(nil)"));
+        return request.redirect(Paths.room(room.id()));
+    }
+
+    @GET
+    @Path("{id}")
+    public Response show(@PathParam("id") String id) {
+        return show(id, null);
+    }
+
+    /// The page with a message in the middle (a permalink) rather than the newest page.
+    @GET
+    @Path("{room_id}/@{message_id}")
+    public Response showAt(@PathParam("room_id") String roomId, @PathParam("message_id") String messageId) {
+        return show(roomId, Params.parseId(messageId));
+    }
+
+    private Response show(String id, @Nullable Long aroundMessageId) {
+        Room room = access.room(id, RoomAccess.Scope.ANY);
+        access.rememberVisit(room.id());
+        var cached = cache.lookup(request, "rooms#show");
+        if (cached.isPresent()) return cached.get();
+        View v = pages.view();
+        v.frameLayout = request.isTurboFrame();
+        RoomPage page = rooms.page(v, room, request.user(), aroundMessageId);
+        return pages.render(200, v, (out, view) -> JteshowGenerated.render(out, null, view, page));
+    }
+
+    /// Routed in Rails, but to a controller that doesn't exist.
+    @GET
+    @Path("{room_id}/settings")
+    public Response settings() {
+        throw new IllegalStateException("uninitialized constant Rooms::SettingsController");
+    }
+
+    @DELETE
+    @Path("{id}")
+    public Response destroy(@PathParam("id") String id) {
+        Room room = access.room(id, RoomAccess.Scope.ANY);
+        access.requireAdministrator(room.creatorId());
+        rooms.destroy(room);
+        return request.redirect(Paths.ROOT);
+    }
+}

@@ -1,0 +1,145 @@
+# syntax = docker/dockerfile:1
+#
+# The JVM image on JDK 26 with an AOT cache (JEPs 483, 515 and 516): classes come preloaded and
+# linked, and the JIT starts from method profiles recorded during the build instead of from
+# nothing, so the app reaches full speed sooner after a restart. Same contract as ./Dockerfile.
+#
+#   docker build -f Dockerfile.aot -t once-campfire-java:aot --build-arg APP_VERSION=... .
+#
+# The training run is a fresh install driven through first run, posting and the main pages. It
+# never sees production data, and the cache holds no application state, only classes and profiles.
+
+ARG DEBIAN_RELEASE=trixie
+
+FROM docker.io/library/maven:3.9.11-eclipse-temurin-25 AS build
+WORKDIR /src
+COPY pom.xml ./
+COPY .mvn .mvn
+RUN --mount=type=cache,id=campfire-java-m2,target=/root/.m2 mvn -q -B dependency:go-offline
+COPY assets assets
+COPY reference reference
+COPY src src
+RUN --mount=type=cache,id=campfire-java-m2,target=/root/.m2 mvn -q -B package -DskipTests && \
+    mv target/quarkus-app /out
+
+
+# A runtime with only the modules the app uses. jdeps on the unpacked classes lists more: java.desktop
+# (Quarkus's native-image substitutions, Jakarta EL), java.net.http (jsoup's Jsoup.connect),
+# java.compiler (Vert.x verticle compilation) and java.rmi (JTA), none of which run here. java.sql
+# brings java.logging, java.xml and java.transaction.xa; jdk.zipfs is required by SmallRye's class
+# loader; jdk.net, which jdeps can't see, is looked up reflectively by the JDK's and Netty's socket
+# code. Logging class loads through the parity suite, posting, uploads and TLS unfurls shows nothing
+# else in use except security providers listed in java.security (PKCS#11, XML DSig, Kerberos, ...),
+# which the JDK skips when the image lacks them.
+#
+# jdk.internal.le (JLine) is unused, but works around a JDK 26.0.2.1 bug: a runtime that has java.sql
+# and none of the modules the app class loader defines, such as Temurin's JRE, can't load any AOT
+# cache. ClassLoaders$AppClassLoader's static initializer throws InternalError ("Unexpected
+# exception when loading aot-linked classes"). Linking from jmods instead of the run-time image
+# doesn't help. Any of jdk.internal.le, jdk.attach, jdk.compiler or jdk.jartool avoids it, and
+# jdk.internal.le adds no tool.
+FROM docker.io/library/eclipse-temurin:26-jdk AS runtime
+RUN jlink --add-modules java.base,java.management,java.naming,java.sql,jdk.net,jdk.unsupported,jdk.zipfs,jdk.internal.le \
+      --strip-debug --no-man-pages --no-header-files --generate-cds-archive --output /runtime
+
+
+FROM docker.io/library/debian:${DEBIAN_RELEASE}-slim
+
+RUN apt-get update -qq && \
+    apt-get install --no-install-recommends -y ca-certificates libvips-tools ffmpeg && \
+    rm -rf /var/lib/apt/lists /var/cache/apt/archives
+
+COPY --from=runtime /runtime /opt/java/openjdk
+ENV JAVA_HOME=/opt/java/openjdk PATH=/opt/java/openjdk/bin:$PATH
+
+RUN groupadd --system --gid 1000 rails && \
+    useradd rails --uid 1000 --gid 1000 --create-home --shell /bin/bash
+
+WORKDIR /rails
+COPY --from=build /out /rails/app
+
+# A cache only applies to a JVM started with the same GC and object layout as the training run,
+# so both read their options from this file.
+COPY <<'EOF' /rails/bin/jvm.options
+-XX:+UseZGC
+-XX:+UseCompactObjectHeaders
+-XX:MaxRAMPercentage=50
+--enable-native-access=ALL-UNNAMED
+EOF
+
+COPY --chmod=755 <<'EOF' /rails/bin/boot
+#!/bin/sh
+exec java @/rails/bin/jvm.options -XX:AOTCache=/rails/app/app.aot \
+  -Dquarkus.http.port="${HTTP_PORT:-80}" -jar /rails/app/quarkus-run.jar
+EOF
+
+# Records the cache: the JVM writes app.aot when the trained app exits. A cache only loads on the
+# runtime that recorded it (same build and lib/modules), so training runs here, on the final
+# runtime, not in a JDK stage. curl is only needed here.
+COPY --chmod=755 <<'EOF' /tmp/train
+#!/bin/bash
+set -euo pipefail
+export CAMPFIRE_STORAGE=/tmp/train-storage SECRET_KEY_BASE=$(head -c 64 /dev/urandom | od -An -tx1 | tr -d ' \n') DISABLE_SSL=true
+mkdir -p $CAMPFIRE_STORAGE/db $CAMPFIRE_STORAGE/files
+java @/rails/bin/jvm.options -XX:AOTCacheOutput=/rails/app/app.aot -Dquarkus.http.port=3000 -jar /rails/app/quarkus-run.jar &
+app=$!
+B=http://127.0.0.1:3000
+until curl -fs -o /dev/null $B/up; do sleep 0.2; done
+
+jar=/tmp/cookies
+c() { curl -fs --compressed -b $jar -c $jar "$@"; }
+c -o /dev/null $B/first_run
+c -o /dev/null --data-urlencode 'user[name]=Training Admin' --data-urlencode 'user[email_address]=admin@example.com' \
+  --data-urlencode 'user[password]=training-password' $B/first_run
+room=$(c -o /dev/null -w '%{redirect_url}' $B/ | grep -o '/rooms/[0-9]*' | sed -n 1p)
+words=(lunch plan release coffee deploy review meeting design launch notes)
+for i in $(seq 1 300); do
+  c -o /dev/null --data-urlencode "message[body]=<div>Message $i about the ${words[i % 10]}, with <strong>bold</strong> and <a href=\"https://example.com/$i\">a link</a></div>" \
+    --data-urlencode "message[client_message_id]=training-$i" $B$room/messages
+done
+page=$(c $B$room)
+css=$(grep -o '/assets/[^"]*\.css' <<<"$page" | sed -n 1p)
+avatar=$(grep -o '/users/[^"]*/avatar[^"]*' <<<"$page" | sed -n 1p)
+urls=($room "$room/messages?before=150" /users/me/sidebar "/searches?q=plan" "/searches?q=review" "$avatar" "$css" /up)
+
+# Several clients for about a minute, so the hot paths collect C2-level profiles.
+load() {
+  local end=$((SECONDS + 60)) args=()
+  for _ in $(seq 25); do for u in "${urls[@]}"; do args+=(-o /dev/null "$B$u"); done; done
+  while ((SECONDS < end)); do curl -fs --compressed -b $jar "${args[@]}"; done
+}
+post() {
+  local end=$((SECONDS + 60)) n=1000
+  while ((SECONDS < end)); do
+    n=$((n + 1))
+    curl -fs --compressed -b $jar -o /dev/null --data-urlencode "message[body]=<div>Post $n</div>" \
+      --data-urlencode "message[client_message_id]=training-$n" $B$room/messages
+  done
+}
+for _ in 1 2 3 4; do load & done
+post &
+wait %2 %3 %4 %5 %6
+
+kill -TERM $app
+wait $app || true
+rm -rf $CAMPFIRE_STORAGE $jar
+test -s /rails/app/app.aot
+EOF
+
+RUN apt-get update -qq && apt-get install --no-install-recommends -y curl && \
+    /tmp/train && \
+    apt-get purge -y --auto-remove curl && rm -rf /var/lib/apt/lists /var/cache/apt/archives /tmp/train
+
+RUN mkdir -p /rails/storage/db /rails/storage/files /rails/storage/backups && \
+    chown -R 1000:1000 /rails
+
+USER 1000:1000
+
+ENV RAILS_ENV="production"
+ARG APP_VERSION
+ENV APP_VERSION=$APP_VERSION
+ARG GIT_REVISION
+ENV GIT_REVISION=$GIT_REVISION
+
+EXPOSE 80
+CMD ["bin/boot"]

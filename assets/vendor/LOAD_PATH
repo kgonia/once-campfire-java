@@ -1,0 +1,16 @@
+reference:app/assets/images
+reference:app/assets/sounds
+reference:app/assets/stylesheets
+reference:app/javascript
+reference:vendor/javascript
+vendor:lexxy/app/assets/javascript
+vendor:lexxy/app/assets/stylesheets
+vendor:stimulus-rails/app/assets/javascripts
+vendor:turbo-rails/app/assets/javascripts
+vendor:actiontext/app/assets/javascripts
+vendor:action_text-trix/app/assets/javascripts
+vendor:action_text-trix/app/assets/stylesheets
+vendor:actioncable/app/assets/javascripts
+vendor:activestorage/app/assets/javascripts
+vendor:actionview/app/assets/javascripts
+vendor:lexxy/app/javascript

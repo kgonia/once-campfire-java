@@ -1,0 +1,1487 @@
+{
+ "hosts": {
+  "www.example.com": [
+   [
+    "93.184.216.34"
+   ]
+  ],
+  "example.com": [
+   [
+    "93.184.216.35"
+   ]
+  ],
+  "www.other.com": [
+   [
+    "93.184.216.36"
+   ]
+  ],
+  "fxtwitter.com": [
+   [
+    "93.184.216.37"
+   ]
+  ],
+  "twitter.com": [
+   [
+    "93.184.216.38"
+   ]
+  ],
+  "mixed.example": [
+   [
+    "10.0.0.9",
+    "::1",
+    "93.184.216.39"
+   ]
+  ],
+  "rebind.example": [
+   [
+    "93.184.216.40"
+   ],
+   [
+    "127.0.0.1"
+   ]
+  ],
+  "ipv6.example": [
+   [
+    "2606:2800:220:1:248:1893:25c8:1946"
+   ]
+  ],
+  "private.example": [
+   [
+    "192.168.1.10"
+   ]
+  ],
+  "mapped.example": [
+   [
+    "::ffff:10.0.0.1"
+   ]
+  ],
+  "localhost": [
+   [
+    "127.0.0.1",
+    "::1"
+   ]
+  ]
+ },
+ "public_ips": [
+  "93.184.216.34",
+  "93.184.216.35",
+  "93.184.216.36",
+  "93.184.216.37",
+  "93.184.216.38",
+  "93.184.216.39",
+  "93.184.216.40",
+  "2606:2800:220:1:248:1893:25c8:1946"
+ ],
+ "routes": [
+  {
+   "method": "HEAD",
+   "host": "example.com",
+   "path": "/image.png",
+   "status": 200,
+   "headers": [
+    [
+     "Content-Type",
+     "image/png"
+    ]
+   ]
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/",
+   "status": 200,
+   "headers": [
+    [
+     "Content-Type",
+     "text/html"
+    ]
+   ],
+   "body": "<html><head><meta property=\"og:url\" content=\"https://example.com\"><meta property=\"og:title\" content=\"Hey!\"><meta property=\"og:description\" content=\"desc..\"><meta property=\"og:image\" content=\"http://example.com/image.png\"></head></html>"
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/name",
+   "status": 200,
+   "headers": [
+    [
+     "Content-Type",
+     "text/html"
+    ]
+   ],
+   "body": "<html><head><meta name=\"og:url\" content=\"https://example.com\"><meta name=\"og:title\" content=\"Hey!\"><meta name=\"og:description\" content=\"desc..\"><meta name=\"og:image\" content=\"http://example.com/image.png\"></head></html>"
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/empty",
+   "status": 200,
+   "headers": [
+    [
+     "Content-Type",
+     "text/html"
+    ]
+   ],
+   "body": "<html><head></head></html>"
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/relative-og-url",
+   "status": 200,
+   "headers": [
+    [
+     "Content-Type",
+     "text/html"
+    ]
+   ],
+   "body": "<html><head><meta property=\"og:url\" content=\"/foo\"><meta property=\"og:title\" content=\"Hey!\"><meta property=\"og:description\" content=\"desc..\"><meta property=\"og:image\" content=\"http://example.com/image.png\"></head></html>"
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/no-og-url",
+   "status": 200,
+   "headers": [
+    [
+     "Content-Type",
+     "text/html"
+    ]
+   ],
+   "body": "<html><head><meta property=\"og:title\" content=\"Hey!\"><meta property=\"og:description\" content=\"desc..\"><meta property=\"og:image\" content=\"http://example.com/image.png\"></head></html>"
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/private-og-url",
+   "status": 200,
+   "headers": [
+    [
+     "Content-Type",
+     "text/html"
+    ]
+   ],
+   "body": "<html><head><meta property=\"og:url\" content=\"http://private.example/\"><meta property=\"og:title\" content=\"Hey!\"><meta property=\"og:description\" content=\"desc..\"><meta property=\"og:image\" content=\"http://example.com/image.png\"></head></html>"
+  },
+  {
+   "method": "HEAD",
+   "host": "example.com",
+   "path": "/image.svg",
+   "status": 200,
+   "headers": [
+    [
+     "Content-Type",
+     "image/svg+xml"
+    ]
+   ]
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/svg",
+   "status": 200,
+   "headers": [
+    [
+     "Content-Type",
+     "text/html"
+    ]
+   ],
+   "body": "<html><head><meta property=\"og:url\" content=\"https://example.com\"><meta property=\"og:title\" content=\"Hey!\"><meta property=\"og:description\" content=\"desc..\"><meta property=\"og:image\" content=\"http://example.com/image.svg\"></head></html>"
+  },
+  {
+   "method": "HEAD",
+   "host": "example.com",
+   "path": "/charset.png",
+   "status": 200,
+   "headers": [
+    [
+     "Content-Type",
+     "image/png; charset=binary"
+    ]
+   ]
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/charset-image",
+   "status": 200,
+   "headers": [
+    [
+     "Content-Type",
+     "text/html"
+    ]
+   ],
+   "body": "<html><head><meta property=\"og:url\" content=\"https://example.com\"><meta property=\"og:title\" content=\"Hey!\"><meta property=\"og:description\" content=\"desc..\"><meta property=\"og:image\" content=\"http://example.com/charset.png\"></head></html>"
+  },
+  {
+   "method": "HEAD",
+   "host": "example.com",
+   "path": "/upper.png",
+   "status": 200,
+   "headers": [
+    [
+     "Content-Type",
+     "IMAGE/PNG"
+    ]
+   ]
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/upper-image",
+   "status": 200,
+   "headers": [
+    [
+     "Content-Type",
+     "text/html"
+    ]
+   ],
+   "body": "<html><head><meta property=\"og:url\" content=\"https://example.com\"><meta property=\"og:title\" content=\"Hey!\"><meta property=\"og:description\" content=\"desc..\"><meta property=\"og:image\" content=\"http://example.com/upper.png\"></head></html>"
+  },
+  {
+   "method": "HEAD",
+   "host": "example.com",
+   "path": "/missing.png",
+   "status": 404,
+   "headers": [
+    [
+     "Content-Type",
+     "image/png"
+    ]
+   ]
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/404-image",
+   "status": 200,
+   "headers": [
+    [
+     "Content-Type",
+     "text/html"
+    ]
+   ],
+   "body": "<html><head><meta property=\"og:url\" content=\"https://example.com\"><meta property=\"og:title\" content=\"Hey!\"><meta property=\"og:description\" content=\"desc..\"><meta property=\"og:image\" content=\"http://example.com/missing.png\"></head></html>"
+  },
+  {
+   "method": "HEAD",
+   "host": "example.com",
+   "path": "/redirected.png",
+   "status": 302,
+   "headers": [
+    [
+     "Location",
+     "http://example.com/image.png"
+    ]
+   ]
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/redirected-image",
+   "status": 200,
+   "headers": [
+    [
+     "Content-Type",
+     "text/html"
+    ]
+   ],
+   "body": "<html><head><meta property=\"og:url\" content=\"https://example.com\"><meta property=\"og:title\" content=\"Hey!\"><meta property=\"og:description\" content=\"desc..\"><meta property=\"og:image\" content=\"http://example.com/redirected.png\"></head></html>"
+  },
+  {
+   "method": "HEAD",
+   "host": "example.com",
+   "path": "/private-redirect.png",
+   "status": 302,
+   "headers": [
+    [
+     "Location",
+     "http://10.0.0.1/image.png"
+    ]
+   ]
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/private-redirect-image",
+   "status": 200,
+   "headers": [
+    [
+     "Content-Type",
+     "text/html"
+    ]
+   ],
+   "body": "<html><head><meta property=\"og:url\" content=\"https://example.com\"><meta property=\"og:title\" content=\"Hey!\"><meta property=\"og:description\" content=\"desc..\"><meta property=\"og:image\" content=\"http://example.com/private-redirect.png\"></head></html>"
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/bad-image-0",
+   "status": 200,
+   "headers": [
+    [
+     "Content-Type",
+     "text/html"
+    ]
+   ],
+   "body": "<html><head><meta property=\"og:url\" content=\"https://example.com\"><meta property=\"og:title\" content=\"Hey!\"><meta property=\"og:description\" content=\"desc..\"><meta property=\"og:image\" content=\"/image.png\"></head></html>"
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/bad-image-1",
+   "status": 200,
+   "headers": [
+    [
+     "Content-Type",
+     "text/html"
+    ]
+   ],
+   "body": "<html><head><meta property=\"og:url\" content=\"https://example.com\"><meta property=\"og:title\" content=\"Hey!\"><meta property=\"og:description\" content=\"desc..\"><meta property=\"og:image\" content=\"foo\"></head></html>"
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/bad-image-2",
+   "status": 200,
+   "headers": [
+    [
+     "Content-Type",
+     "text/html"
+    ]
+   ],
+   "body": "<html><head><meta property=\"og:url\" content=\"https://example.com\"><meta property=\"og:title\" content=\"Hey!\"><meta property=\"og:description\" content=\"desc..\"><meta property=\"og:image\" content=\"https/incorrect\"></head></html>"
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/bad-image-3",
+   "status": 200,
+   "headers": [
+    [
+     "Content-Type",
+     "text/html"
+    ]
+   ],
+   "body": "<html><head><meta property=\"og:url\" content=\"https://example.com\"><meta property=\"og:title\" content=\"Hey!\"><meta property=\"og:description\" content=\"desc..\"><meta property=\"og:image\" content=\"~/etc/password\"></head></html>"
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/bad-image-4",
+   "status": 200,
+   "headers": [
+    [
+     "Content-Type",
+     "text/html"
+    ]
+   ],
+   "body": "<html><head><meta property=\"og:url\" content=\"https://example.com\"><meta property=\"og:title\" content=\"Hey!\"><meta property=\"og:description\" content=\"desc..\"><meta property=\"og:image\" content=\"http://10.0.0.1/image.png\"></head></html>"
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/bad-image-5",
+   "status": 200,
+   "headers": [
+    [
+     "Content-Type",
+     "text/html"
+    ]
+   ],
+   "body": "<html><head><meta property=\"og:url\" content=\"https://example.com\"><meta property=\"og:title\" content=\"Hey!\"><meta property=\"og:description\" content=\"desc..\"><meta property=\"og:image\" content=\"ftp://example.com/x.png\"></head></html>"
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/bad-image-6",
+   "status": 200,
+   "headers": [
+    [
+     "Content-Type",
+     "text/html"
+    ]
+   ],
+   "body": "<html><head><meta property=\"og:url\" content=\"https://example.com\"><meta property=\"og:title\" content=\"Hey!\"><meta property=\"og:description\" content=\"desc..\"><meta property=\"og:image\" content=\"http://example.com/a b.png\"></head></html>"
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/no-image",
+   "status": 200,
+   "headers": [
+    [
+     "Content-Type",
+     "text/html"
+    ]
+   ],
+   "body": "<html><head><meta property=\"og:url\" content=\"https://example.com\"><meta property=\"og:title\" content=\"Hey!\"><meta property=\"og:description\" content=\"desc..\"></head></html>"
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/script",
+   "status": 200,
+   "headers": [
+    [
+     "Content-Type",
+     "text/html"
+    ]
+   ],
+   "body": "<html><head><meta property=\"og:url\" content=\"https://example.com\"><meta property=\"og:title\" content=\"Hey!&lt;script&gt;alert('hi')&lt;/script&gt;\"><meta property=\"og:description\" content=\"Hello<script>alert('hi')</script>\"><meta property=\"og:image\" content=\"http://example.com/image.png\"></head></html>"
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/encoded",
+   "status": 200,
+   "headers": [
+    [
+     "Content-Type",
+     "text/html"
+    ]
+   ],
+   "body": "<html><head><meta property=\"og:url\" content=\"https://example.com\"><meta property=\"og:title\" content=\"Hey!&#x3c;&#x2f;&#x73;&#x63;&#x72;&#x69;&#x70;&#x74;&#x3e;&#x3c;&#x69;&#x6d;&#x67;&#x20;&#x73;&#x72;&#x63;&#x3d;&#x61;&#x20;&#x6f;&#x6e;&#x65;&#x72;&#x72;&#x6f;&#x72;&#x3d;&#x70;&#x72;&#x6f;&#x6d;&#x70;&#x74;&#x28;&#x31;&#x29;&#x3e;\"><meta property=\"og:description\" content=\"&#x3c;&#x2f;&#x73;&#x63;&#x72;&#x69;&#x70;&#x74;&#x3e;&#x3c;&#x69;&#x6d;&#x67;&#x20;&#x73;&#x72;&#x63;&#x3d;&#x61;&#x20;&#x6f;&#x6e;&#x65;&#x72;&#x72;&#x6f;&#x72;&#x3d;&#x70;&#x72;&#x6f;&#x6d;&#x70;&#x74;&#x28;&#x31;&#x29;&#x3e;desc..\"><meta property=\"og:image\" content=\"http://example.com/image.png\"></head></html>"
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/only-markup",
+   "status": 200,
+   "headers": [
+    [
+     "Content-Type",
+     "text/html"
+    ]
+   ],
+   "body": "<html><head><meta property=\"og:url\" content=\"https://example.com\"><meta property=\"og:title\" content=\"<img src='x' onerror='alert(document.domain)'/>\"><meta property=\"og:description\" content=\"<img src='x' onerror='alert(document.domain)'/>\"><meta property=\"og:image\" content=\"http://example.com/image.png\"></head></html>"
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/entities",
+   "status": 200,
+   "headers": [
+    [
+     "Content-Type",
+     "text/html"
+    ]
+   ],
+   "body": "<html><head><meta property=\"og:url\" content=\"https://example.com\"><meta property=\"og:title\" content=\"Tom &amp; Jerry &lt;3 &nbsp;x\"><meta property=\"og:description\" content=\"a &gt; b \"q\" 'a'\"><meta property=\"og:image\" content=\"http://example.com/image.png\"></head></html>"
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/whitespace",
+   "status": 200,
+   "headers": [
+    [
+     "Content-Type",
+     "text/html"
+    ]
+   ],
+   "body": "<html><head><meta property=\"og:url\" content=\"https://example.com\"><meta property=\"og:title\" content=\"   \"><meta property=\"og:description\" content=\"  x  \"><meta property=\"og:image\" content=\"http://example.com/image.png\"></head></html>"
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/plain",
+   "status": 200,
+   "headers": [
+    [
+     "Content-Type",
+     "text/plain"
+    ]
+   ],
+   "body": "I'm not HTML!"
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/no-content-type",
+   "status": 200,
+   "headers": [],
+   "body": "<html><head><meta property=\"og:url\" content=\"https://example.com\"><meta property=\"og:title\" content=\"Hey!\"><meta property=\"og:description\" content=\"desc..\"><meta property=\"og:image\" content=\"http://example.com/image.png\"></head></html>"
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/forbidden",
+   "status": 403,
+   "headers": [
+    [
+     "Content-Type",
+     "text/html"
+    ]
+   ],
+   "body": "<html><head><meta property=\"og:url\" content=\"https://example.com\"><meta property=\"og:title\" content=\"Hey!\"><meta property=\"og:description\" content=\"desc..\"><meta property=\"og:image\" content=\"http://example.com/image.png\"></head></html>"
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/created",
+   "status": 201,
+   "headers": [
+    [
+     "Content-Type",
+     "text/html"
+    ]
+   ],
+   "body": "<html><head><meta property=\"og:url\" content=\"https://example.com\"><meta property=\"og:title\" content=\"Hey!\"><meta property=\"og:description\" content=\"desc..\"><meta property=\"og:image\" content=\"http://example.com/image.png\"></head></html>"
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/html-charset",
+   "status": 200,
+   "headers": [
+    [
+     "Content-Type",
+     "Text/HTML ; charset=utf-8"
+    ]
+   ],
+   "body": "<html><head><meta property=\"og:url\" content=\"https://example.com\"><meta property=\"og:title\" content=\"Hey!\"><meta property=\"og:description\" content=\"desc..\"><meta property=\"og:image\" content=\"http://example.com/image.png\"></head></html>"
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/redirect",
+   "status": 302,
+   "headers": [
+    [
+     "Location",
+     "http://www.other.com/"
+    ]
+   ]
+  },
+  {
+   "method": "GET",
+   "host": "www.other.com",
+   "path": "/",
+   "status": 200,
+   "headers": [
+    [
+     "Content-Type",
+     "text/html"
+    ]
+   ],
+   "body": "<html><head><meta property=\"og:url\" content=\"https://example.com\"><meta property=\"og:title\" content=\"Other\"><meta property=\"og:description\" content=\"desc..\"><meta property=\"og:image\" content=\"http://example.com/image.png\"></head></html>"
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/relative-redirect",
+   "status": 301,
+   "headers": [
+    [
+     "Location",
+     "/"
+    ]
+   ]
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/redirect-no-location",
+   "status": 302,
+   "headers": []
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/not-modified",
+   "status": 304,
+   "headers": []
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/redirect-private-host",
+   "status": 302,
+   "headers": [
+    [
+     "Location",
+     "http://private.example/"
+    ]
+   ]
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/redirect-private-ip",
+   "status": 307,
+   "headers": [
+    [
+     "Location",
+     "http://169.254.169.254/latest/meta-data/"
+    ]
+   ]
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/redirect-localhost",
+   "status": 302,
+   "headers": [
+    [
+     "Location",
+     "http://localhost/"
+    ]
+   ]
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/redirect-ftp",
+   "status": 302,
+   "headers": [
+    [
+     "Location",
+     "ftp://www.other.com/"
+    ]
+   ]
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/loop",
+   "status": 302,
+   "headers": [
+    [
+     "Location",
+     "http://www.example.com/loop"
+    ]
+   ]
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/chain/0",
+   "status": 302,
+   "headers": [
+    [
+     "Location",
+     "http://www.example.com/chain/1"
+    ]
+   ]
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/chain/1",
+   "status": 302,
+   "headers": [
+    [
+     "Location",
+     "http://www.example.com/chain/2"
+    ]
+   ]
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/chain/2",
+   "status": 302,
+   "headers": [
+    [
+     "Location",
+     "http://www.example.com/chain/3"
+    ]
+   ]
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/chain/3",
+   "status": 302,
+   "headers": [
+    [
+     "Location",
+     "http://www.example.com/chain/4"
+    ]
+   ]
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/chain/4",
+   "status": 302,
+   "headers": [
+    [
+     "Location",
+     "http://www.example.com/chain/5"
+    ]
+   ]
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/chain/5",
+   "status": 302,
+   "headers": [
+    [
+     "Location",
+     "http://www.example.com/chain/6"
+    ]
+   ]
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/chain/6",
+   "status": 302,
+   "headers": [
+    [
+     "Location",
+     "http://www.example.com/chain/7"
+    ]
+   ]
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/chain/7",
+   "status": 302,
+   "headers": [
+    [
+     "Location",
+     "http://www.example.com/chain/8"
+    ]
+   ]
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/chain/8",
+   "status": 302,
+   "headers": [
+    [
+     "Location",
+     "http://www.example.com/chain/9"
+    ]
+   ]
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/chain/9",
+   "status": 302,
+   "headers": [
+    [
+     "Location",
+     "http://www.example.com/chain/10"
+    ]
+   ]
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/chain/10",
+   "status": 200,
+   "headers": [
+    [
+     "Content-Type",
+     "text/html"
+    ]
+   ],
+   "body": "<html><head><meta property=\"og:url\" content=\"https://example.com\"><meta property=\"og:title\" content=\"Chain end\"><meta property=\"og:description\" content=\"desc..\"><meta property=\"og:image\" content=\"http://example.com/image.png\"></head></html>"
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/rebind-redirect",
+   "status": 302,
+   "headers": [
+    [
+     "Location",
+     "http://rebind.example/"
+    ]
+   ]
+  },
+  {
+   "method": "GET",
+   "host": "rebind.example",
+   "path": "/",
+   "status": 200,
+   "headers": [
+    [
+     "Content-Type",
+     "text/html"
+    ]
+   ],
+   "body": "<html><head><meta property=\"og:url\" content=\"https://example.com\"><meta property=\"og:title\" content=\"Pinned\"><meta property=\"og:description\" content=\"desc..\"><meta property=\"og:image\" content=\"http://example.com/image.png\"></head></html>"
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/big",
+   "status": 200,
+   "headers": [
+    [
+     "Content-Type",
+     "text/html"
+    ]
+   ],
+   "body_repeat": [
+    "x",
+    5242881
+   ],
+   "chunked": true
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/big-length",
+   "status": 200,
+   "headers": [
+    [
+     "Content-Type",
+     "text/html"
+    ],
+    [
+     "Content-Length",
+     "5242881"
+    ]
+   ],
+   "body": "xxxxxxxxxxxxxxxx"
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/exact",
+   "status": 200,
+   "headers": [
+    [
+     "Content-Type",
+     "text/html"
+    ]
+   ],
+   "body": "<html><head><meta property=\"og:url\" content=\"https://example.com\"><meta property=\"og:title\" content=\"Exact\"><meta property=\"og:description\" content=\"desc..\"><meta property=\"og:image\" content=\"http://example.com/image.png\"></head></html>",
+   "pad_to": 5242880,
+   "chunked": true
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/gzip",
+   "status": 200,
+   "headers": [
+    [
+     "Content-Type",
+     "text/html"
+    ]
+   ],
+   "body": "<html><head><meta property=\"og:url\" content=\"https://example.com\"><meta property=\"og:title\" content=\"Zipped\"><meta property=\"og:description\" content=\"desc..\"><meta property=\"og:image\" content=\"http://example.com/image.png\"></head></html>",
+   "gzip": true
+  },
+  {
+   "method": "GET",
+   "host": "mixed.example",
+   "path": "/",
+   "status": 200,
+   "headers": [
+    [
+     "Content-Type",
+     "text/html"
+    ]
+   ],
+   "body": "<html><head><meta property=\"og:url\" content=\"https://example.com\"><meta property=\"og:title\" content=\"Mixed\"><meta property=\"og:description\" content=\"desc..\"><meta property=\"og:image\" content=\"http://example.com/image.png\"></head></html>"
+  },
+  {
+   "method": "GET",
+   "host": "ipv6.example",
+   "path": "/",
+   "status": 200,
+   "headers": [
+    [
+     "Content-Type",
+     "text/html"
+    ]
+   ],
+   "body": "<html><head><meta property=\"og:url\" content=\"https://example.com\"><meta property=\"og:title\" content=\"IPv6\"><meta property=\"og:description\" content=\"desc..\"><meta property=\"og:image\" content=\"http://example.com/image.png\"></head></html>"
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/archive.tar.gzip",
+   "status": 200,
+   "headers": [
+    [
+     "Content-Type",
+     "text/html"
+    ]
+   ],
+   "body": "<html><head><meta property=\"og:url\" content=\"https://example.com\"><meta property=\"og:title\" content=\"Not an archive\"><meta property=\"og:description\" content=\"desc..\"><meta property=\"og:image\" content=\"http://example.com/image.png\"></head></html>"
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/UPPER.MP4",
+   "status": 200,
+   "headers": [
+    [
+     "Content-Type",
+     "text/html"
+    ]
+   ],
+   "body": "<html><head><meta property=\"og:url\" content=\"https://example.com\"><meta property=\"og:title\" content=\"Upper\"><meta property=\"og:description\" content=\"desc..\"><meta property=\"og:image\" content=\"http://example.com/image.png\"></head></html>"
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/port",
+   "status": 200,
+   "headers": [
+    [
+     "Content-Type",
+     "text/html"
+    ]
+   ],
+   "body": "<html><head><meta property=\"og:url\" content=\"https://example.com\"><meta property=\"og:title\" content=\"Port\"><meta property=\"og:description\" content=\"desc..\"><meta property=\"og:image\" content=\"http://example.com/image.png\"></head></html>"
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/query?a=1&b=2",
+   "status": 200,
+   "headers": [
+    [
+     "Content-Type",
+     "text/html"
+    ]
+   ],
+   "body": "<html><head><meta property=\"og:url\" content=\"https://example.com\"><meta property=\"og:title\" content=\"Query\"><meta property=\"og:description\" content=\"desc..\"><meta property=\"og:image\" content=\"http://example.com/image.png\"></head></html>"
+  },
+  {
+   "method": "GET",
+   "host": "fxtwitter.com",
+   "path": "/dhh/status/1",
+   "status": 200,
+   "headers": [
+    [
+     "Content-Type",
+     "text/html"
+    ]
+   ],
+   "body": "<html><head><meta property=\"og:title\" content=\"DHH 😀 “quoted”\"><meta property=\"og:description\" content=\"tweet é\"></head></html>"
+  },
+  {
+   "method": "GET",
+   "host": "twitter.com",
+   "path": "/",
+   "status": 200,
+   "headers": [
+    [
+     "Content-Type",
+     "text/html"
+    ]
+   ],
+   "body": "<html><head><meta property=\"og:url\" content=\"https://example.com\"><meta property=\"og:title\" content=\"Twitter root\"><meta property=\"og:description\" content=\"desc..\"><meta property=\"og:image\" content=\"http://example.com/image.png\"></head></html>"
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/utf8-no-meta",
+   "status": 200,
+   "headers": [
+    [
+     "Content-Type",
+     "text/html"
+    ]
+   ],
+   "body": "<html><head><meta property=\"og:title\" content=\"Café 😀 ok\"><meta property=\"og:description\" content=\"naïve &eacute; &#233; x\"></head></html>"
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/utf8-meta",
+   "status": 200,
+   "headers": [
+    [
+     "Content-Type",
+     "text/html"
+    ]
+   ],
+   "body": "<html><head><meta charset=\"utf-8\"><meta property=\"og:title\" content=\"Café 😀 ok\"><meta property=\"og:description\" content=\"naïve &eacute; x\"></head></html>"
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/http-equiv",
+   "status": 200,
+   "headers": [
+    [
+     "Content-Type",
+     "text/html"
+    ]
+   ],
+   "body": "<html><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"><meta property=\"og:title\" content=\"Café\"><meta property=\"og:description\" content=\"d\"></head></html>"
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/latin1",
+   "status": 200,
+   "headers": [
+    [
+     "Content-Type",
+     "text/html"
+    ]
+   ],
+   "body_b64": "PGh0bWw+PGhlYWQ+PG1ldGEgY2hhcnNldD0iaXNvLTg4NTktMSI+PG1ldGEgcHJvcGVydHk9Im9nOnRpdGxlIiBjb250ZW50PSJDYWbpIj48bWV0YSBwcm9wZXJ0eT0ib2c6ZGVzY3JpcHRpb24iIGNvbnRlbnQ9ImQiPjwvaGVhZD48L2h0bWw+"
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/invalid-utf8",
+   "status": 200,
+   "headers": [
+    [
+     "Content-Type",
+     "text/html"
+    ]
+   ],
+   "body_b64": "PGh0bWw+PGhlYWQ+PG1ldGEgY2hhcnNldD0idXRmLTgiPjxtZXRhIHByb3BlcnR5PSJvZzp0aXRsZSIgY29udGVudD0iQmFkIP/+IGJ5dGVzIj48bWV0YSBwcm9wZXJ0eT0ib2c6ZGVzY3JpcHRpb24iIGNvbnRlbnQ9ImQiPjwvaGVhZD48L2h0bWw+"
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/duplicates",
+   "status": 200,
+   "headers": [
+    [
+     "Content-Type",
+     "text/html"
+    ]
+   ],
+   "body": "<html><head><meta property=\"og:image\" content=\"http://example.com/image.png\"><meta property=\"og:title\" content=\"First\"><meta property=\"og:description\" content=\"d\"><meta property=\"og:title\" content=\"Second\"><meta property=\"og:type\" content=\"article\"></head></html>"
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/mixed-attrs",
+   "status": 200,
+   "headers": [
+    [
+     "Content-Type",
+     "text/html"
+    ]
+   ],
+   "body": "<html><head><meta property=\"description\" name=\"og:title\" content=\"Wrong\"><meta name=\"og:title\" content=\"Right\"><meta property=\"og:description\" content=\"d\"><meta property=\"OG:title\" content=\"Upper\"></head></html>"
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/body-meta",
+   "status": 200,
+   "headers": [
+    [
+     "Content-Type",
+     "text/html"
+    ]
+   ],
+   "body": "<html><head></head><body><div><meta property=\"og:title\" content=\"In body\"><meta property=\"og:description\" content=\"d\"></div></body></html>"
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/og-og",
+   "status": 200,
+   "headers": [
+    [
+     "Content-Type",
+     "text/html"
+    ]
+   ],
+   "body": "<html><head><meta property=\"og:og:title\" content=\"Doubled\"><meta property=\"og:description\" content=\"d\"></head></html>"
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/unicode-space",
+   "status": 200,
+   "headers": [
+    [
+     "Content-Type",
+     "text/html"
+    ]
+   ],
+   "body": "<html><head><meta property=\"og:url\" content=\"https://example.com\"><meta property=\"og:title\" content=\"  \"><meta property=\"og:description\" content=\"d\"><meta property=\"og:image\" content=\"http://example.com/image.png\"><meta charset=\"utf-8\"></head></html>"
+  },
+  {
+   "method": "GET",
+   "host": "www.example.com",
+   "path": "/json-escapes",
+   "status": 200,
+   "headers": [
+    [
+     "Content-Type",
+     "text/html"
+    ]
+   ],
+   "body": "<html><head><meta charset=\"utf-8\"><meta property=\"og:title\" content=\"a b &lt;/script&gt; c\"><meta property=\"og:description\" content=\"line\nbreak\ttab\"><meta property=\"og:url\" content=\"http://example.com/?a=1&amp;b=<2>\"></head></html>"
+  }
+ ],
+ "cases": [
+  {
+   "name": "success",
+   "url": "http://www.example.com/"
+  },
+  {
+   "name": "name attribute",
+   "url": "http://www.example.com/name"
+  },
+  {
+   "name": "missing tags",
+   "url": "http://www.example.com/empty"
+  },
+  {
+   "name": "relative og:url falls back",
+   "url": "http://www.example.com/relative-og-url"
+  },
+  {
+   "name": "missing og:url falls back",
+   "url": "http://www.example.com/no-og-url"
+  },
+  {
+   "name": "private og:url falls back",
+   "url": "http://www.example.com/private-og-url"
+  },
+  {
+   "name": "svg image dropped",
+   "url": "http://www.example.com/svg"
+  },
+  {
+   "name": "image content type with params dropped",
+   "url": "http://www.example.com/charset-image"
+  },
+  {
+   "name": "uppercase image content type accepted",
+   "url": "http://www.example.com/upper-image"
+  },
+  {
+   "name": "image HEAD status is not checked",
+   "url": "http://www.example.com/404-image"
+  },
+  {
+   "name": "image HEAD follows redirects",
+   "url": "http://www.example.com/redirected-image"
+  },
+  {
+   "name": "image redirect to private network dropped",
+   "url": "http://www.example.com/private-redirect-image"
+  },
+  {
+   "name": "invalid image url /image.png",
+   "url": "http://www.example.com/bad-image-0"
+  },
+  {
+   "name": "invalid image url foo",
+   "url": "http://www.example.com/bad-image-1"
+  },
+  {
+   "name": "invalid image url https/incorrect",
+   "url": "http://www.example.com/bad-image-2"
+  },
+  {
+   "name": "invalid image url ~/etc/password",
+   "url": "http://www.example.com/bad-image-3"
+  },
+  {
+   "name": "invalid image url http://10.0.0.1/image.png",
+   "url": "http://www.example.com/bad-image-4"
+  },
+  {
+   "name": "invalid image url ftp://example.com/x.png",
+   "url": "http://www.example.com/bad-image-5"
+  },
+  {
+   "name": "invalid image url http://example.com/a b.png",
+   "url": "http://www.example.com/bad-image-6"
+  },
+  {
+   "name": "no image",
+   "url": "http://www.example.com/no-image"
+  },
+  {
+   "name": "script stripped",
+   "url": "http://www.example.com/script"
+  },
+  {
+   "name": "encoded tags removed",
+   "url": "http://www.example.com/encoded"
+  },
+  {
+   "name": "only markup is blank",
+   "url": "http://www.example.com/only-markup"
+  },
+  {
+   "name": "entities are escaped",
+   "url": "http://www.example.com/entities"
+  },
+  {
+   "name": "whitespace title skipped",
+   "url": "http://www.example.com/whitespace"
+  },
+  {
+   "name": "non html",
+   "url": "http://www.example.com/plain"
+  },
+  {
+   "name": "missing content type",
+   "url": "http://www.example.com/no-content-type"
+  },
+  {
+   "name": "403",
+   "url": "http://www.example.com/forbidden"
+  },
+  {
+   "name": "201 is not OK",
+   "url": "http://www.example.com/created"
+  },
+  {
+   "name": "content type params and case",
+   "url": "http://www.example.com/html-charset"
+  },
+  {
+   "name": "redirect followed",
+   "url": "http://www.example.com/redirect"
+  },
+  {
+   "name": "relative redirect denied",
+   "url": "http://www.example.com/relative-redirect"
+  },
+  {
+   "name": "redirect without location",
+   "url": "http://www.example.com/redirect-no-location"
+  },
+  {
+   "name": "304 is a redirection",
+   "url": "http://www.example.com/not-modified"
+  },
+  {
+   "name": "redirect to private host",
+   "url": "http://www.example.com/redirect-private-host"
+  },
+  {
+   "name": "redirect to link-local ip",
+   "url": "http://www.example.com/redirect-private-ip"
+  },
+  {
+   "name": "redirect to localhost",
+   "url": "http://www.example.com/redirect-localhost"
+  },
+  {
+   "name": "redirect to ftp",
+   "url": "http://www.example.com/redirect-ftp"
+  },
+  {
+   "name": "redirect loop",
+   "url": "http://www.example.com/loop"
+  },
+  {
+   "name": "nine redirects are followed",
+   "url": "http://www.example.com/chain/1"
+  },
+  {
+   "name": "ten redirects are too many",
+   "url": "http://www.example.com/chain/0"
+  },
+  {
+   "name": "dns rebinding after redirect is pinned",
+   "url": "http://www.example.com/rebind-redirect"
+  },
+  {
+   "name": "dns rebinding is pinned",
+   "url": "http://rebind.example/"
+  },
+  {
+   "name": "large chunked body",
+   "url": "http://www.example.com/big"
+  },
+  {
+   "name": "large content length",
+   "url": "http://www.example.com/big-length"
+  },
+  {
+   "name": "body of exactly 5MB",
+   "url": "http://www.example.com/exact"
+  },
+  {
+   "name": "gzip body",
+   "url": "http://www.example.com/gzip"
+  },
+  {
+   "name": "private host",
+   "url": "http://private.example/"
+  },
+  {
+   "name": "localhost",
+   "url": "http://localhost/"
+  },
+  {
+   "name": "loopback literal",
+   "url": "http://127.0.0.1/"
+  },
+  {
+   "name": "10/8 literal",
+   "url": "http://10.1.2.3/"
+  },
+  {
+   "name": "link-local metadata",
+   "url": "http://169.254.169.254/latest/meta-data/"
+  },
+  {
+   "name": "ipv6 loopback",
+   "url": "http://[::1]/"
+  },
+  {
+   "name": "ipv6 ula",
+   "url": "http://[fd00::1]/"
+  },
+  {
+   "name": "ipv4 mapped ipv6",
+   "url": "http://[::ffff:192.168.1.1]/"
+  },
+  {
+   "name": "decimal ip",
+   "url": "http://2130706433/"
+  },
+  {
+   "name": "hex ip",
+   "url": "http://0x7f.1/"
+  },
+  {
+   "name": "unresolvable",
+   "url": "http://nowhere.example/"
+  },
+  {
+   "name": "mapped private dns answer",
+   "url": "http://mapped.example/"
+  },
+  {
+   "name": "mixed dns answers use the public one",
+   "url": "http://mixed.example/"
+  },
+  {
+   "name": "ipv6 public host",
+   "url": "http://ipv6.example/"
+  },
+  {
+   "name": "underscore host",
+   "url": "http://under_score.example/"
+  },
+  {
+   "name": "media url not fetched",
+   "url": "http://www.example.com/video.mp4"
+  },
+  {
+   "name": "archive url not fetched",
+   "url": "http://www.example.com/archive.tar.gz?x=1"
+  },
+  {
+   "name": "extension needs a word boundary",
+   "url": "http://www.example.com/archive.tar.gzip"
+  },
+  {
+   "name": "extension match is case sensitive",
+   "url": "http://www.example.com/UPPER.MP4"
+  },
+  {
+   "name": "ftp url",
+   "url": "ftp://www.example.com/"
+  },
+  {
+   "name": "not a url",
+   "url": "httpfake"
+  },
+  {
+   "name": "space",
+   "url": " foo"
+  },
+  {
+   "name": "non ascii url",
+   "url": "http://www.example.com/é"
+  },
+  {
+   "name": "mailto raises",
+   "url": "mailto:foo"
+  },
+  {
+   "name": "uppercase scheme",
+   "url": "HTTP://www.example.com/"
+  },
+  {
+   "name": "explicit port",
+   "url": "http://www.example.com:8080/port"
+  },
+  {
+   "name": "query string and fragment",
+   "url": "http://www.example.com/query?a=1&b=2#frag"
+  },
+  {
+   "name": "twitter",
+   "url": "http://twitter.com/dhh/status/1"
+  },
+  {
+   "name": "x.com",
+   "url": "http://x.com/dhh/status/1"
+  },
+  {
+   "name": "www.x.com",
+   "url": "http://www.x.com/dhh/status/1"
+  },
+  {
+   "name": "twitter root is not a tweet",
+   "url": "http://twitter.com/"
+  },
+  {
+   "name": "fxtwitter failure raises",
+   "url": "http://twitter.com/missing/status/2"
+  },
+  {
+   "name": "non-ascii stripped without meta charset",
+   "url": "http://www.example.com/utf8-no-meta"
+  },
+  {
+   "name": "non-ascii kept with meta charset",
+   "url": "http://www.example.com/utf8-meta"
+  },
+  {
+   "name": "http-equiv charset",
+   "url": "http://www.example.com/http-equiv"
+  },
+  {
+   "name": "latin-1 with meta charset",
+   "url": "http://www.example.com/latin1"
+  },
+  {
+   "name": "invalid utf-8 with meta charset",
+   "url": "http://www.example.com/invalid-utf8"
+  },
+  {
+   "name": "duplicates and key order",
+   "url": "http://www.example.com/duplicates"
+  },
+  {
+   "name": "property wins over name",
+   "url": "http://www.example.com/mixed-attrs"
+  },
+  {
+   "name": "meta in body",
+   "url": "http://www.example.com/body-meta"
+  },
+  {
+   "name": "og: removed everywhere",
+   "url": "http://www.example.com/og-og"
+  },
+  {
+   "name": "unicode space title with meta charset",
+   "url": "http://www.example.com/unicode-space"
+  },
+  {
+   "name": "json escapes",
+   "url": "http://www.example.com/json-escapes"
+  }
+ ]
+}

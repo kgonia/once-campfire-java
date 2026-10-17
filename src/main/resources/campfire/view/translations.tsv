@@ -1,0 +1,91 @@
+email_address	🇺🇸	Enter your email address
+email_address	🇪🇸	Introduce tu correo electrónico
+email_address	🇫🇷	Entrez votre adresse courriel
+email_address	🇮🇳	अपना ईमेल पता दर्ज करें
+email_address	🇩🇪	Geben Sie Ihre E-Mail-Adresse ein
+email_address	🇧🇷	Insira seu endereço de email
+email_address	🇯🇵	メールアドレスを入力してください
+password	🇺🇸	Enter your password
+password	🇪🇸	Introduce tu contraseña
+password	🇫🇷	Saisissez votre mot de passe
+password	🇮🇳	अपना पासवर्ड दर्ज करें
+password	🇩🇪	Geben Sie Ihr Passwort ein
+password	🇧🇷	Insira sua senha
+password	🇯🇵	パスワードを入力してください
+update_password	🇺🇸	Change password
+update_password	🇪🇸	Cambiar contraseña
+update_password	🇫🇷	Changer le mot de passe
+update_password	🇮🇳	पासवर्ड बदलें
+update_password	🇩🇪	Passwort ändern
+update_password	🇧🇷	Alterar senha
+update_password	🇯🇵	パスワードを変更
+user_name	🇺🇸	Enter your name
+user_name	🇪🇸	Introduce tu nombre
+user_name	🇫🇷	Entrez votre nom
+user_name	🇮🇳	अपना नाम दर्ज करें
+user_name	🇩🇪	Geben Sie Ihren Namen ein
+user_name	🇧🇷	Insira seu nome
+user_name	🇯🇵	お名前を入力してください
+account_name	🇺🇸	Name this account
+account_name	🇪🇸	Nombre de esta cuenta
+account_name	🇫🇷	Nommez ce compte
+account_name	🇮🇳	इस खाते का नाम दें
+account_name	🇩🇪	Benennen Sie dieses Konto
+account_name	🇧🇷	Dê um nome a essa conta
+account_name	🇯🇵	アカウントに名前を付ける
+room_name	🇺🇸	Name the room
+room_name	🇪🇸	Nombrar la sala
+room_name	🇫🇷	Nommez la salle
+room_name	🇮🇳	कमरे का नाम दें
+room_name	🇩🇪	Geben Sie dem Raum einen Namen
+room_name	🇧🇷	Dê um nome a essa sala
+room_name	🇯🇵	ルームに名前を付ける
+invite_message	🇺🇸	Welcome to Campfire. To invite some people to chat with you, share the join link below.
+invite_message	🇪🇸	Bienvenido a Campfire. Para invitar a algunas personas a chatear contigo, comparte el enlace de unión que se encuentra a continuación.
+invite_message	🇫🇷	Bienvenue sur Campfire. Pour inviter des personnes à discuter avec vous, partagez le lien pour rejoindre ci-dessous.
+invite_message	🇮🇳	Campfire में आपका स्वागत है। अधिक लोगों को चैट के लिए आमंत्रित करने के लिए, नीचे जुड़ने का लिंक साझा करें।
+invite_message	🇩🇪	Willkommen bei Campfire. Um einige Personen zum Chatten einzuladen, teilen Sie den unten stehenden Beitrittslink.
+invite_message	🇧🇷	Boas vindas ao Campfire. Para convidar pessoas para conversarem com você, compartilhe o link de convite abaixo.
+invite_message	🇯🇵	Campfireへようこそ。他の人をチャットに招待するには、下記の参加リンクを共有してください。
+incompatible_browser_messsage	🇺🇸	Upgrade to a supported web browser. Campfire requires a modern web browser. Please use one of the browsers listed below and make sure auto-updates are enabled.
+incompatible_browser_messsage	🇪🇸	Actualiza a un navegador web compatible. Campfire requiere un navegador web moderno. Utiliza uno de los navegadores listados a continuación y asegúrate de que las actualizaciones automáticas estén habilitadas.
+incompatible_browser_messsage	🇫🇷	Mettez à jour vers un navigateur web pris en charge. Campfire nécessite un navigateur web moderne. Veuillez utiliser l'un des navigateurs répertoriés ci-dessous et assurez-vous que les mises à jour automatiques sont activées.
+incompatible_browser_messsage	🇮🇳	समर्थित वेब ब्राउज़र में अपग्रेड करें। Campfire को एक आधुनिक वेब ब्राउज़र की आवश्यकता है। कृपया नीचे सूचीबद्ध ब्राउज़रों में से कोई एक का उपयोग करें और सुनिश्चित करें कि स्वचालित अपडेट्स सक्षम हैं।
+incompatible_browser_messsage	🇩🇪	Aktualisieren Sie auf einen unterstützten Webbrowser. Campfire erfordert einen modernen Webbrowser. Verwenden Sie bitte einen der unten aufgeführten Browser und stellen Sie sicher, dass automatische Updates aktiviert sind.
+incompatible_browser_messsage	🇧🇷	Atualize para um navegador compatível. O Campfire requer um navegador moderno. Por favor, use um dos navegadores listados abaixo e certifique-se de que as atualizações automáticas estão ativadas.
+incompatible_browser_messsage	🇯🇵	サポートされたウェブブラウザーにアップグレードしてください。Campfireはモダンなウェブブラウザーが必要です。下記のブラウザーのいずれかを使用し、自動更新が有効になっていることを確認してください。
+bio	🇺🇸	Enter a few words about yourself.
+bio	🇪🇸	Ingresa algunas palabras sobre ti mismo.
+bio	🇫🇷	Saisissez quelques mots à propos de vous-même.
+bio	🇮🇳	अपने बारे में कुछ शब्द लिखें.
+bio	🇩🇪	Geben Sie ein paar Worte über sich selbst ein.
+bio	🇧🇷	Insira alguma palavras sobre você.
+bio	🇯🇵	ご自分について簡単に記入してください。
+webhook_url	🇺🇸	Webhook URL
+webhook_url	🇪🇸	URL del Webhook
+webhook_url	🇫🇷	URL du webhook
+webhook_url	🇮🇳	वेबहुक URL
+webhook_url	🇩🇪	Webhook-URL
+webhook_url	🇧🇷	URL do Webhook
+webhook_url	🇯🇵	Webhook URL
+chat_bots	🇺🇸	Chat bots. With Chat bots, other sites and services can post updates directly to Campfire.
+chat_bots	🇪🇸	Bots de chat. Con los bots de chat, otros sitios y servicios pueden publicar actualizaciones directamente en Campfire.
+chat_bots	🇫🇷	Bots de discussion. Avec les bots de discussion, d'autres sites et services peuvent publier des mises à jour directement sur Campfire.
+chat_bots	🇮🇳	चैट बॉट। चैट बॉट के साथ, अन्य साइटों और सेवाएं सीधे कैम्पफायर में अपडेट पोस्ट कर सकती हैं।
+chat_bots	🇩🇪	Chat-Bots. Mit Chat-Bots können andere Websites und Dienste Updates direkt in Campfire veröffentlichen.
+chat_bots	🇧🇷	Chat bots. Com Chat bots, outros sites e serviços podem postar atualizações diretamente no Campfire.
+chat_bots	🇯🇵	チャットボット。チャットボットを使用すると、他のサイトやサービスがCampfireに直接更新情報を投稿できます。
+bot_name	🇺🇸	Name the bot
+bot_name	🇪🇸	Nombrar al bot
+bot_name	🇫🇷	Nommer le bot
+bot_name	🇮🇳	बॉट का नाम दें
+bot_name	🇩🇪	Benenne den Bot
+bot_name	🇧🇷	Dê um nome ao bot
+bot_name	🇯🇵	ボットに名前を付ける
+custom_styles	🇺🇸	Add custom CSS styles. Use Caution: you could break things.
+custom_styles	🇪🇸	Agrega estilos CSS personalizados. Usa precaución: podrías romper cosas.
+custom_styles	🇫🇷	Ajoutez des styles CSS personnalisés. Utilisez avec précaution : vous pourriez casser des choses.
+custom_styles	🇮🇳	कस्टम CSS स्टाइल जोड़ें। सावधानी बरतें: आप चीज़ों को तोड़ सकते हैं।
+custom_styles	🇩🇪	Fügen Sie benutzerdefinierte CSS-Stile hinzu. Vorsicht: Sie könnten Dinge kaputt machen.
+custom_styles	🇧🇷	Adicione estilos CSS personalizados. Use com cuidado: você pode quebrar coisas.
+custom_styles	🇯🇵	カスタムCSSスタイルを追加。注意: サイトが壊れる可能性があります。

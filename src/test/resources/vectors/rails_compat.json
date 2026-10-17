@@ -1,0 +1,3343 @@
+{
+  "secret_key_base": "5335c3b1ad35b4ad170c3413bd651ef3b6ed64e257261871a6de3f978cf3868ee417a927040935fb30b0f7debdedb34a2a403e9f34b16cf594c917c2ecd4a995",
+  "rotated_secret_key_base": "0000000000000000000000000000000000000000000000000000000000000000rotatedfffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+  "now": "2026-01-01T12:00:00.000Z",
+  "key_generator": [
+    {
+      "salt": "signed cookie",
+      "length": 64,
+      "key_hex": "4777669222a1dfbfcb0ae1a07fee1450b0c2aeccc8821f27a4514212906dd3d142608325b7b3126978936f407bb147605a074d6d4a63bb4edd9518d72f4f9399"
+    },
+    {
+      "salt": "authenticated encrypted cookie",
+      "length": 32,
+      "key_hex": "c37b900eab3de6f1f2c0693db47bcb6d24f11b2668329b978a93aebcf77283c2"
+    },
+    {
+      "salt": "active_record/signed_id",
+      "length": 64,
+      "key_hex": "d704274602b9061592784bb128b2c8a4695c21158f43d860d6fcd250c3f95f78b2cbd4dd403cffb203eeedb674f4def53d9717d0515ce5dd1e1f93ec65185378"
+    },
+    {
+      "salt": "signed_global_ids",
+      "length": 64,
+      "key_hex": "8ac0edd7b69e1f16def30fb863b78b0bc21c4f17ae69395b6817638808e472cf5fda07afc057e50cd38bb965a419159e748ad0e69bc0eba01862bf0c36897dad"
+    },
+    {
+      "salt": "turbo/signed_stream_verifier_key",
+      "length": 64,
+      "key_hex": "52b780d76ae81794bede4c5422bcb016add697bf9e980d711c67c08470330b704dad5cbe0ecf89edf277151ce8f563e45b99b5c7bc9e8e2f574aecce3d27b85a"
+    },
+    {
+      "salt": "anything",
+      "length": 16,
+      "key_hex": "9d6645a5b0eebc1ac4ee543a165eca9c"
+    }
+  ],
+  "cookie_escaping": [
+    {
+      "raw": "abc",
+      "wire": "abc",
+      "parsed": "abc"
+    },
+    {
+      "raw": "a+b/c=d--0f",
+      "wire": "a%2Bb%2Fc%3Dd--0f",
+      "parsed": "a+b/c=d--0f"
+    },
+    {
+      "raw": "with space",
+      "wire": "with+space",
+      "parsed": "with space"
+    },
+    {
+      "raw": "é~*'()!",
+      "wire": "%C3%A9%7E*%27%28%29%21",
+      "parsed": "é~*'()!"
+    },
+    {
+      "raw": "a%20b",
+      "wire": "a%2520b",
+      "parsed": "a%20b"
+    },
+    {
+      "raw": null,
+      "wire": "a+b",
+      "parsed": "a b"
+    },
+    {
+      "raw": null,
+      "wire": "bad%zzescape",
+      "parsed": "bad%zzescape"
+    }
+  ],
+  "signed_cookies": {
+    "generate": [
+      {
+        "name": "session_token",
+        "value": "e5XWBGGnEJqiHpVCZzbj6bra",
+        "expires_at": "2046-01-01T12:00:00.000Z",
+        "raw": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IkltVTFXRmRDUjBkdVJVcHhhVWh3VmtOYWVtSnFObUp5WVNJPSIsImV4cCI6IjIwNDYtMDEtMDFUMTI6MDA6MDAuMDAwWiIsInB1ciI6ImNvb2tpZS5zZXNzaW9uX3Rva2VuIn19--97d26d3a75e1d4d5a12fa3a2448d1feac36314b9",
+        "set_cookie": "session_token=eyJfcmFpbHMiOnsibWVzc2FnZSI6IkltVTFXRmRDUjBkdVJVcHhhVWh3VmtOYWVtSnFObUp5WVNJPSIsImV4cCI6IjIwNDYtMDEtMDFUMTI6MDA6MDAuMDAwWiIsInB1ciI6ImNvb2tpZS5zZXNzaW9uX3Rva2VuIn19--97d26d3a75e1d4d5a12fa3a2448d1feac36314b9; path=/; expires=Mon, 01 Jan 2046 12:00:00 GMT; httponly; samesite=lax"
+      },
+      {
+        "name": "session_token",
+        "value": "hello world",
+        "expires_at": "2046-01-01T12:00:00.000Z",
+        "raw": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IkltaGxiR3h2SUhkdmNteGtJZz09IiwiZXhwIjoiMjA0Ni0wMS0wMVQxMjowMDowMC4wMDBaIiwicHVyIjoiY29va2llLnNlc3Npb25fdG9rZW4ifX0=--39bc3535e5f45a95eb9b0e682f896d448c372571",
+        "set_cookie": "session_token=eyJfcmFpbHMiOnsibWVzc2FnZSI6IkltaGxiR3h2SUhkdmNteGtJZz09IiwiZXhwIjoiMjA0Ni0wMS0wMVQxMjowMDowMC4wMDBaIiwicHVyIjoiY29va2llLnNlc3Npb25fdG9rZW4ifX0%3D--39bc3535e5f45a95eb9b0e682f896d448c372571; path=/; expires=Mon, 01 Jan 2046 12:00:00 GMT; httponly; samesite=lax"
+      },
+      {
+        "name": "session_token",
+        "value": "a+b/c=d",
+        "expires_at": "2046-01-01T12:00:00.000Z",
+        "raw": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IkltRXJZaTlqUFdRaSIsImV4cCI6IjIwNDYtMDEtMDFUMTI6MDA6MDAuMDAwWiIsInB1ciI6ImNvb2tpZS5zZXNzaW9uX3Rva2VuIn19--14a98e6c374607a23387899e3e4deb393e95087a",
+        "set_cookie": "session_token=eyJfcmFpbHMiOnsibWVzc2FnZSI6IkltRXJZaTlqUFdRaSIsImV4cCI6IjIwNDYtMDEtMDFUMTI6MDA6MDAuMDAwWiIsInB1ciI6ImNvb2tpZS5zZXNzaW9uX3Rva2VuIn19--14a98e6c374607a23387899e3e4deb393e95087a; path=/; expires=Mon, 01 Jan 2046 12:00:00 GMT; httponly; samesite=lax"
+      },
+      {
+        "name": "session_token",
+        "value": "<script>&'\"</script>",
+        "expires_at": "2046-01-01T12:00:00.000Z",
+        "raw": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IklseDFNREF6WTNOamNtbHdkRngxTURBelpWeDFNREF5TmlkY0lseDFNREF6WXk5elkzSnBjSFJjZFRBd00yVWkiLCJleHAiOiIyMDQ2LTAxLTAxVDEyOjAwOjAwLjAwMFoiLCJwdXIiOiJjb29raWUuc2Vzc2lvbl90b2tlbiJ9fQ==--29f504b833cf0789baef02f4caee6d202dd1d692",
+        "set_cookie": "session_token=eyJfcmFpbHMiOnsibWVzc2FnZSI6IklseDFNREF6WTNOamNtbHdkRngxTURBelpWeDFNREF5TmlkY0lseDFNREF6WXk5elkzSnBjSFJjZFRBd00yVWkiLCJleHAiOiIyMDQ2LTAxLTAxVDEyOjAwOjAwLjAwMFoiLCJwdXIiOiJjb29raWUuc2Vzc2lvbl90b2tlbiJ9fQ%3D%3D--29f504b833cf0789baef02f4caee6d202dd1d692; path=/; expires=Mon, 01 Jan 2046 12:00:00 GMT; httponly; samesite=lax"
+      },
+      {
+        "name": "session_token",
+        "value": "é ünïcødé ☃",
+        "expires_at": "2046-01-01T12:00:00.000Z",
+        "raw": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IklzT3BJTU84YnNPdlk4TzRaTU9wSU9LWWd5ST0iLCJleHAiOiIyMDQ2LTAxLTAxVDEyOjAwOjAwLjAwMFoiLCJwdXIiOiJjb29raWUuc2Vzc2lvbl90b2tlbiJ9fQ==--ad0be021bdb2c70f4eac07fc7e60d76d77ef98cf",
+        "set_cookie": "session_token=eyJfcmFpbHMiOnsibWVzc2FnZSI6IklzT3BJTU84YnNPdlk4TzRaTU9wSU9LWWd5ST0iLCJleHAiOiIyMDQ2LTAxLTAxVDEyOjAwOjAwLjAwMFoiLCJwdXIiOiJjb29raWUuc2Vzc2lvbl90b2tlbiJ9fQ%3D%3D--ad0be021bdb2c70f4eac07fc7e60d76d77ef98cf; path=/; expires=Mon, 01 Jan 2046 12:00:00 GMT; httponly; samesite=lax"
+      },
+      {
+        "name": "session_token",
+        "value": "line sep ",
+        "expires_at": "2046-01-01T12:00:00.000Z",
+        "raw": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IklteHBibVhpZ0toelpYRGlnS2tpIiwiZXhwIjoiMjA0Ni0wMS0wMVQxMjowMDowMC4wMDBaIiwicHVyIjoiY29va2llLnNlc3Npb25fdG9rZW4ifX0=--1920f09ef997c2bc745cd3d7b16feb41fe859e66",
+        "set_cookie": "session_token=eyJfcmFpbHMiOnsibWVzc2FnZSI6IklteHBibVhpZ0toelpYRGlnS2tpIiwiZXhwIjoiMjA0Ni0wMS0wMVQxMjowMDowMC4wMDBaIiwicHVyIjoiY29va2llLnNlc3Npb25fdG9rZW4ifX0%3D--1920f09ef997c2bc745cd3d7b16feb41fe859e66; path=/; expires=Mon, 01 Jan 2046 12:00:00 GMT; httponly; samesite=lax"
+      },
+      {
+        "name": "session_token",
+        "value": "tab\tnew\nline\u0001",
+        "expires_at": "2046-01-01T12:00:00.000Z",
+        "raw": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IkluUmhZbHgwYm1WM1hHNXNhVzVsWEhVd01EQXhJZz09IiwiZXhwIjoiMjA0Ni0wMS0wMVQxMjowMDowMC4wMDBaIiwicHVyIjoiY29va2llLnNlc3Npb25fdG9rZW4ifX0=--de03ac62dbae81bcc76ea6e144b8966a77eb4c09",
+        "set_cookie": "session_token=eyJfcmFpbHMiOnsibWVzc2FnZSI6IkluUmhZbHgwYm1WM1hHNXNhVzVsWEhVd01EQXhJZz09IiwiZXhwIjoiMjA0Ni0wMS0wMVQxMjowMDowMC4wMDBaIiwicHVyIjoiY29va2llLnNlc3Npb25fdG9rZW4ifX0%3D--de03ac62dbae81bcc76ea6e144b8966a77eb4c09; path=/; expires=Mon, 01 Jan 2046 12:00:00 GMT; httponly; samesite=lax"
+      },
+      {
+        "name": "session_token",
+        "value": "",
+        "expires_at": "2046-01-01T12:00:00.000Z",
+        "raw": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IklpST0iLCJleHAiOiIyMDQ2LTAxLTAxVDEyOjAwOjAwLjAwMFoiLCJwdXIiOiJjb29raWUuc2Vzc2lvbl90b2tlbiJ9fQ==--3627e25b60265fbf281f75fddcdc95d575f26be0",
+        "set_cookie": "session_token=eyJfcmFpbHMiOnsibWVzc2FnZSI6IklpST0iLCJleHAiOiIyMDQ2LTAxLTAxVDEyOjAwOjAwLjAwMFoiLCJwdXIiOiJjb29raWUuc2Vzc2lvbl90b2tlbiJ9fQ%3D%3D--3627e25b60265fbf281f75fddcdc95d575f26be0; path=/; expires=Mon, 01 Jan 2046 12:00:00 GMT; httponly; samesite=lax"
+      },
+      {
+        "name": "no_expiry",
+        "value": "value",
+        "expires_at": null,
+        "raw": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IkluWmhiSFZsSWc9PSIsImV4cCI6bnVsbCwicHVyIjoiY29va2llLm5vX2V4cGlyeSJ9fQ==--62885ca65121896da2376780e1c14e9644de460a",
+        "set_cookie": "no_expiry=eyJfcmFpbHMiOnsibWVzc2FnZSI6IkluWmhiSFZsSWc9PSIsImV4cCI6bnVsbCwicHVyIjoiY29va2llLm5vX2V4cGlyeSJ9fQ%3D%3D--62885ca65121896da2376780e1c14e9644de460a; path=/; samesite=lax"
+      },
+      {
+        "name": "short",
+        "value": "short-lived",
+        "expires_at": "2026-01-01T13:00:00.000Z",
+        "raw": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IkluTm9iM0owTFd4cGRtVmtJZz09IiwiZXhwIjoiMjAyNi0wMS0wMVQxMzowMDowMC4wMDBaIiwicHVyIjoiY29va2llLnNob3J0In19--fabecbe64423539df34d525102bccf2814a0a9cd",
+        "set_cookie": "short=eyJfcmFpbHMiOnsibWVzc2FnZSI6IkluTm9iM0owTFd4cGRtVmtJZz09IiwiZXhwIjoiMjAyNi0wMS0wMVQxMzowMDowMC4wMDBaIiwicHVyIjoiY29va2llLnNob3J0In19--fabecbe64423539df34d525102bccf2814a0a9cd; path=/; expires=Thu, 01 Jan 2026 13:00:00 GMT; samesite=lax"
+      }
+    ],
+    "verify": [
+      {
+        "case": "valid session_token \"e5XWBGGnEJqiHpVCZzbj6bra\"",
+        "name": "session_token",
+        "raw": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IkltVTFXRmRDUjBkdVJVcHhhVWh3VmtOYWVtSnFObUp5WVNJPSIsImV4cCI6IjIwNDYtMDEtMDFUMTI6MDA6MDAuMDAwWiIsInB1ciI6ImNvb2tpZS5zZXNzaW9uX3Rva2VuIn19--97d26d3a75e1d4d5a12fa3a2448d1feac36314b9",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": "e5XWBGGnEJqiHpVCZzbj6bra"
+      },
+      {
+        "case": "valid session_token \"hello world\"",
+        "name": "session_token",
+        "raw": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IkltaGxiR3h2SUhkdmNteGtJZz09IiwiZXhwIjoiMjA0Ni0wMS0wMVQxMjowMDowMC4wMDBaIiwicHVyIjoiY29va2llLnNlc3Npb25fdG9rZW4ifX0=--39bc3535e5f45a95eb9b0e682f896d448c372571",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": "hello world"
+      },
+      {
+        "case": "valid session_token \"a+b/c=d\"",
+        "name": "session_token",
+        "raw": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IkltRXJZaTlqUFdRaSIsImV4cCI6IjIwNDYtMDEtMDFUMTI6MDA6MDAuMDAwWiIsInB1ciI6ImNvb2tpZS5zZXNzaW9uX3Rva2VuIn19--14a98e6c374607a23387899e3e4deb393e95087a",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": "a+b/c=d"
+      },
+      {
+        "case": "valid session_token \"<script>&'\\\"</script>\"",
+        "name": "session_token",
+        "raw": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IklseDFNREF6WTNOamNtbHdkRngxTURBelpWeDFNREF5TmlkY0lseDFNREF6WXk5elkzSnBjSFJjZFRBd00yVWkiLCJleHAiOiIyMDQ2LTAxLTAxVDEyOjAwOjAwLjAwMFoiLCJwdXIiOiJjb29raWUuc2Vzc2lvbl90b2tlbiJ9fQ==--29f504b833cf0789baef02f4caee6d202dd1d692",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": "<script>&'\"</script>"
+      },
+      {
+        "case": "valid session_token \"é ünïcødé ☃\"",
+        "name": "session_token",
+        "raw": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IklzT3BJTU84YnNPdlk4TzRaTU9wSU9LWWd5ST0iLCJleHAiOiIyMDQ2LTAxLTAxVDEyOjAwOjAwLjAwMFoiLCJwdXIiOiJjb29raWUuc2Vzc2lvbl90b2tlbiJ9fQ==--ad0be021bdb2c70f4eac07fc7e60d76d77ef98cf",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": "é ünïcødé ☃"
+      },
+      {
+        "case": "valid session_token \"line\\u2028sep\\u2029\"",
+        "name": "session_token",
+        "raw": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IklteHBibVhpZ0toelpYRGlnS2tpIiwiZXhwIjoiMjA0Ni0wMS0wMVQxMjowMDowMC4wMDBaIiwicHVyIjoiY29va2llLnNlc3Npb25fdG9rZW4ifX0=--1920f09ef997c2bc745cd3d7b16feb41fe859e66",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": "line sep "
+      },
+      {
+        "case": "valid session_token \"tab\\tnew\\nline\\u0001\"",
+        "name": "session_token",
+        "raw": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IkluUmhZbHgwYm1WM1hHNXNhVzVsWEhVd01EQXhJZz09IiwiZXhwIjoiMjA0Ni0wMS0wMVQxMjowMDowMC4wMDBaIiwicHVyIjoiY29va2llLnNlc3Npb25fdG9rZW4ifX0=--de03ac62dbae81bcc76ea6e144b8966a77eb4c09",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": "tab\tnew\nline\u0001"
+      },
+      {
+        "case": "valid session_token \"\"",
+        "name": "session_token",
+        "raw": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IklpST0iLCJleHAiOiIyMDQ2LTAxLTAxVDEyOjAwOjAwLjAwMFoiLCJwdXIiOiJjb29raWUuc2Vzc2lvbl90b2tlbiJ9fQ==--3627e25b60265fbf281f75fddcdc95d575f26be0",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": ""
+      },
+      {
+        "case": "valid no_expiry \"value\"",
+        "name": "no_expiry",
+        "raw": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IkluWmhiSFZsSWc9PSIsImV4cCI6bnVsbCwicHVyIjoiY29va2llLm5vX2V4cGlyeSJ9fQ==--62885ca65121896da2376780e1c14e9644de460a",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": "value"
+      },
+      {
+        "case": "valid short \"short-lived\"",
+        "name": "short",
+        "raw": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IkluTm9iM0owTFd4cGRtVmtJZz09IiwiZXhwIjoiMjAyNi0wMS0wMVQxMzowMDowMC4wMDBaIiwicHVyIjoiY29va2llLnNob3J0In19--fabecbe64423539df34d525102bccf2814a0a9cd",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": "short-lived"
+      },
+      {
+        "case": "short-lived before expiry",
+        "name": "short",
+        "raw": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IkluTm9iM0owTFd4cGRtVmtJZz09IiwiZXhwIjoiMjAyNi0wMS0wMVQxMzowMDowMC4wMDBaIiwicHVyIjoiY29va2llLnNob3J0In19--fabecbe64423539df34d525102bccf2814a0a9cd",
+        "now": "2026-01-01T12:59:00.000Z",
+        "expected": "short-lived"
+      },
+      {
+        "case": "short-lived at expiry",
+        "name": "short",
+        "raw": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IkluTm9iM0owTFd4cGRtVmtJZz09IiwiZXhwIjoiMjAyNi0wMS0wMVQxMzowMDowMC4wMDBaIiwicHVyIjoiY29va2llLnNob3J0In19--fabecbe64423539df34d525102bccf2814a0a9cd",
+        "now": "2026-01-01T13:00:00.000Z",
+        "expected": null
+      },
+      {
+        "case": "short-lived after expiry",
+        "name": "short",
+        "raw": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IkluTm9iM0owTFd4cGRtVmtJZz09IiwiZXhwIjoiMjAyNi0wMS0wMVQxMzowMDowMC4wMDBaIiwicHVyIjoiY29va2llLnNob3J0In19--fabecbe64423539df34d525102bccf2814a0a9cd",
+        "now": "2026-01-01T14:00:00.000Z",
+        "expected": null
+      },
+      {
+        "case": "permanent just before 20 years",
+        "name": "session_token",
+        "raw": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IkltVTFXRmRDUjBkdVJVcHhhVWh3VmtOYWVtSnFObUp5WVNJPSIsImV4cCI6IjIwNDYtMDEtMDFUMTI6MDA6MDAuMDAwWiIsInB1ciI6ImNvb2tpZS5zZXNzaW9uX3Rva2VuIn19--97d26d3a75e1d4d5a12fa3a2448d1feac36314b9",
+        "now": "2046-01-01T11:59:59.000Z",
+        "expected": "e5XWBGGnEJqiHpVCZzbj6bra"
+      },
+      {
+        "case": "permanent after 20 years",
+        "name": "session_token",
+        "raw": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IkltVTFXRmRDUjBkdVJVcHhhVWh3VmtOYWVtSnFObUp5WVNJPSIsImV4cCI6IjIwNDYtMDEtMDFUMTI6MDA6MDAuMDAwWiIsInB1ciI6ImNvb2tpZS5zZXNzaW9uX3Rva2VuIn19--97d26d3a75e1d4d5a12fa3a2448d1feac36314b9",
+        "now": "2046-01-01T12:00:01.000Z",
+        "expected": null
+      },
+      {
+        "case": "wrong cookie name",
+        "name": "other_name",
+        "raw": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IkltVTFXRmRDUjBkdVJVcHhhVWh3VmtOYWVtSnFObUp5WVNJPSIsImV4cCI6IjIwNDYtMDEtMDFUMTI6MDA6MDAuMDAwWiIsInB1ciI6ImNvb2tpZS5zZXNzaW9uX3Rva2VuIn19--97d26d3a75e1d4d5a12fa3a2448d1feac36314b9",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": null
+      },
+      {
+        "case": "tampered digest",
+        "name": "session_token",
+        "raw": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IkltVTFXRmRDUjBkdVJVcHhhVWh3VmtOYWVtSnFObUp5WVNJPSIsImV4cCI6IjIwNDYtMDEtMDFUMTI6MDA6MDAuMDAwWiIsInB1ciI6ImNvb2tpZS5zZXNzaW9uX3Rva2VuIn19--97d26d3a75e1d4d5a12fa3a2448d1feac36314b0",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": null
+      },
+      {
+        "case": "tampered payload",
+        "name": "session_token",
+        "raw": "AyJfcmFpbHMiOnsibWVzc2FnZSI6IkltVTFXRmRDUjBkdVJVcHhhVWh3VmtOYWVtSnFObUp5WVNJPSIsImV4cCI6IjIwNDYtMDEtMDFUMTI6MDA6MDAuMDAwWiIsInB1ciI6ImNvb2tpZS5zZXNzaW9uX3Rva2VuIn19--97d26d3a75e1d4d5a12fa3a2448d1feac36314b9",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": null
+      },
+      {
+        "case": "digest removed",
+        "name": "session_token",
+        "raw": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IkltVTFXRmRDUjBkdVJVcHhhVWh3VmtOYWVtSnFObUp5WVNJPSIsImV4cCI6IjIwNDYtMDEtMDFUMTI6MDA6MDAuMDAwWiIsInB1ciI6ImNvb2tpZS5zZXNzaW9uX3Rva2VuIn19",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": null
+      },
+      {
+        "case": "truncated digest",
+        "name": "session_token",
+        "raw": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IkltVTFXRmRDUjBkdVJVcHhhVWh3VmtOYWVtSnFObUp5WVNJPSIsImV4cCI6IjIwNDYtMDEtMDFUMTI6MDA6MDAuMDAwWiIsInB1ciI6ImNvb2tpZS5zZXNzaW9uX3Rva2VuIn19--97d26d3a75e1d4d5a12fa3a2448d1feac36314",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": null
+      },
+      {
+        "case": "garbage",
+        "name": "session_token",
+        "raw": "not a cookie",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": null
+      },
+      {
+        "case": "empty",
+        "name": "session_token",
+        "raw": "",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": null
+      },
+      {
+        "case": "signed with rotated secret",
+        "name": "session_token",
+        "raw": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IkltVTFXRmRDUjBkdVJVcHhhVWh3VmtOYWVtSnFObUp5WVNJPSIsImV4cCI6IjIwNDYtMDEtMDFUMTI6MDA6MDAuMDAwWiIsInB1ciI6ImNvb2tpZS5zZXNzaW9uX3Rva2VuIn19--4fcf902faaeb60839f956ce1c801ed835fe5a90e",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": null
+      },
+      {
+        "case": "sha256 digest",
+        "name": "session_token",
+        "raw": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IkltVTFXRmRDUjBkdVJVcHhhVWh3VmtOYWVtSnFObUp5WVNJPSIsImV4cCI6IjIwNDYtMDEtMDFUMTI6MDA6MDAuMDAwWiIsInB1ciI6ImNvb2tpZS5zZXNzaW9uX3Rva2VuIn19--2312d3799228fec2236043730ed5f6ae4de44c6ece7124606536d235ac73d46f",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": null
+      },
+      {
+        "case": "no metadata (pre-5.2), any name",
+        "name": "session_token",
+        "raw": "ImxlZ2FjeSI=--437adfa25141b53e3be94b290283538fd975ef08",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": "legacy"
+      },
+      {
+        "case": "no metadata under another name",
+        "name": "whatever",
+        "raw": "ImxlZ2FjeSI=--437adfa25141b53e3be94b290283538fd975ef08",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": "legacy"
+      },
+      {
+        "case": "metadata without purpose",
+        "name": "session_token",
+        "raw": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IkltNXZjSFZ5Y0c5elpTST0iLCJleHAiOiIyMDI2LTAxLTAyVDEyOjAwOjAwLjAwMFoiLCJwdXIiOm51bGx9fQ==--ce674c4e2eae4763923a1a05d72f6b9fdcdf14fc",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": "nopurpose"
+      },
+      {
+        "case": "metadata without purpose, expired",
+        "name": "session_token",
+        "raw": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IkltNXZjSFZ5Y0c5elpTST0iLCJleHAiOiIyMDI1LTEyLTMxVDEyOjAwOjAwLjAwMFoiLCJwdXIiOm51bGx9fQ==--991b52e0442af6ca5302f80e6fd90b38060f536e",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": null
+      },
+      {
+        "case": "purpose of another cookie",
+        "name": "session_token",
+        "raw": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IkluZ2kiLCJleHAiOm51bGwsInB1ciI6ImNvb2tpZS5vdGhlciJ9fQ==--d3cabe684a242043755b350b99d67ad0c3c2a557",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": null
+      },
+      {
+        "case": "marshal serialized value",
+        "name": "session_token",
+        "raw": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaEpJZzV0WVhKemFHRnNaV1FHT2daRlZBPT0iLCJleHAiOm51bGwsInB1ciI6ImNvb2tpZS5zZXNzaW9uX3Rva2VuIn19--d5f938abb8ec3b9549d0e2f69c566b1599d8bd5b",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": null
+      },
+      {
+        "case": "marshal serialized value, no metadata",
+        "name": "session_token",
+        "raw": "BAhJIg5tYXJzaGFsZWQGOgZFVA==--9261d4293fe55ab21ab43c06bcf98383ab653e16",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": null
+      },
+      {
+        "case": "json integer value",
+        "name": "session_token",
+        "raw": "eyJfcmFpbHMiOnsibWVzc2FnZSI6Ik1USXoiLCJleHAiOm51bGwsInB1ciI6ImNvb2tpZS5zZXNzaW9uX3Rva2VuIn19--4e01a2f412b6fff5d82f2e7c18592da31be06786",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": 123
+      },
+      {
+        "case": "json object value",
+        "name": "session_token",
+        "raw": "eyJfcmFpbHMiOnsibWVzc2FnZSI6ImV5SmhJam94ZlE9PSIsImV4cCI6bnVsbCwicHVyIjoiY29va2llLnNlc3Npb25fdG9rZW4ifX0=--e72973158fcec6041a61cb6d2889c1f5ff47cf12",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": {
+          "a": 1
+        }
+      },
+      {
+        "case": "unparseable value",
+        "name": "session_token",
+        "raw": "eyJfcmFpbHMiOnsibWVzc2FnZSI6ImJtOTBJR3B6YjI0PSIsImV4cCI6bnVsbCwicHVyIjoiY29va2llLnNlc3Npb25fdG9rZW4ifX0=--ee079fb585dc2bf67b9026e9497077d7948eda8b",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": null
+      },
+      {
+        "case": "new-style envelope",
+        "name": "session_token",
+        "raw": "eyJfcmFpbHMiOnsiZGF0YSI6IngiLCJwdXIiOiJjb29raWUuc2Vzc2lvbl90b2tlbiJ9fQ==--4ed1f8dd2148962bafc9a10c184e6085af6ea631",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": {
+          "_rails": {
+            "data": "x",
+            "pur": "cookie.session_token"
+          }
+        }
+      }
+    ]
+  },
+  "encrypted_cookies": {
+    "generate": [
+      {
+        "name": "_campfire_session",
+        "value": {
+          "session_id": "6d3a2b1c0f9e8d7c6b5a493827161504",
+          "_csrf_token": "qK3zv7cQ2oYlP4-sX6JtW0nBf9eR1uHaMdLgE5iVy8k"
+        },
+        "expires_at": "2046-01-01T12:00:00.000Z",
+        "raw": "NOlqOHTLnofV9OfOPTKwbz37W5h0q5v2MN7NAxU32S858Btw/VEXc0cNPhs9WTp42dlZrAyx8asFgNETEY83jKHTybeGKogaRsHJXG/M9O92ZHdCZg4zFslMfzI2DgBZIyKL3sIesagGeqVNYqRgi/4vc+QA3lX2xTL01kNKc/sKGtt2WXI45za/LQyIy1xHHmfNXpGS7nEswMMw5AXqXk1lC0PKGKd+s8YLD8f+0Tc3dJ9M6hygi2I16zTTRhRCFl5WdKjc0WsmRblgDw+xrYJ5s9NwwuqN/tA8Uom39ma0w+QUh+GBrvR5dueBJK0=--aLsLJQUZe1sHp4Y/--gXqGsSLjvclcSmibYj1XYQ==",
+        "set_cookie": "_campfire_session=NOlqOHTLnofV9OfOPTKwbz37W5h0q5v2MN7NAxU32S858Btw%2FVEXc0cNPhs9WTp42dlZrAyx8asFgNETEY83jKHTybeGKogaRsHJXG%2FM9O92ZHdCZg4zFslMfzI2DgBZIyKL3sIesagGeqVNYqRgi%2F4vc%2BQA3lX2xTL01kNKc%2FsKGtt2WXI45za%2FLQyIy1xHHmfNXpGS7nEswMMw5AXqXk1lC0PKGKd%2Bs8YLD8f%2B0Tc3dJ9M6hygi2I16zTTRhRCFl5WdKjc0WsmRblgDw%2BxrYJ5s9NwwuqN%2FtA8Uom39ma0w%2BQUh%2BGBrvR5dueBJK0%3D--aLsLJQUZe1sHp4Y%2F--gXqGsSLjvclcSmibYj1XYQ%3D%3D; path=/; expires=Mon, 01 Jan 2046 12:00:00 GMT; samesite=lax",
+        "plaintext": "{\"_rails\":{\"message\":\"eyJzZXNzaW9uX2lkIjoiNmQzYTJiMWMwZjllOGQ3YzZiNWE0OTM4MjcxNjE1MDQiLCJfY3NyZl90b2tlbiI6InFLM3p2N2NRMm9ZbFA0LXNYNkp0VzBuQmY5ZVIxdUhhTWRMZ0U1aVZ5OGsifQ==\",\"exp\":\"2046-01-01T12:00:00.000Z\",\"pur\":\"cookie._campfire_session\"}}"
+      },
+      {
+        "name": "_campfire_session",
+        "value": {
+          "session_id": "abc",
+          "return_to_after_authenticating": "http://campfire.test/rooms/1?a=1&b=<2>"
+        },
+        "expires_at": "2046-01-01T12:00:00.000Z",
+        "raw": "Mltp2V+lJUXoHwCPulaV5ovHpQB5PNVEJKG+CYHrFhTZqJ+KZI9yhpYzr9WuGwPh2VXWaSpiRkclC8JmIv9mtIVFXstMSOPlEMB4qawo30mAAu79B9xGKPao7gQCpjgCAnrSoCwWWtVXH3gD52XQpBFhWXzm8a8IPi/vqTdPbHj0pH2JUhqTFX8tPIWHZ7YrnR8tRCTGp5sBxQYNQ1s0Zp94shMON8mJ3ForjWvQsTM/RImFm5KHYfQLqQancp3sFPJKCS8r/jt9rZePAhznqZKoA4oj6KfWy0EbV+XrfsA/RvDnSQgxZ0tVtDDhID0=--mZL/dQUCpZMaYjVh--z/3hFjCLRDe9c4ZSNVlzBA==",
+        "set_cookie": "_campfire_session=Mltp2V%2BlJUXoHwCPulaV5ovHpQB5PNVEJKG%2BCYHrFhTZqJ%2BKZI9yhpYzr9WuGwPh2VXWaSpiRkclC8JmIv9mtIVFXstMSOPlEMB4qawo30mAAu79B9xGKPao7gQCpjgCAnrSoCwWWtVXH3gD52XQpBFhWXzm8a8IPi%2FvqTdPbHj0pH2JUhqTFX8tPIWHZ7YrnR8tRCTGp5sBxQYNQ1s0Zp94shMON8mJ3ForjWvQsTM%2FRImFm5KHYfQLqQancp3sFPJKCS8r%2Fjt9rZePAhznqZKoA4oj6KfWy0EbV%2BXrfsA%2FRvDnSQgxZ0tVtDDhID0%3D--mZL%2FdQUCpZMaYjVh--z%2F3hFjCLRDe9c4ZSNVlzBA%3D%3D; path=/; expires=Mon, 01 Jan 2046 12:00:00 GMT; samesite=lax",
+        "plaintext": "{\"_rails\":{\"message\":\"eyJzZXNzaW9uX2lkIjoiYWJjIiwicmV0dXJuX3RvX2FmdGVyX2F1dGhlbnRpY2F0aW5nIjoiaHR0cDovL2NhbXBmaXJlLnRlc3Qvcm9vbXMvMT9hPTFcdTAwMjZiPVx1MDAzYzJcdTAwM2UifQ==\",\"exp\":\"2046-01-01T12:00:00.000Z\",\"pur\":\"cookie._campfire_session\"}}"
+      },
+      {
+        "name": "_campfire_session",
+        "value": "plain string",
+        "expires_at": "2046-01-01T12:00:00.000Z",
+        "raw": "vU7zaCPG6QiW7W89JSsuWOJyjmlrc1WxzIa2Ya7Qw32JmirOGOsKF0TzMl1NLmVgv4LKnUqX3vTEimLArNX5P0h6a3O+lB7/nOGhvzQoCMsDElmeNkvCNTy1UacPQ59rDDZeyBOCvT9XL8poOZ79--Ybo+WrUrroQc9u1u--j1IukvrbemySHCiKo8gzbw==",
+        "set_cookie": "_campfire_session=vU7zaCPG6QiW7W89JSsuWOJyjmlrc1WxzIa2Ya7Qw32JmirOGOsKF0TzMl1NLmVgv4LKnUqX3vTEimLArNX5P0h6a3O%2BlB7%2FnOGhvzQoCMsDElmeNkvCNTy1UacPQ59rDDZeyBOCvT9XL8poOZ79--Ybo%2BWrUrroQc9u1u--j1IukvrbemySHCiKo8gzbw%3D%3D; path=/; expires=Mon, 01 Jan 2046 12:00:00 GMT; samesite=lax",
+        "plaintext": "{\"_rails\":{\"message\":\"InBsYWluIHN0cmluZyI=\",\"exp\":\"2046-01-01T12:00:00.000Z\",\"pur\":\"cookie._campfire_session\"}}"
+      },
+      {
+        "name": "_campfire_session",
+        "value": 42,
+        "expires_at": "2046-01-01T12:00:00.000Z",
+        "raw": "M/ROjAT5T8qc4iGsMkb7CWLFyfP0kAd/UE6qTQQxJy7FojbDNDu/KUI78F6ucwTq3o4aIzDWQvn6PnGS8CmQGeWW4p/iXYOR6udzCJPdggQyqavZBOogOPu9rsE2kcc=--CYN80krmllK36gfO--SDWnObmUQbc1kGXOT5Av6g==",
+        "set_cookie": "_campfire_session=M%2FROjAT5T8qc4iGsMkb7CWLFyfP0kAd%2FUE6qTQQxJy7FojbDNDu%2FKUI78F6ucwTq3o4aIzDWQvn6PnGS8CmQGeWW4p%2FiXYOR6udzCJPdggQyqavZBOogOPu9rsE2kcc%3D--CYN80krmllK36gfO--SDWnObmUQbc1kGXOT5Av6g%3D%3D; path=/; expires=Mon, 01 Jan 2046 12:00:00 GMT; samesite=lax",
+        "plaintext": "{\"_rails\":{\"message\":\"NDI=\",\"exp\":\"2046-01-01T12:00:00.000Z\",\"pur\":\"cookie._campfire_session\"}}"
+      },
+      {
+        "name": "_campfire_session",
+        "value": [
+          1,
+          "two",
+          null,
+          true
+        ],
+        "expires_at": "2046-01-01T12:00:00.000Z",
+        "raw": "yje8MLRD8L5xnn4tdpPvbWyeoTs1MBHiN+WjA6hIerGc64kFvu9Gio24gjH+HQsF/+QQ65ArlUxKIFajtzUXTiV5t/m+hLp6Q4yyUpXJ4t6OlTCsNL2i9bJafyUaSzt9MoYBrAGjI7KYY7JeETeqYgoCPMKOndY=--+DFP/t3N4bHPrDuI--AR+CsfVctLYapDJyk5eGWQ==",
+        "set_cookie": "_campfire_session=yje8MLRD8L5xnn4tdpPvbWyeoTs1MBHiN%2BWjA6hIerGc64kFvu9Gio24gjH%2BHQsF%2F%2BQQ65ArlUxKIFajtzUXTiV5t%2Fm%2BhLp6Q4yyUpXJ4t6OlTCsNL2i9bJafyUaSzt9MoYBrAGjI7KYY7JeETeqYgoCPMKOndY%3D--%2BDFP%2Ft3N4bHPrDuI--AR%2BCsfVctLYapDJyk5eGWQ%3D%3D; path=/; expires=Mon, 01 Jan 2046 12:00:00 GMT; samesite=lax",
+        "plaintext": "{\"_rails\":{\"message\":\"WzEsInR3byIsbnVsbCx0cnVlXQ==\",\"exp\":\"2046-01-01T12:00:00.000Z\",\"pur\":\"cookie._campfire_session\"}}"
+      },
+      {
+        "name": "_campfire_session",
+        "value": {
+          "nested": {
+            "é": "☃ "
+          }
+        },
+        "expires_at": "2046-01-01T12:00:00.000Z",
+        "raw": "1KPr7vH1dKD4O8S0mPlVNPhS37HqadNrZw1GvE62av1WnbgGzxmcrdeDa4KGp5govkvL9s9r0IjgzYe6sqr3wnoMjZxlfy8nYdlGrl+5PkouY7SmM4MK4oSbtcUbFWDUGjNLXm/OaH9dO8TPmt5dvtj84cHKQK155HOGh/9qrQ==--444jBiwpEptBYPY5--gMYzZ/8/ElbU9GhvzfGbxg==",
+        "set_cookie": "_campfire_session=1KPr7vH1dKD4O8S0mPlVNPhS37HqadNrZw1GvE62av1WnbgGzxmcrdeDa4KGp5govkvL9s9r0IjgzYe6sqr3wnoMjZxlfy8nYdlGrl%2B5PkouY7SmM4MK4oSbtcUbFWDUGjNLXm%2FOaH9dO8TPmt5dvtj84cHKQK155HOGh%2F9qrQ%3D%3D--444jBiwpEptBYPY5--gMYzZ%2F8%2FElbU9GhvzfGbxg%3D%3D; path=/; expires=Mon, 01 Jan 2046 12:00:00 GMT; samesite=lax",
+        "plaintext": "{\"_rails\":{\"message\":\"eyJuZXN0ZWQiOnsiw6kiOiLimIPigKgifX0=\",\"exp\":\"2046-01-01T12:00:00.000Z\",\"pur\":\"cookie._campfire_session\"}}"
+      },
+      {
+        "name": "short",
+        "value": "short-lived",
+        "expires_at": "2026-01-01T13:00:00.000Z",
+        "raw": "JEK+GZF9xu62Rx6U7zC8Rw0/t9P8Y61uFki4vmUD1NPI4guY+u5cKMI/IlSOH3JKG0LzmFT6mgsQfyFGM1wLzB/KxDdS6wB0VF0Mfdd9ipg4mLICyNKlTSHRKCdJhTj0+Xvp--6idWOtttFR0Iql+N--0Mw3B+FFaaWgJOVBPim9PA==",
+        "plaintext": "{\"_rails\":{\"message\":\"InNob3J0LWxpdmVkIg==\",\"exp\":\"2026-01-01T13:00:00.000Z\",\"pur\":\"cookie.short\"}}"
+      },
+      {
+        "name": "no_expiry",
+        "value": "forever",
+        "expires_at": null,
+        "raw": "o4Gh+Z5ylxMiVlyivfkdT7MZJgQ/qG5qTUq2IYsYOh+lyspb3LHgSDIt2D8Nm8zsEzMq/6dHlxLif+4HJjHevPgu1A9fW1GXMQ==--bfgPvzTOVpuT9XO2--8gFl+Tl27FsnnxDyd/tWkw==",
+        "plaintext": "{\"_rails\":{\"message\":\"ImZvcmV2ZXIi\",\"exp\":null,\"pur\":\"cookie.no_expiry\"}}"
+      }
+    ],
+    "verify": [
+      {
+        "case": "valid _campfire_session {\"session_id\" => \"6d3a2b1c0f9e8d7c6b5a49",
+        "name": "_campfire_session",
+        "raw": "NOlqOHTLnofV9OfOPTKwbz37W5h0q5v2MN7NAxU32S858Btw/VEXc0cNPhs9WTp42dlZrAyx8asFgNETEY83jKHTybeGKogaRsHJXG/M9O92ZHdCZg4zFslMfzI2DgBZIyKL3sIesagGeqVNYqRgi/4vc+QA3lX2xTL01kNKc/sKGtt2WXI45za/LQyIy1xHHmfNXpGS7nEswMMw5AXqXk1lC0PKGKd+s8YLD8f+0Tc3dJ9M6hygi2I16zTTRhRCFl5WdKjc0WsmRblgDw+xrYJ5s9NwwuqN/tA8Uom39ma0w+QUh+GBrvR5dueBJK0=--aLsLJQUZe1sHp4Y/--gXqGsSLjvclcSmibYj1XYQ==",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": {
+          "session_id": "6d3a2b1c0f9e8d7c6b5a493827161504",
+          "_csrf_token": "qK3zv7cQ2oYlP4-sX6JtW0nBf9eR1uHaMdLgE5iVy8k"
+        }
+      },
+      {
+        "case": "valid _campfire_session {\"session_id\" => \"abc\", \"return_to_after",
+        "name": "_campfire_session",
+        "raw": "Mltp2V+lJUXoHwCPulaV5ovHpQB5PNVEJKG+CYHrFhTZqJ+KZI9yhpYzr9WuGwPh2VXWaSpiRkclC8JmIv9mtIVFXstMSOPlEMB4qawo30mAAu79B9xGKPao7gQCpjgCAnrSoCwWWtVXH3gD52XQpBFhWXzm8a8IPi/vqTdPbHj0pH2JUhqTFX8tPIWHZ7YrnR8tRCTGp5sBxQYNQ1s0Zp94shMON8mJ3ForjWvQsTM/RImFm5KHYfQLqQancp3sFPJKCS8r/jt9rZePAhznqZKoA4oj6KfWy0EbV+XrfsA/RvDnSQgxZ0tVtDDhID0=--mZL/dQUCpZMaYjVh--z/3hFjCLRDe9c4ZSNVlzBA==",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": {
+          "session_id": "abc",
+          "return_to_after_authenticating": "http://campfire.test/rooms/1?a=1&b=<2>"
+        }
+      },
+      {
+        "case": "valid _campfire_session \"plain string\"",
+        "name": "_campfire_session",
+        "raw": "vU7zaCPG6QiW7W89JSsuWOJyjmlrc1WxzIa2Ya7Qw32JmirOGOsKF0TzMl1NLmVgv4LKnUqX3vTEimLArNX5P0h6a3O+lB7/nOGhvzQoCMsDElmeNkvCNTy1UacPQ59rDDZeyBOCvT9XL8poOZ79--Ybo+WrUrroQc9u1u--j1IukvrbemySHCiKo8gzbw==",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": "plain string"
+      },
+      {
+        "case": "valid _campfire_session 42",
+        "name": "_campfire_session",
+        "raw": "M/ROjAT5T8qc4iGsMkb7CWLFyfP0kAd/UE6qTQQxJy7FojbDNDu/KUI78F6ucwTq3o4aIzDWQvn6PnGS8CmQGeWW4p/iXYOR6udzCJPdggQyqavZBOogOPu9rsE2kcc=--CYN80krmllK36gfO--SDWnObmUQbc1kGXOT5Av6g==",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": 42
+      },
+      {
+        "case": "valid _campfire_session [1, \"two\", nil, true]",
+        "name": "_campfire_session",
+        "raw": "yje8MLRD8L5xnn4tdpPvbWyeoTs1MBHiN+WjA6hIerGc64kFvu9Gio24gjH+HQsF/+QQ65ArlUxKIFajtzUXTiV5t/m+hLp6Q4yyUpXJ4t6OlTCsNL2i9bJafyUaSzt9MoYBrAGjI7KYY7JeETeqYgoCPMKOndY=--+DFP/t3N4bHPrDuI--AR+CsfVctLYapDJyk5eGWQ==",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": [
+          1,
+          "two",
+          null,
+          true
+        ]
+      },
+      {
+        "case": "valid _campfire_session {\"nested\" => {\"é\" => \"☃\\u2028\"}}",
+        "name": "_campfire_session",
+        "raw": "1KPr7vH1dKD4O8S0mPlVNPhS37HqadNrZw1GvE62av1WnbgGzxmcrdeDa4KGp5govkvL9s9r0IjgzYe6sqr3wnoMjZxlfy8nYdlGrl+5PkouY7SmM4MK4oSbtcUbFWDUGjNLXm/OaH9dO8TPmt5dvtj84cHKQK155HOGh/9qrQ==--444jBiwpEptBYPY5--gMYzZ/8/ElbU9GhvzfGbxg==",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": {
+          "nested": {
+            "é": "☃ "
+          }
+        }
+      },
+      {
+        "case": "valid short \"short-lived\"",
+        "name": "short",
+        "raw": "JEK+GZF9xu62Rx6U7zC8Rw0/t9P8Y61uFki4vmUD1NPI4guY+u5cKMI/IlSOH3JKG0LzmFT6mgsQfyFGM1wLzB/KxDdS6wB0VF0Mfdd9ipg4mLICyNKlTSHRKCdJhTj0+Xvp--6idWOtttFR0Iql+N--0Mw3B+FFaaWgJOVBPim9PA==",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": "short-lived"
+      },
+      {
+        "case": "valid no_expiry \"forever\"",
+        "name": "no_expiry",
+        "raw": "o4Gh+Z5ylxMiVlyivfkdT7MZJgQ/qG5qTUq2IYsYOh+lyspb3LHgSDIt2D8Nm8zsEzMq/6dHlxLif+4HJjHevPgu1A9fW1GXMQ==--bfgPvzTOVpuT9XO2--8gFl+Tl27FsnnxDyd/tWkw==",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": "forever"
+      },
+      {
+        "case": "short-lived after expiry",
+        "name": "short",
+        "raw": "JEK+GZF9xu62Rx6U7zC8Rw0/t9P8Y61uFki4vmUD1NPI4guY+u5cKMI/IlSOH3JKG0LzmFT6mgsQfyFGM1wLzB/KxDdS6wB0VF0Mfdd9ipg4mLICyNKlTSHRKCdJhTj0+Xvp--6idWOtttFR0Iql+N--0Mw3B+FFaaWgJOVBPim9PA==",
+        "now": "2026-01-01T14:00:00.000Z",
+        "expected": null
+      },
+      {
+        "case": "short-lived before expiry",
+        "name": "short",
+        "raw": "JEK+GZF9xu62Rx6U7zC8Rw0/t9P8Y61uFki4vmUD1NPI4guY+u5cKMI/IlSOH3JKG0LzmFT6mgsQfyFGM1wLzB/KxDdS6wB0VF0Mfdd9ipg4mLICyNKlTSHRKCdJhTj0+Xvp--6idWOtttFR0Iql+N--0Mw3B+FFaaWgJOVBPim9PA==",
+        "now": "2026-01-01T12:30:00.000Z",
+        "expected": "short-lived"
+      },
+      {
+        "case": "wrong cookie name",
+        "name": "other",
+        "raw": "NOlqOHTLnofV9OfOPTKwbz37W5h0q5v2MN7NAxU32S858Btw/VEXc0cNPhs9WTp42dlZrAyx8asFgNETEY83jKHTybeGKogaRsHJXG/M9O92ZHdCZg4zFslMfzI2DgBZIyKL3sIesagGeqVNYqRgi/4vc+QA3lX2xTL01kNKc/sKGtt2WXI45za/LQyIy1xHHmfNXpGS7nEswMMw5AXqXk1lC0PKGKd+s8YLD8f+0Tc3dJ9M6hygi2I16zTTRhRCFl5WdKjc0WsmRblgDw+xrYJ5s9NwwuqN/tA8Uom39ma0w+QUh+GBrvR5dueBJK0=--aLsLJQUZe1sHp4Y/--gXqGsSLjvclcSmibYj1XYQ==",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": null
+      },
+      {
+        "case": "tampered ciphertext",
+        "name": "_campfire_session",
+        "raw": "AOlqOHTLnofV9OfOPTKwbz37W5h0q5v2MN7NAxU32S858Btw/VEXc0cNPhs9WTp42dlZrAyx8asFgNETEY83jKHTybeGKogaRsHJXG/M9O92ZHdCZg4zFslMfzI2DgBZIyKL3sIesagGeqVNYqRgi/4vc+QA3lX2xTL01kNKc/sKGtt2WXI45za/LQyIy1xHHmfNXpGS7nEswMMw5AXqXk1lC0PKGKd+s8YLD8f+0Tc3dJ9M6hygi2I16zTTRhRCFl5WdKjc0WsmRblgDw+xrYJ5s9NwwuqN/tA8Uom39ma0w+QUh+GBrvR5dueBJK0=--aLsLJQUZe1sHp4Y/--gXqGsSLjvclcSmibYj1XYQ==",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": null
+      },
+      {
+        "case": "tampered iv",
+        "name": "_campfire_session",
+        "raw": "NOlqOHTLnofV9OfOPTKwbz37W5h0q5v2MN7NAxU32S858Btw/VEXc0cNPhs9WTp42dlZrAyx8asFgNETEY83jKHTybeGKogaRsHJXG/M9O92ZHdCZg4zFslMfzI2DgBZIyKL3sIesagGeqVNYqRgi/4vc+QA3lX2xTL01kNKc/sKGtt2WXI45za/LQyIy1xHHmfNXpGS7nEswMMw5AXqXk1lC0PKGKd+s8YLD8f+0Tc3dJ9M6hygi2I16zTTRhRCFl5WdKjc0WsmRblgDw+xrYJ5s9NwwuqN/tA8Uom39ma0w+QUh+GBrvR5dueBJK0=--ALsLJQUZe1sHp4Y/--gXqGsSLjvclcSmibYj1XYQ==",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": null
+      },
+      {
+        "case": "tampered auth tag",
+        "name": "_campfire_session",
+        "raw": "NOlqOHTLnofV9OfOPTKwbz37W5h0q5v2MN7NAxU32S858Btw/VEXc0cNPhs9WTp42dlZrAyx8asFgNETEY83jKHTybeGKogaRsHJXG/M9O92ZHdCZg4zFslMfzI2DgBZIyKL3sIesagGeqVNYqRgi/4vc+QA3lX2xTL01kNKc/sKGtt2WXI45za/LQyIy1xHHmfNXpGS7nEswMMw5AXqXk1lC0PKGKd+s8YLD8f+0Tc3dJ9M6hygi2I16zTTRhRCFl5WdKjc0WsmRblgDw+xrYJ5s9NwwuqN/tA8Uom39ma0w+QUh+GBrvR5dueBJK0=--aLsLJQUZe1sHp4Y/--AXqGsSLjvclcSmibYj1XYQ==",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": null
+      },
+      {
+        "case": "missing auth tag",
+        "name": "_campfire_session",
+        "raw": "NOlqOHTLnofV9OfOPTKwbz37W5h0q5v2MN7NAxU32S858Btw/VEXc0cNPhs9WTp42dlZrAyx8asFgNETEY83jKHTybeGKogaRsHJXG/M9O92ZHdCZg4zFslMfzI2DgBZIyKL3sIesagGeqVNYqRgi/4vc+QA3lX2xTL01kNKc/sKGtt2WXI45za/LQyIy1xHHmfNXpGS7nEswMMw5AXqXk1lC0PKGKd+s8YLD8f+0Tc3dJ9M6hygi2I16zTTRhRCFl5WdKjc0WsmRblgDw+xrYJ5s9NwwuqN/tA8Uom39ma0w+QUh+GBrvR5dueBJK0=--aLsLJQUZe1sHp4Y/",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": null
+      },
+      {
+        "case": "truncated auth tag",
+        "name": "_campfire_session",
+        "raw": "NOlqOHTLnofV9OfOPTKwbz37W5h0q5v2MN7NAxU32S858Btw/VEXc0cNPhs9WTp42dlZrAyx8asFgNETEY83jKHTybeGKogaRsHJXG/M9O92ZHdCZg4zFslMfzI2DgBZIyKL3sIesagGeqVNYqRgi/4vc+QA3lX2xTL01kNKc/sKGtt2WXI45za/LQyIy1xHHmfNXpGS7nEswMMw5AXqXk1lC0PKGKd+s8YLD8f+0Tc3dJ9M6hygi2I16zTTRhRCFl5WdKjc0WsmRblgDw+xrYJ5s9NwwuqN/tA8Uom39ma0w+QUh+GBrvR5dueBJK0=--aLsLJQUZe1sHp4Y/--gXqGsSLjvclc",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": null
+      },
+      {
+        "case": "garbage",
+        "name": "_campfire_session",
+        "raw": "garbage",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": null
+      },
+      {
+        "case": "encrypted with rotated secret",
+        "name": "_campfire_session",
+        "raw": "+66V5tUc5niERMQqM2AOBXiFDtXV1JHO9S6ymsJVDViMQHXd0fq4h/qaG3uY8GaTc2tevyiBGxq//RYqctxKxSHtC+iqs6Zb2XGo8iYw01mZPUKlEsX1+h4ZowlCHzl2fGrau8rV5hy9Zm4arMXFiSx9BFABq3PT9TOOHVNMiotRVQhU6mtQSUE8JnBmv9vuOVgZZYdmQNPSdX8/iUv4mv8q/a+1b1+7cMOn6LjH69ouA/IQ/9zQ9oa9Yu31FWIxwEodQnTyTwvRmczXqrODBRrICR70aibFnAfkAK0XvAkOU4dL3/gFRAcqchNWy/Y=--pEv/SH8/9TBxUU3w--oUodO6tMn1ksPsdGwxICbA==",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": null
+      },
+      {
+        "case": "no metadata (any name)",
+        "name": "whatever",
+        "raw": "1Hlan0W975fFfpTpWpDX--NZU3dSs+fg4ubbUy--1u3BfAPkOkSv9ywa2UVfZA==",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": {
+          "legacy": true
+        }
+      },
+      {
+        "case": "marshal value",
+        "name": "_campfire_session",
+        "raw": "vj7uLN8uwRzdlsP9DehDO1/voxhE8vIKVEqUBWb2q/ztiznN2bKvUAmZfXOnT1F+Z8Fb97q9UwdMjMzg8cjBfcaZViPTWGaC+kRjOToesA97KtQR4VfqCmU876Kifu5JJw==--B+wMwUjJY2C2rLFy--uzEm+veuAfCwCBFwKxDJJA==",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": null
+      }
+    ]
+  },
+  "session": {
+    "new_status": 200,
+    "set_cookie": "_campfire_session=CJuFb%2BfXRvpUoNtY4h%2F3YITukfWGtWCQLO4OPZYcHMn6HLweBkvzsOApyzRn%2B9La%2FEd%2FmjpqK2iY9Gqp2aFVGhWTgX6kPrgE7JvDxUYU7ShT9CzVgpwCZygPwbx3E1xwnGCzoBseopfOOv2eQ%2BnrNsCEz6yds00OiyK%2BBYa7mpbUbAYs7DZMULAQ5YpmCpL0D%2FEJG82%2FITt30zyGqYFVz6QC%2BNGOzijaAGa%2Fa8cMZ%2Fs7fQoXuJRp3U7YyIE0BAmqPDw%2BXZvK06E7NYeGxtjFBnlAVeaRv7a%2FgDu7oHcNuMibCfNav12bI244Za6WYWk%3D--yM%2Ff2qfj5rpZNtpG--GHo5InJ0wALtcC8X9NuN3A%3D%3D; path=/; expires=Mon, 01 Jan 2046 12:00:00 GMT; httponly; samesite=lax",
+    "session_cookie_raw": "CJuFb+fXRvpUoNtY4h/3YITukfWGtWCQLO4OPZYcHMn6HLweBkvzsOApyzRn+9La/Ed/mjpqK2iY9Gqp2aFVGhWTgX6kPrgE7JvDxUYU7ShT9CzVgpwCZygPwbx3E1xwnGCzoBseopfOOv2eQ+nrNsCEz6yds00OiyK+BYa7mpbUbAYs7DZMULAQ5YpmCpL0D/EJG82/ITt30zyGqYFVz6QC+NGOzijaAGa/a8cMZ/s7fQoXuJRp3U7YyIE0BAmqPDw+XZvK06E7NYeGxtjFBnlAVeaRv7a/gDu7oHcNuMibCfNav12bI244Za6WYWk=--yM/f2qfj5rpZNtpG--GHo5InJ0wALtcC8X9NuN3A==",
+    "session": {
+      "session_id": "36166e44ee4e3a234bcf50a9f864d2a7",
+      "_csrf_token": "k4vklJ5KxBdxnfVe662NP9X81VADA1_Hwj_ZP4LzBIo"
+    },
+    "csrf_meta_token": "BXXSjYYRIEvqXvscN-ABJ8tOpJLgBsyNqmP25rPBAO4zlFDLhzOfRQnSIGr6PzeEfn5gv1VMtOOYsYw2jtwzVw",
+    "session_form_token": "WqkUeNYeKQbeGaA7uvoDQED86MN9qcz-3tuiwhqJwhGAb8mhiEC6i1IRgp3keZdsWJ8FltYfGPZpTvXwcPJWrg",
+    "post_with_bad_token_status": 422,
+    "post_with_form_token_status": 302,
+    "post_with_meta_token_header_status": 302,
+    "post_with_cross_origin_status": 422,
+    "session_token_set_cookie": "session_token=eyJfcmFpbHMiOnsibWVzc2FnZSI6IklrdHFZMkkwVjFWRmEzUnJTa3BoV1VweVUySlVPSGRqWWlJPSIsImV4cCI6IjIwNDYtMDEtMDFUMTI6MDA6MDAuMDAwWiIsInB1ciI6ImNvb2tpZS5zZXNzaW9uX3Rva2VuIn19--b3dbda9a5a3419318297ac639fcab5bc36de1426; path=/; expires=Mon, 01 Jan 2046 12:00:00 GMT; httponly; samesite=lax",
+    "session_token_raw": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IklrdHFZMkkwVjFWRmEzUnJTa3BoV1VweVUySlVPSGRqWWlJPSIsImV4cCI6IjIwNDYtMDEtMDFUMTI6MDA6MDAuMDAwWiIsInB1ciI6ImNvb2tpZS5zZXNzaW9uX3Rva2VuIn19--b3dbda9a5a3419318297ac639fcab5bc36de1426",
+    "session_token_value": "Kjcb4WUEktkJJaYJrSbT8wcb",
+    "session_after_login_raw": "royV68QDzOQEKXvi3QNu4Tj9y5OFYqBpHQn7ORv2eXuE9htAD34VGPylypdtzQH3xr2yWXZ4KEOc9KgpEIKJ0xKXg1P/mi8kb4enRAJnE6suvGvFnTfy+XKTvj8s7BYK+BWHScMxqlDdzTj+D7fG3YnD6/vSMCo2eLWOROTyxPs8U0JfP1ZDLcNhU7bz8Dcuvy2uUJkCJ5iLs9Ck0OZaRw99vnDEfXaA81Yzy1UJyMGaLlLXQTHYXzwzVwFPCSqMR0i+cI/4MU8w/xumesOkXdW/Rrh0xIIOQ6aPaPNw79QKEgy6xM7f6asl9hGeD54=--WFlILm4BedO7r7Bc--GXPSbs50jSkoOD7MTlgIuw==",
+    "session_after_login": {
+      "session_id": "36166e44ee4e3a234bcf50a9f864d2a7",
+      "_csrf_token": "k4vklJ5KxBdxnfVe662NP9X81VADA1_Hwj_ZP4LzBIo"
+    }
+  },
+  "csrf": {
+    "session_token": "qK3zv7cQ2oYlP4-sX6JtW0nBf9eR1uHaMdLgE5iVy8k",
+    "global_token_hex": "6ec0767be83c2cd5b35a59da9e04dc63995d1884b214289561b6d7528cd85d37",
+    "global_tokens": [
+      "92UpvZ0uKkd9Pj_Ff0mtp8Uf6iKD7AXWj9nZ2bgulm-ZpV_GdRIGks5kZh_hTXHEXELypjH4LUPubw6LNPbLWA",
+      "vpYYMbCtyFIsSgNDAJJGJxALtdECgKHDrDeI4PxzgaDQVm5KWJHkh58QWpmelppEiVatVbCUiVbNgV-ycKvclw",
+      "QzMO2L9cyeer_h4Vs4AfcIAzxLXXqwhpP4Yj8b6SIHQt83ijV2DlMhikR88thMMTGW7cMWW_IPxeMPSjMkp9Qw"
+    ],
+    "form_tokens": [
+      {
+        "action": "/session",
+        "method": "post",
+        "page_path": "/session/new",
+        "normalized_action_path": "/session",
+        "unmasked_hex": "211efb87ddee9bc039e52945fddb57b4b3ebd1a99d6ce3c553a4e837a19736d8",
+        "token": "kvbJAVR8Go3OjQgc-hfS9Y2WczaW8vxPC4_9KhgOP0ez6DKGiZKBTfdoIVkHzIVBPn2inwueH4pYKxUduZkJnw"
+      },
+      {
+        "action": "http://campfire.test/session",
+        "method": "post",
+        "page_path": "/session/new",
+        "normalized_action_path": "/session",
+        "unmasked_hex": "211efb87ddee9bc039e52945fddb57b4b3ebd1a99d6ce3c553a4e837a19736d8",
+        "token": "nMlVRmw9UnHNQ3DU_E9lZq_TCtapEt3sL-RikHC1PXi9167BsdPJsfSmWZEBlDLSHDjbfzR-Pil8QIqn0SILoA"
+      },
+      {
+        "action": "/rooms/1/messages",
+        "method": "post",
+        "page_path": "/rooms/1",
+        "normalized_action_path": "/rooms/1/messages",
+        "unmasked_hex": "c619633b83b27a77ba076ca7df0d6fbbcf92c7ac28d070244f7aed5f26fefa9a",
+        "token": "QReB1QXvXLODFm6BysOfILkl6FH8udqeXGoPjqPXzd6HDuLuhl0mxDkRAiYVzvCbdrcv_dRpqroTEOLRhSk3RA"
+      },
+      {
+        "action": "/rooms/1/",
+        "method": "patch",
+        "page_path": "/rooms/1/edit",
+        "normalized_action_path": "/rooms/1",
+        "unmasked_hex": "5b48c342a55506e1387e69c42c117c57ed73a673488246a7243ebcc870d3f01f",
+        "token": "m3Hv60iNDeNwEu_6R0nXwNta7Ch5kfOtsm_8_HOUzhLAOSyp7dgLAkhshj5rWKuXNilKWzETtQqWUUA0A0c-DQ"
+      },
+      {
+        "action": "/rooms/1?x=1",
+        "method": "delete",
+        "page_path": "/rooms/1",
+        "normalized_action_path": "/rooms/1",
+        "unmasked_hex": "fdd3e5c35cbb2c63b07dcdf6c71047105c5701bfcd8230f327e43c299e8a8850",
+        "token": "l3-_xD_QIvHiRaNdqm133uaT_M8ShzpoS2iHXsQ-CTpqrFoHY2sOklI4bqttfTDOusT9cN8FCptsjLt3WrSBag"
+      },
+      {
+        "action": "messages",
+        "method": "post",
+        "page_path": "/rooms/1",
+        "normalized_action_path": "/rooms/1/messages",
+        "unmasked_hex": "c619633b83b27a77ba076ca7df0d6fbbcf92c7ac28d070244f7aed5f26fefa9a",
+        "token": "PbjIVa737iCaniS037vakE5b1kObqC4KJU8esvkiV0j7oatuLUWUVyCZSBMAtrUrgckR77N4Xi5qNfPt39yt0g"
+      },
+      {
+        "action": "./involvement",
+        "method": "put",
+        "page_path": "/rooms/1/",
+        "normalized_action_path": "/rooms/1//involvement",
+        "unmasked_hex": "9dba14a1fff9d2a699101a7bab5d8f5aaa0da736bbe014ef615304ba9bf09ca4",
+        "token": "X1NXwpBMP0R32kdkRlxOyYoWAoppQbq6-PlhgsVldfXC6UNjb7Xt4u7KXR_tAcGTIBulvNKhrlWZqmU4XpXpUQ"
+      },
+      {
+        "action": "",
+        "method": "post",
+        "page_path": "/account/edit",
+        "normalized_action_path": "/account/edit",
+        "unmasked_hex": "57d1148317080650fbf8c1ea26d510b58e532b611eebcf4a502c22ffaab0fcac",
+        "token": "URsRWZlqxD0Ge6M04KK4B7Mbk_ly_rtzf58JGLAMEp4GygXajmLCbf2DYt7Gd6iyPUi4mGwVdDkvsyvnGrzuMg"
+      }
+    ],
+    "validity": [
+      {
+        "case": "masked global token",
+        "token": "92UpvZ0uKkd9Pj_Ff0mtp8Uf6iKD7AXWj9nZ2bgulm-ZpV_GdRIGks5kZh_hTXHEXELypjH4LUPubw6LNPbLWA",
+        "path": "/session",
+        "method": "POST",
+        "expected": true
+      },
+      {
+        "case": "masked global token",
+        "token": "92UpvZ0uKkd9Pj_Ff0mtp8Uf6iKD7AXWj9nZ2bgulm-ZpV_GdRIGks5kZh_hTXHEXELypjH4LUPubw6LNPbLWA",
+        "path": "/session/",
+        "method": "POST",
+        "expected": true
+      },
+      {
+        "case": "masked global token",
+        "token": "92UpvZ0uKkd9Pj_Ff0mtp8Uf6iKD7AXWj9nZ2bgulm-ZpV_GdRIGks5kZh_hTXHEXELypjH4LUPubw6LNPbLWA",
+        "path": "/session",
+        "method": "PUT",
+        "expected": true
+      },
+      {
+        "case": "masked global token",
+        "token": "92UpvZ0uKkd9Pj_Ff0mtp8Uf6iKD7AXWj9nZ2bgulm-ZpV_GdRIGks5kZh_hTXHEXELypjH4LUPubw6LNPbLWA",
+        "path": "/rooms/1/messages",
+        "method": "POST",
+        "expected": true
+      },
+      {
+        "case": "masked global token",
+        "token": "92UpvZ0uKkd9Pj_Ff0mtp8Uf6iKD7AXWj9nZ2bgulm-ZpV_GdRIGks5kZh_hTXHEXELypjH4LUPubw6LNPbLWA",
+        "path": "/rooms/1",
+        "method": "PATCH",
+        "expected": true
+      },
+      {
+        "case": "masked global token",
+        "token": "92UpvZ0uKkd9Pj_Ff0mtp8Uf6iKD7AXWj9nZ2bgulm-ZpV_GdRIGks5kZh_hTXHEXELypjH4LUPubw6LNPbLWA",
+        "path": "/rooms/1",
+        "method": "DELETE",
+        "expected": true
+      },
+      {
+        "case": "masked global token",
+        "token": "92UpvZ0uKkd9Pj_Ff0mtp8Uf6iKD7AXWj9nZ2bgulm-ZpV_GdRIGks5kZh_hTXHEXELypjH4LUPubw6LNPbLWA",
+        "path": "/rooms/1/involvement",
+        "method": "PUT",
+        "expected": true
+      },
+      {
+        "case": "masked global token",
+        "token": "92UpvZ0uKkd9Pj_Ff0mtp8Uf6iKD7AXWj9nZ2bgulm-ZpV_GdRIGks5kZh_hTXHEXELypjH4LUPubw6LNPbLWA",
+        "path": "/account/edit",
+        "method": "POST",
+        "expected": true
+      },
+      {
+        "case": "masked global token",
+        "token": "92UpvZ0uKkd9Pj_Ff0mtp8Uf6iKD7AXWj9nZ2bgulm-ZpV_GdRIGks5kZh_hTXHEXELypjH4LUPubw6LNPbLWA",
+        "path": "/other",
+        "method": "POST",
+        "expected": true
+      },
+      {
+        "case": "masked global token",
+        "token": "vpYYMbCtyFIsSgNDAJJGJxALtdECgKHDrDeI4PxzgaDQVm5KWJHkh58QWpmelppEiVatVbCUiVbNgV-ycKvclw",
+        "path": "/session",
+        "method": "POST",
+        "expected": true
+      },
+      {
+        "case": "masked global token",
+        "token": "vpYYMbCtyFIsSgNDAJJGJxALtdECgKHDrDeI4PxzgaDQVm5KWJHkh58QWpmelppEiVatVbCUiVbNgV-ycKvclw",
+        "path": "/session/",
+        "method": "POST",
+        "expected": true
+      },
+      {
+        "case": "masked global token",
+        "token": "vpYYMbCtyFIsSgNDAJJGJxALtdECgKHDrDeI4PxzgaDQVm5KWJHkh58QWpmelppEiVatVbCUiVbNgV-ycKvclw",
+        "path": "/session",
+        "method": "PUT",
+        "expected": true
+      },
+      {
+        "case": "masked global token",
+        "token": "vpYYMbCtyFIsSgNDAJJGJxALtdECgKHDrDeI4PxzgaDQVm5KWJHkh58QWpmelppEiVatVbCUiVbNgV-ycKvclw",
+        "path": "/rooms/1/messages",
+        "method": "POST",
+        "expected": true
+      },
+      {
+        "case": "masked global token",
+        "token": "vpYYMbCtyFIsSgNDAJJGJxALtdECgKHDrDeI4PxzgaDQVm5KWJHkh58QWpmelppEiVatVbCUiVbNgV-ycKvclw",
+        "path": "/rooms/1",
+        "method": "PATCH",
+        "expected": true
+      },
+      {
+        "case": "masked global token",
+        "token": "vpYYMbCtyFIsSgNDAJJGJxALtdECgKHDrDeI4PxzgaDQVm5KWJHkh58QWpmelppEiVatVbCUiVbNgV-ycKvclw",
+        "path": "/rooms/1",
+        "method": "DELETE",
+        "expected": true
+      },
+      {
+        "case": "masked global token",
+        "token": "vpYYMbCtyFIsSgNDAJJGJxALtdECgKHDrDeI4PxzgaDQVm5KWJHkh58QWpmelppEiVatVbCUiVbNgV-ycKvclw",
+        "path": "/rooms/1/involvement",
+        "method": "PUT",
+        "expected": true
+      },
+      {
+        "case": "masked global token",
+        "token": "vpYYMbCtyFIsSgNDAJJGJxALtdECgKHDrDeI4PxzgaDQVm5KWJHkh58QWpmelppEiVatVbCUiVbNgV-ycKvclw",
+        "path": "/account/edit",
+        "method": "POST",
+        "expected": true
+      },
+      {
+        "case": "masked global token",
+        "token": "vpYYMbCtyFIsSgNDAJJGJxALtdECgKHDrDeI4PxzgaDQVm5KWJHkh58QWpmelppEiVatVbCUiVbNgV-ycKvclw",
+        "path": "/other",
+        "method": "POST",
+        "expected": true
+      },
+      {
+        "case": "masked global token",
+        "token": "QzMO2L9cyeer_h4Vs4AfcIAzxLXXqwhpP4Yj8b6SIHQt83ijV2DlMhikR88thMMTGW7cMWW_IPxeMPSjMkp9Qw",
+        "path": "/session",
+        "method": "POST",
+        "expected": true
+      },
+      {
+        "case": "masked global token",
+        "token": "QzMO2L9cyeer_h4Vs4AfcIAzxLXXqwhpP4Yj8b6SIHQt83ijV2DlMhikR88thMMTGW7cMWW_IPxeMPSjMkp9Qw",
+        "path": "/session/",
+        "method": "POST",
+        "expected": true
+      },
+      {
+        "case": "masked global token",
+        "token": "QzMO2L9cyeer_h4Vs4AfcIAzxLXXqwhpP4Yj8b6SIHQt83ijV2DlMhikR88thMMTGW7cMWW_IPxeMPSjMkp9Qw",
+        "path": "/session",
+        "method": "PUT",
+        "expected": true
+      },
+      {
+        "case": "masked global token",
+        "token": "QzMO2L9cyeer_h4Vs4AfcIAzxLXXqwhpP4Yj8b6SIHQt83ijV2DlMhikR88thMMTGW7cMWW_IPxeMPSjMkp9Qw",
+        "path": "/rooms/1/messages",
+        "method": "POST",
+        "expected": true
+      },
+      {
+        "case": "masked global token",
+        "token": "QzMO2L9cyeer_h4Vs4AfcIAzxLXXqwhpP4Yj8b6SIHQt83ijV2DlMhikR88thMMTGW7cMWW_IPxeMPSjMkp9Qw",
+        "path": "/rooms/1",
+        "method": "PATCH",
+        "expected": true
+      },
+      {
+        "case": "masked global token",
+        "token": "QzMO2L9cyeer_h4Vs4AfcIAzxLXXqwhpP4Yj8b6SIHQt83ijV2DlMhikR88thMMTGW7cMWW_IPxeMPSjMkp9Qw",
+        "path": "/rooms/1",
+        "method": "DELETE",
+        "expected": true
+      },
+      {
+        "case": "masked global token",
+        "token": "QzMO2L9cyeer_h4Vs4AfcIAzxLXXqwhpP4Yj8b6SIHQt83ijV2DlMhikR88thMMTGW7cMWW_IPxeMPSjMkp9Qw",
+        "path": "/rooms/1/involvement",
+        "method": "PUT",
+        "expected": true
+      },
+      {
+        "case": "masked global token",
+        "token": "QzMO2L9cyeer_h4Vs4AfcIAzxLXXqwhpP4Yj8b6SIHQt83ijV2DlMhikR88thMMTGW7cMWW_IPxeMPSjMkp9Qw",
+        "path": "/account/edit",
+        "method": "POST",
+        "expected": true
+      },
+      {
+        "case": "masked global token",
+        "token": "QzMO2L9cyeer_h4Vs4AfcIAzxLXXqwhpP4Yj8b6SIHQt83ijV2DlMhikR88thMMTGW7cMWW_IPxeMPSjMkp9Qw",
+        "path": "/other",
+        "method": "POST",
+        "expected": true
+      },
+      {
+        "case": "unmasked session token",
+        "token": "qK3zv7cQ2oYlP4-sX6JtW0nBf9eR1uHaMdLgE5iVy8k",
+        "path": "/session",
+        "method": "POST",
+        "expected": true
+      },
+      {
+        "case": "unmasked session token",
+        "token": "qK3zv7cQ2oYlP4-sX6JtW0nBf9eR1uHaMdLgE5iVy8k",
+        "path": "/session/",
+        "method": "POST",
+        "expected": true
+      },
+      {
+        "case": "unmasked session token",
+        "token": "qK3zv7cQ2oYlP4-sX6JtW0nBf9eR1uHaMdLgE5iVy8k",
+        "path": "/session",
+        "method": "PUT",
+        "expected": true
+      },
+      {
+        "case": "unmasked session token",
+        "token": "qK3zv7cQ2oYlP4-sX6JtW0nBf9eR1uHaMdLgE5iVy8k",
+        "path": "/rooms/1/messages",
+        "method": "POST",
+        "expected": true
+      },
+      {
+        "case": "unmasked session token",
+        "token": "qK3zv7cQ2oYlP4-sX6JtW0nBf9eR1uHaMdLgE5iVy8k",
+        "path": "/rooms/1",
+        "method": "PATCH",
+        "expected": true
+      },
+      {
+        "case": "unmasked session token",
+        "token": "qK3zv7cQ2oYlP4-sX6JtW0nBf9eR1uHaMdLgE5iVy8k",
+        "path": "/rooms/1",
+        "method": "DELETE",
+        "expected": true
+      },
+      {
+        "case": "unmasked session token",
+        "token": "qK3zv7cQ2oYlP4-sX6JtW0nBf9eR1uHaMdLgE5iVy8k",
+        "path": "/rooms/1/involvement",
+        "method": "PUT",
+        "expected": true
+      },
+      {
+        "case": "unmasked session token",
+        "token": "qK3zv7cQ2oYlP4-sX6JtW0nBf9eR1uHaMdLgE5iVy8k",
+        "path": "/account/edit",
+        "method": "POST",
+        "expected": true
+      },
+      {
+        "case": "unmasked session token",
+        "token": "qK3zv7cQ2oYlP4-sX6JtW0nBf9eR1uHaMdLgE5iVy8k",
+        "path": "/other",
+        "method": "POST",
+        "expected": true
+      },
+      {
+        "case": "session token masked with a pad",
+        "token": "AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQGprPK-thHbhyQ-jq1eo2xaSMB-1pDX4Nsw0-ESmZTKyA",
+        "path": "/session",
+        "method": "POST",
+        "expected": true
+      },
+      {
+        "case": "session token masked with a pad",
+        "token": "AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQGprPK-thHbhyQ-jq1eo2xaSMB-1pDX4Nsw0-ESmZTKyA",
+        "path": "/session/",
+        "method": "POST",
+        "expected": true
+      },
+      {
+        "case": "session token masked with a pad",
+        "token": "AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQGprPK-thHbhyQ-jq1eo2xaSMB-1pDX4Nsw0-ESmZTKyA",
+        "path": "/session",
+        "method": "PUT",
+        "expected": true
+      },
+      {
+        "case": "session token masked with a pad",
+        "token": "AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQGprPK-thHbhyQ-jq1eo2xaSMB-1pDX4Nsw0-ESmZTKyA",
+        "path": "/rooms/1/messages",
+        "method": "POST",
+        "expected": true
+      },
+      {
+        "case": "session token masked with a pad",
+        "token": "AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQGprPK-thHbhyQ-jq1eo2xaSMB-1pDX4Nsw0-ESmZTKyA",
+        "path": "/rooms/1",
+        "method": "PATCH",
+        "expected": true
+      },
+      {
+        "case": "session token masked with a pad",
+        "token": "AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQGprPK-thHbhyQ-jq1eo2xaSMB-1pDX4Nsw0-ESmZTKyA",
+        "path": "/rooms/1",
+        "method": "DELETE",
+        "expected": true
+      },
+      {
+        "case": "session token masked with a pad",
+        "token": "AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQGprPK-thHbhyQ-jq1eo2xaSMB-1pDX4Nsw0-ESmZTKyA",
+        "path": "/rooms/1/involvement",
+        "method": "PUT",
+        "expected": true
+      },
+      {
+        "case": "session token masked with a pad",
+        "token": "AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQGprPK-thHbhyQ-jq1eo2xaSMB-1pDX4Nsw0-ESmZTKyA",
+        "path": "/account/edit",
+        "method": "POST",
+        "expected": true
+      },
+      {
+        "case": "session token masked with a pad",
+        "token": "AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQGprPK-thHbhyQ-jq1eo2xaSMB-1pDX4Nsw0-ESmZTKyA",
+        "path": "/other",
+        "method": "POST",
+        "expected": true
+      },
+      {
+        "case": "unmasked global token",
+        "token": "bsB2e-g8LNWzWlnangTcY5ldGISyFCiVYbbXUozYXTc",
+        "path": "/session",
+        "method": "POST",
+        "expected": false
+      },
+      {
+        "case": "unmasked global token",
+        "token": "bsB2e-g8LNWzWlnangTcY5ldGISyFCiVYbbXUozYXTc",
+        "path": "/session/",
+        "method": "POST",
+        "expected": false
+      },
+      {
+        "case": "unmasked global token",
+        "token": "bsB2e-g8LNWzWlnangTcY5ldGISyFCiVYbbXUozYXTc",
+        "path": "/session",
+        "method": "PUT",
+        "expected": false
+      },
+      {
+        "case": "unmasked global token",
+        "token": "bsB2e-g8LNWzWlnangTcY5ldGISyFCiVYbbXUozYXTc",
+        "path": "/rooms/1/messages",
+        "method": "POST",
+        "expected": false
+      },
+      {
+        "case": "unmasked global token",
+        "token": "bsB2e-g8LNWzWlnangTcY5ldGISyFCiVYbbXUozYXTc",
+        "path": "/rooms/1",
+        "method": "PATCH",
+        "expected": false
+      },
+      {
+        "case": "unmasked global token",
+        "token": "bsB2e-g8LNWzWlnangTcY5ldGISyFCiVYbbXUozYXTc",
+        "path": "/rooms/1",
+        "method": "DELETE",
+        "expected": false
+      },
+      {
+        "case": "unmasked global token",
+        "token": "bsB2e-g8LNWzWlnangTcY5ldGISyFCiVYbbXUozYXTc",
+        "path": "/rooms/1/involvement",
+        "method": "PUT",
+        "expected": false
+      },
+      {
+        "case": "unmasked global token",
+        "token": "bsB2e-g8LNWzWlnangTcY5ldGISyFCiVYbbXUozYXTc",
+        "path": "/account/edit",
+        "method": "POST",
+        "expected": false
+      },
+      {
+        "case": "unmasked global token",
+        "token": "bsB2e-g8LNWzWlnangTcY5ldGISyFCiVYbbXUozYXTc",
+        "path": "/other",
+        "method": "POST",
+        "expected": false
+      },
+      {
+        "case": "masked global token, padded",
+        "token": "92UpvZ0uKkd9Pj_Ff0mtp8Uf6iKD7AXWj9nZ2bgulm-ZpV_GdRIGks5kZh_hTXHEXELypjH4LUPubw6LNPbLWA==",
+        "path": "/session",
+        "method": "POST",
+        "expected": true
+      },
+      {
+        "case": "masked global token, padded",
+        "token": "92UpvZ0uKkd9Pj_Ff0mtp8Uf6iKD7AXWj9nZ2bgulm-ZpV_GdRIGks5kZh_hTXHEXELypjH4LUPubw6LNPbLWA==",
+        "path": "/session/",
+        "method": "POST",
+        "expected": true
+      },
+      {
+        "case": "masked global token, padded",
+        "token": "92UpvZ0uKkd9Pj_Ff0mtp8Uf6iKD7AXWj9nZ2bgulm-ZpV_GdRIGks5kZh_hTXHEXELypjH4LUPubw6LNPbLWA==",
+        "path": "/session",
+        "method": "PUT",
+        "expected": true
+      },
+      {
+        "case": "masked global token, padded",
+        "token": "92UpvZ0uKkd9Pj_Ff0mtp8Uf6iKD7AXWj9nZ2bgulm-ZpV_GdRIGks5kZh_hTXHEXELypjH4LUPubw6LNPbLWA==",
+        "path": "/rooms/1/messages",
+        "method": "POST",
+        "expected": true
+      },
+      {
+        "case": "masked global token, padded",
+        "token": "92UpvZ0uKkd9Pj_Ff0mtp8Uf6iKD7AXWj9nZ2bgulm-ZpV_GdRIGks5kZh_hTXHEXELypjH4LUPubw6LNPbLWA==",
+        "path": "/rooms/1",
+        "method": "PATCH",
+        "expected": true
+      },
+      {
+        "case": "masked global token, padded",
+        "token": "92UpvZ0uKkd9Pj_Ff0mtp8Uf6iKD7AXWj9nZ2bgulm-ZpV_GdRIGks5kZh_hTXHEXELypjH4LUPubw6LNPbLWA==",
+        "path": "/rooms/1",
+        "method": "DELETE",
+        "expected": true
+      },
+      {
+        "case": "masked global token, padded",
+        "token": "92UpvZ0uKkd9Pj_Ff0mtp8Uf6iKD7AXWj9nZ2bgulm-ZpV_GdRIGks5kZh_hTXHEXELypjH4LUPubw6LNPbLWA==",
+        "path": "/rooms/1/involvement",
+        "method": "PUT",
+        "expected": true
+      },
+      {
+        "case": "masked global token, padded",
+        "token": "92UpvZ0uKkd9Pj_Ff0mtp8Uf6iKD7AXWj9nZ2bgulm-ZpV_GdRIGks5kZh_hTXHEXELypjH4LUPubw6LNPbLWA==",
+        "path": "/account/edit",
+        "method": "POST",
+        "expected": true
+      },
+      {
+        "case": "masked global token, padded",
+        "token": "92UpvZ0uKkd9Pj_Ff0mtp8Uf6iKD7AXWj9nZ2bgulm-ZpV_GdRIGks5kZh_hTXHEXELypjH4LUPubw6LNPbLWA==",
+        "path": "/other",
+        "method": "POST",
+        "expected": true
+      },
+      {
+        "case": "masked global token, standard alphabet",
+        "token": "92UpvZ0uKkd9Pj/Ff0mtp8Uf6iKD7AXWj9nZ2bgulm+ZpV/GdRIGks5kZh/hTXHEXELypjH4LUPubw6LNPbLWA",
+        "path": "/session",
+        "method": "POST",
+        "expected": true
+      },
+      {
+        "case": "masked global token, standard alphabet",
+        "token": "92UpvZ0uKkd9Pj/Ff0mtp8Uf6iKD7AXWj9nZ2bgulm+ZpV/GdRIGks5kZh/hTXHEXELypjH4LUPubw6LNPbLWA",
+        "path": "/session/",
+        "method": "POST",
+        "expected": true
+      },
+      {
+        "case": "masked global token, standard alphabet",
+        "token": "92UpvZ0uKkd9Pj/Ff0mtp8Uf6iKD7AXWj9nZ2bgulm+ZpV/GdRIGks5kZh/hTXHEXELypjH4LUPubw6LNPbLWA",
+        "path": "/session",
+        "method": "PUT",
+        "expected": true
+      },
+      {
+        "case": "masked global token, standard alphabet",
+        "token": "92UpvZ0uKkd9Pj/Ff0mtp8Uf6iKD7AXWj9nZ2bgulm+ZpV/GdRIGks5kZh/hTXHEXELypjH4LUPubw6LNPbLWA",
+        "path": "/rooms/1/messages",
+        "method": "POST",
+        "expected": true
+      },
+      {
+        "case": "masked global token, standard alphabet",
+        "token": "92UpvZ0uKkd9Pj/Ff0mtp8Uf6iKD7AXWj9nZ2bgulm+ZpV/GdRIGks5kZh/hTXHEXELypjH4LUPubw6LNPbLWA",
+        "path": "/rooms/1",
+        "method": "PATCH",
+        "expected": true
+      },
+      {
+        "case": "masked global token, standard alphabet",
+        "token": "92UpvZ0uKkd9Pj/Ff0mtp8Uf6iKD7AXWj9nZ2bgulm+ZpV/GdRIGks5kZh/hTXHEXELypjH4LUPubw6LNPbLWA",
+        "path": "/rooms/1",
+        "method": "DELETE",
+        "expected": true
+      },
+      {
+        "case": "masked global token, standard alphabet",
+        "token": "92UpvZ0uKkd9Pj/Ff0mtp8Uf6iKD7AXWj9nZ2bgulm+ZpV/GdRIGks5kZh/hTXHEXELypjH4LUPubw6LNPbLWA",
+        "path": "/rooms/1/involvement",
+        "method": "PUT",
+        "expected": true
+      },
+      {
+        "case": "masked global token, standard alphabet",
+        "token": "92UpvZ0uKkd9Pj/Ff0mtp8Uf6iKD7AXWj9nZ2bgulm+ZpV/GdRIGks5kZh/hTXHEXELypjH4LUPubw6LNPbLWA",
+        "path": "/account/edit",
+        "method": "POST",
+        "expected": true
+      },
+      {
+        "case": "masked global token, standard alphabet",
+        "token": "92UpvZ0uKkd9Pj/Ff0mtp8Uf6iKD7AXWj9nZ2bgulm+ZpV/GdRIGks5kZh/hTXHEXELypjH4LUPubw6LNPbLWA",
+        "path": "/other",
+        "method": "POST",
+        "expected": true
+      },
+      {
+        "case": "token for another session",
+        "token": "WU-6hOS3NXxuzY8Ibhem_Dr3qU68QexTBz6I1BRwrebQ-wo_UjtAgCyE0PBTPWmNFYKI-8ifIjg5VLC2XTX37g",
+        "path": "/session",
+        "method": "POST",
+        "expected": false
+      },
+      {
+        "case": "token for another session",
+        "token": "WU-6hOS3NXxuzY8Ibhem_Dr3qU68QexTBz6I1BRwrebQ-wo_UjtAgCyE0PBTPWmNFYKI-8ifIjg5VLC2XTX37g",
+        "path": "/session/",
+        "method": "POST",
+        "expected": false
+      },
+      {
+        "case": "token for another session",
+        "token": "WU-6hOS3NXxuzY8Ibhem_Dr3qU68QexTBz6I1BRwrebQ-wo_UjtAgCyE0PBTPWmNFYKI-8ifIjg5VLC2XTX37g",
+        "path": "/session",
+        "method": "PUT",
+        "expected": false
+      },
+      {
+        "case": "token for another session",
+        "token": "WU-6hOS3NXxuzY8Ibhem_Dr3qU68QexTBz6I1BRwrebQ-wo_UjtAgCyE0PBTPWmNFYKI-8ifIjg5VLC2XTX37g",
+        "path": "/rooms/1/messages",
+        "method": "POST",
+        "expected": false
+      },
+      {
+        "case": "token for another session",
+        "token": "WU-6hOS3NXxuzY8Ibhem_Dr3qU68QexTBz6I1BRwrebQ-wo_UjtAgCyE0PBTPWmNFYKI-8ifIjg5VLC2XTX37g",
+        "path": "/rooms/1",
+        "method": "PATCH",
+        "expected": false
+      },
+      {
+        "case": "token for another session",
+        "token": "WU-6hOS3NXxuzY8Ibhem_Dr3qU68QexTBz6I1BRwrebQ-wo_UjtAgCyE0PBTPWmNFYKI-8ifIjg5VLC2XTX37g",
+        "path": "/rooms/1",
+        "method": "DELETE",
+        "expected": false
+      },
+      {
+        "case": "token for another session",
+        "token": "WU-6hOS3NXxuzY8Ibhem_Dr3qU68QexTBz6I1BRwrebQ-wo_UjtAgCyE0PBTPWmNFYKI-8ifIjg5VLC2XTX37g",
+        "path": "/rooms/1/involvement",
+        "method": "PUT",
+        "expected": false
+      },
+      {
+        "case": "token for another session",
+        "token": "WU-6hOS3NXxuzY8Ibhem_Dr3qU68QexTBz6I1BRwrebQ-wo_UjtAgCyE0PBTPWmNFYKI-8ifIjg5VLC2XTX37g",
+        "path": "/account/edit",
+        "method": "POST",
+        "expected": false
+      },
+      {
+        "case": "token for another session",
+        "token": "WU-6hOS3NXxuzY8Ibhem_Dr3qU68QexTBz6I1BRwrebQ-wo_UjtAgCyE0PBTPWmNFYKI-8ifIjg5VLC2XTX37g",
+        "path": "/other",
+        "method": "POST",
+        "expected": false
+      },
+      {
+        "case": "tampered masked token",
+        "token": "A2UpvZ0uKkd9Pj_Ff0mtp8Uf6iKD7AXWj9nZ2bgulm-ZpV_GdRIGks5kZh_hTXHEXELypjH4LUPubw6LNPbLWA",
+        "path": "/session",
+        "method": "POST",
+        "expected": false
+      },
+      {
+        "case": "tampered masked token",
+        "token": "A2UpvZ0uKkd9Pj_Ff0mtp8Uf6iKD7AXWj9nZ2bgulm-ZpV_GdRIGks5kZh_hTXHEXELypjH4LUPubw6LNPbLWA",
+        "path": "/session/",
+        "method": "POST",
+        "expected": false
+      },
+      {
+        "case": "tampered masked token",
+        "token": "A2UpvZ0uKkd9Pj_Ff0mtp8Uf6iKD7AXWj9nZ2bgulm-ZpV_GdRIGks5kZh_hTXHEXELypjH4LUPubw6LNPbLWA",
+        "path": "/session",
+        "method": "PUT",
+        "expected": false
+      },
+      {
+        "case": "tampered masked token",
+        "token": "A2UpvZ0uKkd9Pj_Ff0mtp8Uf6iKD7AXWj9nZ2bgulm-ZpV_GdRIGks5kZh_hTXHEXELypjH4LUPubw6LNPbLWA",
+        "path": "/rooms/1/messages",
+        "method": "POST",
+        "expected": false
+      },
+      {
+        "case": "tampered masked token",
+        "token": "A2UpvZ0uKkd9Pj_Ff0mtp8Uf6iKD7AXWj9nZ2bgulm-ZpV_GdRIGks5kZh_hTXHEXELypjH4LUPubw6LNPbLWA",
+        "path": "/rooms/1",
+        "method": "PATCH",
+        "expected": false
+      },
+      {
+        "case": "tampered masked token",
+        "token": "A2UpvZ0uKkd9Pj_Ff0mtp8Uf6iKD7AXWj9nZ2bgulm-ZpV_GdRIGks5kZh_hTXHEXELypjH4LUPubw6LNPbLWA",
+        "path": "/rooms/1",
+        "method": "DELETE",
+        "expected": false
+      },
+      {
+        "case": "tampered masked token",
+        "token": "A2UpvZ0uKkd9Pj_Ff0mtp8Uf6iKD7AXWj9nZ2bgulm-ZpV_GdRIGks5kZh_hTXHEXELypjH4LUPubw6LNPbLWA",
+        "path": "/rooms/1/involvement",
+        "method": "PUT",
+        "expected": false
+      },
+      {
+        "case": "tampered masked token",
+        "token": "A2UpvZ0uKkd9Pj_Ff0mtp8Uf6iKD7AXWj9nZ2bgulm-ZpV_GdRIGks5kZh_hTXHEXELypjH4LUPubw6LNPbLWA",
+        "path": "/account/edit",
+        "method": "POST",
+        "expected": false
+      },
+      {
+        "case": "tampered masked token",
+        "token": "A2UpvZ0uKkd9Pj_Ff0mtp8Uf6iKD7AXWj9nZ2bgulm-ZpV_GdRIGks5kZh_hTXHEXELypjH4LUPubw6LNPbLWA",
+        "path": "/other",
+        "method": "POST",
+        "expected": false
+      },
+      {
+        "case": "truncated masked token",
+        "token": "92UpvZ0uKkd9Pj_Ff0mtp8Uf6iKD7AXWj9nZ2bgulm-ZpV_GdRIGks5kZh_hTXHEXELypjH4LUPubw6LNP",
+        "path": "/session",
+        "method": "POST",
+        "expected": false
+      },
+      {
+        "case": "truncated masked token",
+        "token": "92UpvZ0uKkd9Pj_Ff0mtp8Uf6iKD7AXWj9nZ2bgulm-ZpV_GdRIGks5kZh_hTXHEXELypjH4LUPubw6LNP",
+        "path": "/session/",
+        "method": "POST",
+        "expected": false
+      },
+      {
+        "case": "truncated masked token",
+        "token": "92UpvZ0uKkd9Pj_Ff0mtp8Uf6iKD7AXWj9nZ2bgulm-ZpV_GdRIGks5kZh_hTXHEXELypjH4LUPubw6LNP",
+        "path": "/session",
+        "method": "PUT",
+        "expected": false
+      },
+      {
+        "case": "truncated masked token",
+        "token": "92UpvZ0uKkd9Pj_Ff0mtp8Uf6iKD7AXWj9nZ2bgulm-ZpV_GdRIGks5kZh_hTXHEXELypjH4LUPubw6LNP",
+        "path": "/rooms/1/messages",
+        "method": "POST",
+        "expected": false
+      },
+      {
+        "case": "truncated masked token",
+        "token": "92UpvZ0uKkd9Pj_Ff0mtp8Uf6iKD7AXWj9nZ2bgulm-ZpV_GdRIGks5kZh_hTXHEXELypjH4LUPubw6LNP",
+        "path": "/rooms/1",
+        "method": "PATCH",
+        "expected": false
+      },
+      {
+        "case": "truncated masked token",
+        "token": "92UpvZ0uKkd9Pj_Ff0mtp8Uf6iKD7AXWj9nZ2bgulm-ZpV_GdRIGks5kZh_hTXHEXELypjH4LUPubw6LNP",
+        "path": "/rooms/1",
+        "method": "DELETE",
+        "expected": false
+      },
+      {
+        "case": "truncated masked token",
+        "token": "92UpvZ0uKkd9Pj_Ff0mtp8Uf6iKD7AXWj9nZ2bgulm-ZpV_GdRIGks5kZh_hTXHEXELypjH4LUPubw6LNP",
+        "path": "/rooms/1/involvement",
+        "method": "PUT",
+        "expected": false
+      },
+      {
+        "case": "truncated masked token",
+        "token": "92UpvZ0uKkd9Pj_Ff0mtp8Uf6iKD7AXWj9nZ2bgulm-ZpV_GdRIGks5kZh_hTXHEXELypjH4LUPubw6LNP",
+        "path": "/account/edit",
+        "method": "POST",
+        "expected": false
+      },
+      {
+        "case": "truncated masked token",
+        "token": "92UpvZ0uKkd9Pj_Ff0mtp8Uf6iKD7AXWj9nZ2bgulm-ZpV_GdRIGks5kZh_hTXHEXELypjH4LUPubw6LNP",
+        "path": "/other",
+        "method": "POST",
+        "expected": false
+      },
+      {
+        "case": "invalid base64",
+        "token": "!!!!",
+        "path": "/session",
+        "method": "POST",
+        "expected": false
+      },
+      {
+        "case": "invalid base64",
+        "token": "!!!!",
+        "path": "/session/",
+        "method": "POST",
+        "expected": false
+      },
+      {
+        "case": "invalid base64",
+        "token": "!!!!",
+        "path": "/session",
+        "method": "PUT",
+        "expected": false
+      },
+      {
+        "case": "invalid base64",
+        "token": "!!!!",
+        "path": "/rooms/1/messages",
+        "method": "POST",
+        "expected": false
+      },
+      {
+        "case": "invalid base64",
+        "token": "!!!!",
+        "path": "/rooms/1",
+        "method": "PATCH",
+        "expected": false
+      },
+      {
+        "case": "invalid base64",
+        "token": "!!!!",
+        "path": "/rooms/1",
+        "method": "DELETE",
+        "expected": false
+      },
+      {
+        "case": "invalid base64",
+        "token": "!!!!",
+        "path": "/rooms/1/involvement",
+        "method": "PUT",
+        "expected": false
+      },
+      {
+        "case": "invalid base64",
+        "token": "!!!!",
+        "path": "/account/edit",
+        "method": "POST",
+        "expected": false
+      },
+      {
+        "case": "invalid base64",
+        "token": "!!!!",
+        "path": "/other",
+        "method": "POST",
+        "expected": false
+      },
+      {
+        "case": "empty",
+        "token": "",
+        "path": "/session",
+        "method": "POST",
+        "expected": false
+      },
+      {
+        "case": "empty",
+        "token": "",
+        "path": "/session/",
+        "method": "POST",
+        "expected": false
+      },
+      {
+        "case": "empty",
+        "token": "",
+        "path": "/session",
+        "method": "PUT",
+        "expected": false
+      },
+      {
+        "case": "empty",
+        "token": "",
+        "path": "/rooms/1/messages",
+        "method": "POST",
+        "expected": false
+      },
+      {
+        "case": "empty",
+        "token": "",
+        "path": "/rooms/1",
+        "method": "PATCH",
+        "expected": false
+      },
+      {
+        "case": "empty",
+        "token": "",
+        "path": "/rooms/1",
+        "method": "DELETE",
+        "expected": false
+      },
+      {
+        "case": "empty",
+        "token": "",
+        "path": "/rooms/1/involvement",
+        "method": "PUT",
+        "expected": false
+      },
+      {
+        "case": "empty",
+        "token": "",
+        "path": "/account/edit",
+        "method": "POST",
+        "expected": false
+      },
+      {
+        "case": "empty",
+        "token": "",
+        "path": "/other",
+        "method": "POST",
+        "expected": false
+      },
+      {
+        "case": "per-form token post /session",
+        "token": "kvbJAVR8Go3OjQgc-hfS9Y2WczaW8vxPC4_9KhgOP0ez6DKGiZKBTfdoIVkHzIVBPn2inwueH4pYKxUduZkJnw",
+        "path": "/session",
+        "method": "POST",
+        "expected": true
+      },
+      {
+        "case": "per-form token post /session",
+        "token": "kvbJAVR8Go3OjQgc-hfS9Y2WczaW8vxPC4_9KhgOP0ez6DKGiZKBTfdoIVkHzIVBPn2inwueH4pYKxUduZkJnw",
+        "path": "/session/",
+        "method": "POST",
+        "expected": true
+      },
+      {
+        "case": "per-form token post /session",
+        "token": "kvbJAVR8Go3OjQgc-hfS9Y2WczaW8vxPC4_9KhgOP0ez6DKGiZKBTfdoIVkHzIVBPn2inwueH4pYKxUduZkJnw",
+        "path": "/session",
+        "method": "PUT",
+        "expected": false
+      },
+      {
+        "case": "per-form token post /session",
+        "token": "kvbJAVR8Go3OjQgc-hfS9Y2WczaW8vxPC4_9KhgOP0ez6DKGiZKBTfdoIVkHzIVBPn2inwueH4pYKxUduZkJnw",
+        "path": "/rooms/1/messages",
+        "method": "POST",
+        "expected": false
+      },
+      {
+        "case": "per-form token post /session",
+        "token": "kvbJAVR8Go3OjQgc-hfS9Y2WczaW8vxPC4_9KhgOP0ez6DKGiZKBTfdoIVkHzIVBPn2inwueH4pYKxUduZkJnw",
+        "path": "/rooms/1",
+        "method": "PATCH",
+        "expected": false
+      },
+      {
+        "case": "per-form token post /session",
+        "token": "kvbJAVR8Go3OjQgc-hfS9Y2WczaW8vxPC4_9KhgOP0ez6DKGiZKBTfdoIVkHzIVBPn2inwueH4pYKxUduZkJnw",
+        "path": "/rooms/1",
+        "method": "DELETE",
+        "expected": false
+      },
+      {
+        "case": "per-form token post /session",
+        "token": "kvbJAVR8Go3OjQgc-hfS9Y2WczaW8vxPC4_9KhgOP0ez6DKGiZKBTfdoIVkHzIVBPn2inwueH4pYKxUduZkJnw",
+        "path": "/rooms/1/involvement",
+        "method": "PUT",
+        "expected": false
+      },
+      {
+        "case": "per-form token post /session",
+        "token": "kvbJAVR8Go3OjQgc-hfS9Y2WczaW8vxPC4_9KhgOP0ez6DKGiZKBTfdoIVkHzIVBPn2inwueH4pYKxUduZkJnw",
+        "path": "/account/edit",
+        "method": "POST",
+        "expected": false
+      },
+      {
+        "case": "per-form token post /session",
+        "token": "kvbJAVR8Go3OjQgc-hfS9Y2WczaW8vxPC4_9KhgOP0ez6DKGiZKBTfdoIVkHzIVBPn2inwueH4pYKxUduZkJnw",
+        "path": "/other",
+        "method": "POST",
+        "expected": false
+      },
+      {
+        "case": "per-form token post http://campfire.test/session",
+        "token": "nMlVRmw9UnHNQ3DU_E9lZq_TCtapEt3sL-RikHC1PXi9167BsdPJsfSmWZEBlDLSHDjbfzR-Pil8QIqn0SILoA",
+        "path": "/session",
+        "method": "POST",
+        "expected": true
+      },
+      {
+        "case": "per-form token post http://campfire.test/session",
+        "token": "nMlVRmw9UnHNQ3DU_E9lZq_TCtapEt3sL-RikHC1PXi9167BsdPJsfSmWZEBlDLSHDjbfzR-Pil8QIqn0SILoA",
+        "path": "/session/",
+        "method": "POST",
+        "expected": true
+      },
+      {
+        "case": "per-form token post http://campfire.test/session",
+        "token": "nMlVRmw9UnHNQ3DU_E9lZq_TCtapEt3sL-RikHC1PXi9167BsdPJsfSmWZEBlDLSHDjbfzR-Pil8QIqn0SILoA",
+        "path": "/session",
+        "method": "PUT",
+        "expected": false
+      },
+      {
+        "case": "per-form token post http://campfire.test/session",
+        "token": "nMlVRmw9UnHNQ3DU_E9lZq_TCtapEt3sL-RikHC1PXi9167BsdPJsfSmWZEBlDLSHDjbfzR-Pil8QIqn0SILoA",
+        "path": "/rooms/1/messages",
+        "method": "POST",
+        "expected": false
+      },
+      {
+        "case": "per-form token post http://campfire.test/session",
+        "token": "nMlVRmw9UnHNQ3DU_E9lZq_TCtapEt3sL-RikHC1PXi9167BsdPJsfSmWZEBlDLSHDjbfzR-Pil8QIqn0SILoA",
+        "path": "/rooms/1",
+        "method": "PATCH",
+        "expected": false
+      },
+      {
+        "case": "per-form token post http://campfire.test/session",
+        "token": "nMlVRmw9UnHNQ3DU_E9lZq_TCtapEt3sL-RikHC1PXi9167BsdPJsfSmWZEBlDLSHDjbfzR-Pil8QIqn0SILoA",
+        "path": "/rooms/1",
+        "method": "DELETE",
+        "expected": false
+      },
+      {
+        "case": "per-form token post http://campfire.test/session",
+        "token": "nMlVRmw9UnHNQ3DU_E9lZq_TCtapEt3sL-RikHC1PXi9167BsdPJsfSmWZEBlDLSHDjbfzR-Pil8QIqn0SILoA",
+        "path": "/rooms/1/involvement",
+        "method": "PUT",
+        "expected": false
+      },
+      {
+        "case": "per-form token post http://campfire.test/session",
+        "token": "nMlVRmw9UnHNQ3DU_E9lZq_TCtapEt3sL-RikHC1PXi9167BsdPJsfSmWZEBlDLSHDjbfzR-Pil8QIqn0SILoA",
+        "path": "/account/edit",
+        "method": "POST",
+        "expected": false
+      },
+      {
+        "case": "per-form token post http://campfire.test/session",
+        "token": "nMlVRmw9UnHNQ3DU_E9lZq_TCtapEt3sL-RikHC1PXi9167BsdPJsfSmWZEBlDLSHDjbfzR-Pil8QIqn0SILoA",
+        "path": "/other",
+        "method": "POST",
+        "expected": false
+      },
+      {
+        "case": "per-form token post /rooms/1/messages",
+        "token": "QReB1QXvXLODFm6BysOfILkl6FH8udqeXGoPjqPXzd6HDuLuhl0mxDkRAiYVzvCbdrcv_dRpqroTEOLRhSk3RA",
+        "path": "/session",
+        "method": "POST",
+        "expected": false
+      },
+      {
+        "case": "per-form token post /rooms/1/messages",
+        "token": "QReB1QXvXLODFm6BysOfILkl6FH8udqeXGoPjqPXzd6HDuLuhl0mxDkRAiYVzvCbdrcv_dRpqroTEOLRhSk3RA",
+        "path": "/session/",
+        "method": "POST",
+        "expected": false
+      },
+      {
+        "case": "per-form token post /rooms/1/messages",
+        "token": "QReB1QXvXLODFm6BysOfILkl6FH8udqeXGoPjqPXzd6HDuLuhl0mxDkRAiYVzvCbdrcv_dRpqroTEOLRhSk3RA",
+        "path": "/session",
+        "method": "PUT",
+        "expected": false
+      },
+      {
+        "case": "per-form token post /rooms/1/messages",
+        "token": "QReB1QXvXLODFm6BysOfILkl6FH8udqeXGoPjqPXzd6HDuLuhl0mxDkRAiYVzvCbdrcv_dRpqroTEOLRhSk3RA",
+        "path": "/rooms/1/messages",
+        "method": "POST",
+        "expected": true
+      },
+      {
+        "case": "per-form token post /rooms/1/messages",
+        "token": "QReB1QXvXLODFm6BysOfILkl6FH8udqeXGoPjqPXzd6HDuLuhl0mxDkRAiYVzvCbdrcv_dRpqroTEOLRhSk3RA",
+        "path": "/rooms/1",
+        "method": "PATCH",
+        "expected": false
+      },
+      {
+        "case": "per-form token post /rooms/1/messages",
+        "token": "QReB1QXvXLODFm6BysOfILkl6FH8udqeXGoPjqPXzd6HDuLuhl0mxDkRAiYVzvCbdrcv_dRpqroTEOLRhSk3RA",
+        "path": "/rooms/1",
+        "method": "DELETE",
+        "expected": false
+      },
+      {
+        "case": "per-form token post /rooms/1/messages",
+        "token": "QReB1QXvXLODFm6BysOfILkl6FH8udqeXGoPjqPXzd6HDuLuhl0mxDkRAiYVzvCbdrcv_dRpqroTEOLRhSk3RA",
+        "path": "/rooms/1/involvement",
+        "method": "PUT",
+        "expected": false
+      },
+      {
+        "case": "per-form token post /rooms/1/messages",
+        "token": "QReB1QXvXLODFm6BysOfILkl6FH8udqeXGoPjqPXzd6HDuLuhl0mxDkRAiYVzvCbdrcv_dRpqroTEOLRhSk3RA",
+        "path": "/account/edit",
+        "method": "POST",
+        "expected": false
+      },
+      {
+        "case": "per-form token post /rooms/1/messages",
+        "token": "QReB1QXvXLODFm6BysOfILkl6FH8udqeXGoPjqPXzd6HDuLuhl0mxDkRAiYVzvCbdrcv_dRpqroTEOLRhSk3RA",
+        "path": "/other",
+        "method": "POST",
+        "expected": false
+      },
+      {
+        "case": "per-form token patch /rooms/1/",
+        "token": "m3Hv60iNDeNwEu_6R0nXwNta7Ch5kfOtsm_8_HOUzhLAOSyp7dgLAkhshj5rWKuXNilKWzETtQqWUUA0A0c-DQ",
+        "path": "/session",
+        "method": "POST",
+        "expected": false
+      },
+      {
+        "case": "per-form token patch /rooms/1/",
+        "token": "m3Hv60iNDeNwEu_6R0nXwNta7Ch5kfOtsm_8_HOUzhLAOSyp7dgLAkhshj5rWKuXNilKWzETtQqWUUA0A0c-DQ",
+        "path": "/session/",
+        "method": "POST",
+        "expected": false
+      },
+      {
+        "case": "per-form token patch /rooms/1/",
+        "token": "m3Hv60iNDeNwEu_6R0nXwNta7Ch5kfOtsm_8_HOUzhLAOSyp7dgLAkhshj5rWKuXNilKWzETtQqWUUA0A0c-DQ",
+        "path": "/session",
+        "method": "PUT",
+        "expected": false
+      },
+      {
+        "case": "per-form token patch /rooms/1/",
+        "token": "m3Hv60iNDeNwEu_6R0nXwNta7Ch5kfOtsm_8_HOUzhLAOSyp7dgLAkhshj5rWKuXNilKWzETtQqWUUA0A0c-DQ",
+        "path": "/rooms/1/messages",
+        "method": "POST",
+        "expected": false
+      },
+      {
+        "case": "per-form token patch /rooms/1/",
+        "token": "m3Hv60iNDeNwEu_6R0nXwNta7Ch5kfOtsm_8_HOUzhLAOSyp7dgLAkhshj5rWKuXNilKWzETtQqWUUA0A0c-DQ",
+        "path": "/rooms/1",
+        "method": "PATCH",
+        "expected": true
+      },
+      {
+        "case": "per-form token patch /rooms/1/",
+        "token": "m3Hv60iNDeNwEu_6R0nXwNta7Ch5kfOtsm_8_HOUzhLAOSyp7dgLAkhshj5rWKuXNilKWzETtQqWUUA0A0c-DQ",
+        "path": "/rooms/1",
+        "method": "DELETE",
+        "expected": false
+      },
+      {
+        "case": "per-form token patch /rooms/1/",
+        "token": "m3Hv60iNDeNwEu_6R0nXwNta7Ch5kfOtsm_8_HOUzhLAOSyp7dgLAkhshj5rWKuXNilKWzETtQqWUUA0A0c-DQ",
+        "path": "/rooms/1/involvement",
+        "method": "PUT",
+        "expected": false
+      },
+      {
+        "case": "per-form token patch /rooms/1/",
+        "token": "m3Hv60iNDeNwEu_6R0nXwNta7Ch5kfOtsm_8_HOUzhLAOSyp7dgLAkhshj5rWKuXNilKWzETtQqWUUA0A0c-DQ",
+        "path": "/account/edit",
+        "method": "POST",
+        "expected": false
+      },
+      {
+        "case": "per-form token patch /rooms/1/",
+        "token": "m3Hv60iNDeNwEu_6R0nXwNta7Ch5kfOtsm_8_HOUzhLAOSyp7dgLAkhshj5rWKuXNilKWzETtQqWUUA0A0c-DQ",
+        "path": "/other",
+        "method": "POST",
+        "expected": false
+      },
+      {
+        "case": "per-form token delete /rooms/1?x=1",
+        "token": "l3-_xD_QIvHiRaNdqm133uaT_M8ShzpoS2iHXsQ-CTpqrFoHY2sOklI4bqttfTDOusT9cN8FCptsjLt3WrSBag",
+        "path": "/session",
+        "method": "POST",
+        "expected": false
+      },
+      {
+        "case": "per-form token delete /rooms/1?x=1",
+        "token": "l3-_xD_QIvHiRaNdqm133uaT_M8ShzpoS2iHXsQ-CTpqrFoHY2sOklI4bqttfTDOusT9cN8FCptsjLt3WrSBag",
+        "path": "/session/",
+        "method": "POST",
+        "expected": false
+      },
+      {
+        "case": "per-form token delete /rooms/1?x=1",
+        "token": "l3-_xD_QIvHiRaNdqm133uaT_M8ShzpoS2iHXsQ-CTpqrFoHY2sOklI4bqttfTDOusT9cN8FCptsjLt3WrSBag",
+        "path": "/session",
+        "method": "PUT",
+        "expected": false
+      },
+      {
+        "case": "per-form token delete /rooms/1?x=1",
+        "token": "l3-_xD_QIvHiRaNdqm133uaT_M8ShzpoS2iHXsQ-CTpqrFoHY2sOklI4bqttfTDOusT9cN8FCptsjLt3WrSBag",
+        "path": "/rooms/1/messages",
+        "method": "POST",
+        "expected": false
+      },
+      {
+        "case": "per-form token delete /rooms/1?x=1",
+        "token": "l3-_xD_QIvHiRaNdqm133uaT_M8ShzpoS2iHXsQ-CTpqrFoHY2sOklI4bqttfTDOusT9cN8FCptsjLt3WrSBag",
+        "path": "/rooms/1",
+        "method": "PATCH",
+        "expected": false
+      },
+      {
+        "case": "per-form token delete /rooms/1?x=1",
+        "token": "l3-_xD_QIvHiRaNdqm133uaT_M8ShzpoS2iHXsQ-CTpqrFoHY2sOklI4bqttfTDOusT9cN8FCptsjLt3WrSBag",
+        "path": "/rooms/1",
+        "method": "DELETE",
+        "expected": true
+      },
+      {
+        "case": "per-form token delete /rooms/1?x=1",
+        "token": "l3-_xD_QIvHiRaNdqm133uaT_M8ShzpoS2iHXsQ-CTpqrFoHY2sOklI4bqttfTDOusT9cN8FCptsjLt3WrSBag",
+        "path": "/rooms/1/involvement",
+        "method": "PUT",
+        "expected": false
+      },
+      {
+        "case": "per-form token delete /rooms/1?x=1",
+        "token": "l3-_xD_QIvHiRaNdqm133uaT_M8ShzpoS2iHXsQ-CTpqrFoHY2sOklI4bqttfTDOusT9cN8FCptsjLt3WrSBag",
+        "path": "/account/edit",
+        "method": "POST",
+        "expected": false
+      },
+      {
+        "case": "per-form token delete /rooms/1?x=1",
+        "token": "l3-_xD_QIvHiRaNdqm133uaT_M8ShzpoS2iHXsQ-CTpqrFoHY2sOklI4bqttfTDOusT9cN8FCptsjLt3WrSBag",
+        "path": "/other",
+        "method": "POST",
+        "expected": false
+      },
+      {
+        "case": "per-form token post messages",
+        "token": "PbjIVa737iCaniS037vakE5b1kObqC4KJU8esvkiV0j7oatuLUWUVyCZSBMAtrUrgckR77N4Xi5qNfPt39yt0g",
+        "path": "/session",
+        "method": "POST",
+        "expected": false
+      },
+      {
+        "case": "per-form token post messages",
+        "token": "PbjIVa737iCaniS037vakE5b1kObqC4KJU8esvkiV0j7oatuLUWUVyCZSBMAtrUrgckR77N4Xi5qNfPt39yt0g",
+        "path": "/session/",
+        "method": "POST",
+        "expected": false
+      },
+      {
+        "case": "per-form token post messages",
+        "token": "PbjIVa737iCaniS037vakE5b1kObqC4KJU8esvkiV0j7oatuLUWUVyCZSBMAtrUrgckR77N4Xi5qNfPt39yt0g",
+        "path": "/session",
+        "method": "PUT",
+        "expected": false
+      },
+      {
+        "case": "per-form token post messages",
+        "token": "PbjIVa737iCaniS037vakE5b1kObqC4KJU8esvkiV0j7oatuLUWUVyCZSBMAtrUrgckR77N4Xi5qNfPt39yt0g",
+        "path": "/rooms/1/messages",
+        "method": "POST",
+        "expected": true
+      },
+      {
+        "case": "per-form token post messages",
+        "token": "PbjIVa737iCaniS037vakE5b1kObqC4KJU8esvkiV0j7oatuLUWUVyCZSBMAtrUrgckR77N4Xi5qNfPt39yt0g",
+        "path": "/rooms/1",
+        "method": "PATCH",
+        "expected": false
+      },
+      {
+        "case": "per-form token post messages",
+        "token": "PbjIVa737iCaniS037vakE5b1kObqC4KJU8esvkiV0j7oatuLUWUVyCZSBMAtrUrgckR77N4Xi5qNfPt39yt0g",
+        "path": "/rooms/1",
+        "method": "DELETE",
+        "expected": false
+      },
+      {
+        "case": "per-form token post messages",
+        "token": "PbjIVa737iCaniS037vakE5b1kObqC4KJU8esvkiV0j7oatuLUWUVyCZSBMAtrUrgckR77N4Xi5qNfPt39yt0g",
+        "path": "/rooms/1/involvement",
+        "method": "PUT",
+        "expected": false
+      },
+      {
+        "case": "per-form token post messages",
+        "token": "PbjIVa737iCaniS037vakE5b1kObqC4KJU8esvkiV0j7oatuLUWUVyCZSBMAtrUrgckR77N4Xi5qNfPt39yt0g",
+        "path": "/account/edit",
+        "method": "POST",
+        "expected": false
+      },
+      {
+        "case": "per-form token post messages",
+        "token": "PbjIVa737iCaniS037vakE5b1kObqC4KJU8esvkiV0j7oatuLUWUVyCZSBMAtrUrgckR77N4Xi5qNfPt39yt0g",
+        "path": "/other",
+        "method": "POST",
+        "expected": false
+      },
+      {
+        "case": "per-form token put ./involvement",
+        "token": "X1NXwpBMP0R32kdkRlxOyYoWAoppQbq6-PlhgsVldfXC6UNjb7Xt4u7KXR_tAcGTIBulvNKhrlWZqmU4XpXpUQ",
+        "path": "/session",
+        "method": "POST",
+        "expected": false
+      },
+      {
+        "case": "per-form token put ./involvement",
+        "token": "X1NXwpBMP0R32kdkRlxOyYoWAoppQbq6-PlhgsVldfXC6UNjb7Xt4u7KXR_tAcGTIBulvNKhrlWZqmU4XpXpUQ",
+        "path": "/session/",
+        "method": "POST",
+        "expected": false
+      },
+      {
+        "case": "per-form token put ./involvement",
+        "token": "X1NXwpBMP0R32kdkRlxOyYoWAoppQbq6-PlhgsVldfXC6UNjb7Xt4u7KXR_tAcGTIBulvNKhrlWZqmU4XpXpUQ",
+        "path": "/session",
+        "method": "PUT",
+        "expected": false
+      },
+      {
+        "case": "per-form token put ./involvement",
+        "token": "X1NXwpBMP0R32kdkRlxOyYoWAoppQbq6-PlhgsVldfXC6UNjb7Xt4u7KXR_tAcGTIBulvNKhrlWZqmU4XpXpUQ",
+        "path": "/rooms/1/messages",
+        "method": "POST",
+        "expected": false
+      },
+      {
+        "case": "per-form token put ./involvement",
+        "token": "X1NXwpBMP0R32kdkRlxOyYoWAoppQbq6-PlhgsVldfXC6UNjb7Xt4u7KXR_tAcGTIBulvNKhrlWZqmU4XpXpUQ",
+        "path": "/rooms/1",
+        "method": "PATCH",
+        "expected": false
+      },
+      {
+        "case": "per-form token put ./involvement",
+        "token": "X1NXwpBMP0R32kdkRlxOyYoWAoppQbq6-PlhgsVldfXC6UNjb7Xt4u7KXR_tAcGTIBulvNKhrlWZqmU4XpXpUQ",
+        "path": "/rooms/1",
+        "method": "DELETE",
+        "expected": false
+      },
+      {
+        "case": "per-form token put ./involvement",
+        "token": "X1NXwpBMP0R32kdkRlxOyYoWAoppQbq6-PlhgsVldfXC6UNjb7Xt4u7KXR_tAcGTIBulvNKhrlWZqmU4XpXpUQ",
+        "path": "/rooms/1/involvement",
+        "method": "PUT",
+        "expected": false
+      },
+      {
+        "case": "per-form token put ./involvement",
+        "token": "X1NXwpBMP0R32kdkRlxOyYoWAoppQbq6-PlhgsVldfXC6UNjb7Xt4u7KXR_tAcGTIBulvNKhrlWZqmU4XpXpUQ",
+        "path": "/account/edit",
+        "method": "POST",
+        "expected": false
+      },
+      {
+        "case": "per-form token put ./involvement",
+        "token": "X1NXwpBMP0R32kdkRlxOyYoWAoppQbq6-PlhgsVldfXC6UNjb7Xt4u7KXR_tAcGTIBulvNKhrlWZqmU4XpXpUQ",
+        "path": "/other",
+        "method": "POST",
+        "expected": false
+      },
+      {
+        "case": "per-form token post ",
+        "token": "URsRWZlqxD0Ge6M04KK4B7Mbk_ly_rtzf58JGLAMEp4GygXajmLCbf2DYt7Gd6iyPUi4mGwVdDkvsyvnGrzuMg",
+        "path": "/session",
+        "method": "POST",
+        "expected": false
+      },
+      {
+        "case": "per-form token post ",
+        "token": "URsRWZlqxD0Ge6M04KK4B7Mbk_ly_rtzf58JGLAMEp4GygXajmLCbf2DYt7Gd6iyPUi4mGwVdDkvsyvnGrzuMg",
+        "path": "/session/",
+        "method": "POST",
+        "expected": false
+      },
+      {
+        "case": "per-form token post ",
+        "token": "URsRWZlqxD0Ge6M04KK4B7Mbk_ly_rtzf58JGLAMEp4GygXajmLCbf2DYt7Gd6iyPUi4mGwVdDkvsyvnGrzuMg",
+        "path": "/session",
+        "method": "PUT",
+        "expected": false
+      },
+      {
+        "case": "per-form token post ",
+        "token": "URsRWZlqxD0Ge6M04KK4B7Mbk_ly_rtzf58JGLAMEp4GygXajmLCbf2DYt7Gd6iyPUi4mGwVdDkvsyvnGrzuMg",
+        "path": "/rooms/1/messages",
+        "method": "POST",
+        "expected": false
+      },
+      {
+        "case": "per-form token post ",
+        "token": "URsRWZlqxD0Ge6M04KK4B7Mbk_ly_rtzf58JGLAMEp4GygXajmLCbf2DYt7Gd6iyPUi4mGwVdDkvsyvnGrzuMg",
+        "path": "/rooms/1",
+        "method": "PATCH",
+        "expected": false
+      },
+      {
+        "case": "per-form token post ",
+        "token": "URsRWZlqxD0Ge6M04KK4B7Mbk_ly_rtzf58JGLAMEp4GygXajmLCbf2DYt7Gd6iyPUi4mGwVdDkvsyvnGrzuMg",
+        "path": "/rooms/1",
+        "method": "DELETE",
+        "expected": false
+      },
+      {
+        "case": "per-form token post ",
+        "token": "URsRWZlqxD0Ge6M04KK4B7Mbk_ly_rtzf58JGLAMEp4GygXajmLCbf2DYt7Gd6iyPUi4mGwVdDkvsyvnGrzuMg",
+        "path": "/rooms/1/involvement",
+        "method": "PUT",
+        "expected": false
+      },
+      {
+        "case": "per-form token post ",
+        "token": "URsRWZlqxD0Ge6M04KK4B7Mbk_ly_rtzf58JGLAMEp4GygXajmLCbf2DYt7Gd6iyPUi4mGwVdDkvsyvnGrzuMg",
+        "path": "/account/edit",
+        "method": "POST",
+        "expected": true
+      },
+      {
+        "case": "per-form token post ",
+        "token": "URsRWZlqxD0Ge6M04KK4B7Mbk_ly_rtzf58JGLAMEp4GygXajmLCbf2DYt7Gd6iyPUi4mGwVdDkvsyvnGrzuMg",
+        "path": "/other",
+        "method": "POST",
+        "expected": false
+      }
+    ],
+    "origin": [
+      {
+        "origin": null,
+        "base_url": "http://campfire.test",
+        "expected": true
+      },
+      {
+        "origin": "http://campfire.test",
+        "base_url": "http://campfire.test",
+        "expected": true
+      },
+      {
+        "origin": "https://campfire.test",
+        "base_url": "http://campfire.test",
+        "expected": false
+      },
+      {
+        "origin": "http://evil.test",
+        "base_url": "http://campfire.test",
+        "expected": false
+      },
+      {
+        "origin": "null",
+        "base_url": "http://campfire.test",
+        "expected": "raises"
+      },
+      {
+        "origin": "http://campfire.test:8080",
+        "base_url": "http://campfire.test",
+        "expected": false
+      },
+      {
+        "origin": "http://campfire.test:8080",
+        "base_url": "http://campfire.test:8080",
+        "expected": true
+      },
+      {
+        "origin": "HTTP://CAMPFIRE.TEST",
+        "base_url": "http://campfire.test",
+        "expected": false
+      }
+    ],
+    "per_form_csrf_tokens": true,
+    "forgery_protection_origin_check": true,
+    "generated_session_token_example": "qis2kD9wy9-aiMXqGj3RFcNTSI_ulsDkvf7aM0XKkGw"
+  },
+  "signed_ids": {
+    "generate": [
+      {
+        "model": "User",
+        "id": 1,
+        "purpose": "avatar",
+        "expires_at": null,
+        "signed_id": "eyJfcmFpbHMiOnsiZGF0YSI6MSwicHVyIjoidXNlci9hdmF0YXIifX0--023b16424a00933214f527b2dbc6cb54ffa966a5b4fa3375c0678891f4e168e1"
+      },
+      {
+        "model": "User",
+        "id": 1,
+        "purpose": "transfer",
+        "expires_at": "2026-01-01T16:00:00.000Z",
+        "signed_id": "eyJfcmFpbHMiOnsiZGF0YSI6MSwiZXhwIjoiMjAyNi0wMS0wMVQxNjowMDowMC4wMDBaIiwicHVyIjoidXNlci90cmFuc2ZlciJ9fQ--84b6cbc2d8ed3a38eca9044b3791b20d41abb332c2f81c01fc13a1534d4dc3a6"
+      },
+      {
+        "model": "User",
+        "id": 1,
+        "purpose": null,
+        "expires_at": null,
+        "signed_id": "eyJfcmFpbHMiOnsiZGF0YSI6MSwicHVyIjoidXNlciJ9fQ--ca0a5ac7b8763056751763399933da27f8551acad70d40c9be532b8b31e16c1b"
+      },
+      {
+        "model": "User",
+        "id": 2,
+        "purpose": "avatar",
+        "expires_at": null,
+        "signed_id": "eyJfcmFpbHMiOnsiZGF0YSI6MiwicHVyIjoidXNlci9hdmF0YXIifX0--18b8839b6557c9efbe30c5aa140bd88b7b723b705167ec563f69e2522adb22b3"
+      },
+      {
+        "model": "User",
+        "id": 2,
+        "purpose": "transfer",
+        "expires_at": "2026-01-01T16:00:00.000Z",
+        "signed_id": "eyJfcmFpbHMiOnsiZGF0YSI6MiwiZXhwIjoiMjAyNi0wMS0wMVQxNjowMDowMC4wMDBaIiwicHVyIjoidXNlci90cmFuc2ZlciJ9fQ--bdd9bea926e971fe9d119dbd22f2cd054d55f858f9fcd85ebacb9f3fe6a0706d"
+      },
+      {
+        "model": "User",
+        "id": 2,
+        "purpose": null,
+        "expires_at": null,
+        "signed_id": "eyJfcmFpbHMiOnsiZGF0YSI6MiwicHVyIjoidXNlciJ9fQ--7e6a28967b4f7466e2a67a8533ad3e7f83adc814f9c356251d4c337db5b0ac80"
+      },
+      {
+        "model": "User",
+        "id": 12345,
+        "purpose": "avatar",
+        "expires_at": null,
+        "signed_id": "eyJfcmFpbHMiOnsiZGF0YSI6MTIzNDUsInB1ciI6InVzZXIvYXZhdGFyIn19--169ed9d46dc6dfbed888ed5e8add66e3f16fb61e4764c104a900aaf82fcaaaa2"
+      },
+      {
+        "model": "User",
+        "id": 12345,
+        "purpose": "transfer",
+        "expires_at": "2026-01-01T16:00:00.000Z",
+        "signed_id": "eyJfcmFpbHMiOnsiZGF0YSI6MTIzNDUsImV4cCI6IjIwMjYtMDEtMDFUMTY6MDA6MDAuMDAwWiIsInB1ciI6InVzZXIvdHJhbnNmZXIifX0--908466b7bdffa61056af41b8d4f464b5b99f9c479ea973d7869b5dfb2eb3864a"
+      },
+      {
+        "model": "User",
+        "id": 12345,
+        "purpose": null,
+        "expires_at": null,
+        "signed_id": "eyJfcmFpbHMiOnsiZGF0YSI6MTIzNDUsInB1ciI6InVzZXIifX0--7c85dd0b655d8729be00bd7da6e8d37589ca13f7360608a36cb04c6d8bb5bbea"
+      },
+      {
+        "model": "User",
+        "id": 9007199254740993,
+        "purpose": "avatar",
+        "expires_at": null,
+        "signed_id": "eyJfcmFpbHMiOnsiZGF0YSI6OTAwNzE5OTI1NDc0MDk5MywicHVyIjoidXNlci9hdmF0YXIifX0--25760de52cfbcdcb439e0ff1fddb721fbd7c67499ed4a7fb5e2fc4616fea3457"
+      },
+      {
+        "model": "User",
+        "id": 9007199254740993,
+        "purpose": "transfer",
+        "expires_at": "2026-01-01T16:00:00.000Z",
+        "signed_id": "eyJfcmFpbHMiOnsiZGF0YSI6OTAwNzE5OTI1NDc0MDk5MywiZXhwIjoiMjAyNi0wMS0wMVQxNjowMDowMC4wMDBaIiwicHVyIjoidXNlci90cmFuc2ZlciJ9fQ--d6d7efab76468e826f5c93957a3289820d2f2357076e24e1f47d1dd5819d31ae"
+      },
+      {
+        "model": "User",
+        "id": 9007199254740993,
+        "purpose": null,
+        "expires_at": null,
+        "signed_id": "eyJfcmFpbHMiOnsiZGF0YSI6OTAwNzE5OTI1NDc0MDk5MywicHVyIjoidXNlciJ9fQ--d0532c404c6372acc706b334bd9f7307eefeebf13ab97c80165eccbeaebc983d"
+      },
+      {
+        "model": "Room",
+        "id": 1,
+        "purpose": "avatar",
+        "expires_at": null,
+        "signed_id": "eyJfcmFpbHMiOnsiZGF0YSI6MSwicHVyIjoicm9vbS9hdmF0YXIifX0--57f4ae85db0114da3e1a05f74877f24805e20f29f85e65e0f4e5df7a8545a04c"
+      },
+      {
+        "model": "User",
+        "id": 1,
+        "purpose": "transfer",
+        "expires_at": "2026-01-01T12:30:00.000Z",
+        "signed_id": "eyJfcmFpbHMiOnsiZGF0YSI6MSwiZXhwIjoiMjAyNi0wMS0wMVQxMjozMDowMC4wMDBaIiwicHVyIjoidXNlci90cmFuc2ZlciJ9fQ--cd31c899f438aeaad22214b4ca0465affd1b10d4d403105137923123610d9e0d"
+      }
+    ],
+    "verify": [
+      {
+        "case": "valid User 1 avatar",
+        "model": "User",
+        "signed_id": "eyJfcmFpbHMiOnsiZGF0YSI6MSwicHVyIjoidXNlci9hdmF0YXIifX0--023b16424a00933214f527b2dbc6cb54ffa966a5b4fa3375c0678891f4e168e1",
+        "purpose": "avatar",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": 1
+      },
+      {
+        "case": "valid User 1 transfer",
+        "model": "User",
+        "signed_id": "eyJfcmFpbHMiOnsiZGF0YSI6MSwiZXhwIjoiMjAyNi0wMS0wMVQxNjowMDowMC4wMDBaIiwicHVyIjoidXNlci90cmFuc2ZlciJ9fQ--84b6cbc2d8ed3a38eca9044b3791b20d41abb332c2f81c01fc13a1534d4dc3a6",
+        "purpose": "transfer",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": 1
+      },
+      {
+        "case": "valid User 1 ",
+        "model": "User",
+        "signed_id": "eyJfcmFpbHMiOnsiZGF0YSI6MSwicHVyIjoidXNlciJ9fQ--ca0a5ac7b8763056751763399933da27f8551acad70d40c9be532b8b31e16c1b",
+        "purpose": null,
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": 1
+      },
+      {
+        "case": "valid User 2 avatar",
+        "model": "User",
+        "signed_id": "eyJfcmFpbHMiOnsiZGF0YSI6MiwicHVyIjoidXNlci9hdmF0YXIifX0--18b8839b6557c9efbe30c5aa140bd88b7b723b705167ec563f69e2522adb22b3",
+        "purpose": "avatar",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": 2
+      },
+      {
+        "case": "valid User 2 transfer",
+        "model": "User",
+        "signed_id": "eyJfcmFpbHMiOnsiZGF0YSI6MiwiZXhwIjoiMjAyNi0wMS0wMVQxNjowMDowMC4wMDBaIiwicHVyIjoidXNlci90cmFuc2ZlciJ9fQ--bdd9bea926e971fe9d119dbd22f2cd054d55f858f9fcd85ebacb9f3fe6a0706d",
+        "purpose": "transfer",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": 2
+      },
+      {
+        "case": "valid User 2 ",
+        "model": "User",
+        "signed_id": "eyJfcmFpbHMiOnsiZGF0YSI6MiwicHVyIjoidXNlciJ9fQ--7e6a28967b4f7466e2a67a8533ad3e7f83adc814f9c356251d4c337db5b0ac80",
+        "purpose": null,
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": 2
+      },
+      {
+        "case": "valid User 12345 avatar",
+        "model": "User",
+        "signed_id": "eyJfcmFpbHMiOnsiZGF0YSI6MTIzNDUsInB1ciI6InVzZXIvYXZhdGFyIn19--169ed9d46dc6dfbed888ed5e8add66e3f16fb61e4764c104a900aaf82fcaaaa2",
+        "purpose": "avatar",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": 12345
+      },
+      {
+        "case": "valid User 12345 transfer",
+        "model": "User",
+        "signed_id": "eyJfcmFpbHMiOnsiZGF0YSI6MTIzNDUsImV4cCI6IjIwMjYtMDEtMDFUMTY6MDA6MDAuMDAwWiIsInB1ciI6InVzZXIvdHJhbnNmZXIifX0--908466b7bdffa61056af41b8d4f464b5b99f9c479ea973d7869b5dfb2eb3864a",
+        "purpose": "transfer",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": 12345
+      },
+      {
+        "case": "valid User 12345 ",
+        "model": "User",
+        "signed_id": "eyJfcmFpbHMiOnsiZGF0YSI6MTIzNDUsInB1ciI6InVzZXIifX0--7c85dd0b655d8729be00bd7da6e8d37589ca13f7360608a36cb04c6d8bb5bbea",
+        "purpose": null,
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": 12345
+      },
+      {
+        "case": "valid User 9007199254740993 avatar",
+        "model": "User",
+        "signed_id": "eyJfcmFpbHMiOnsiZGF0YSI6OTAwNzE5OTI1NDc0MDk5MywicHVyIjoidXNlci9hdmF0YXIifX0--25760de52cfbcdcb439e0ff1fddb721fbd7c67499ed4a7fb5e2fc4616fea3457",
+        "purpose": "avatar",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": 9007199254740993
+      },
+      {
+        "case": "valid User 9007199254740993 transfer",
+        "model": "User",
+        "signed_id": "eyJfcmFpbHMiOnsiZGF0YSI6OTAwNzE5OTI1NDc0MDk5MywiZXhwIjoiMjAyNi0wMS0wMVQxNjowMDowMC4wMDBaIiwicHVyIjoidXNlci90cmFuc2ZlciJ9fQ--d6d7efab76468e826f5c93957a3289820d2f2357076e24e1f47d1dd5819d31ae",
+        "purpose": "transfer",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": 9007199254740993
+      },
+      {
+        "case": "valid User 9007199254740993 ",
+        "model": "User",
+        "signed_id": "eyJfcmFpbHMiOnsiZGF0YSI6OTAwNzE5OTI1NDc0MDk5MywicHVyIjoidXNlciJ9fQ--d0532c404c6372acc706b334bd9f7307eefeebf13ab97c80165eccbeaebc983d",
+        "purpose": null,
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": 9007199254740993
+      },
+      {
+        "case": "valid Room 1 avatar",
+        "model": "Room",
+        "signed_id": "eyJfcmFpbHMiOnsiZGF0YSI6MSwicHVyIjoicm9vbS9hdmF0YXIifX0--57f4ae85db0114da3e1a05f74877f24805e20f29f85e65e0f4e5df7a8545a04c",
+        "purpose": "avatar",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": 1
+      },
+      {
+        "case": "valid User 1 transfer",
+        "model": "User",
+        "signed_id": "eyJfcmFpbHMiOnsiZGF0YSI6MSwiZXhwIjoiMjAyNi0wMS0wMVQxMjozMDowMC4wMDBaIiwicHVyIjoidXNlci90cmFuc2ZlciJ9fQ--cd31c899f438aeaad22214b4ca0465affd1b10d4d403105137923123610d9e0d",
+        "purpose": "transfer",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": 1
+      },
+      {
+        "case": "transfer before expiry",
+        "model": "User",
+        "signed_id": "eyJfcmFpbHMiOnsiZGF0YSI6MSwiZXhwIjoiMjAyNi0wMS0wMVQxNjowMDowMC4wMDBaIiwicHVyIjoidXNlci90cmFuc2ZlciJ9fQ--84b6cbc2d8ed3a38eca9044b3791b20d41abb332c2f81c01fc13a1534d4dc3a6",
+        "purpose": "transfer",
+        "now": "2026-01-01T15:59:59.000Z",
+        "expected": 1
+      },
+      {
+        "case": "transfer at expiry",
+        "model": "User",
+        "signed_id": "eyJfcmFpbHMiOnsiZGF0YSI6MSwiZXhwIjoiMjAyNi0wMS0wMVQxNjowMDowMC4wMDBaIiwicHVyIjoidXNlci90cmFuc2ZlciJ9fQ--84b6cbc2d8ed3a38eca9044b3791b20d41abb332c2f81c01fc13a1534d4dc3a6",
+        "purpose": "transfer",
+        "now": "2026-01-01T16:00:00.000Z",
+        "expected": null
+      },
+      {
+        "case": "transfer after expiry",
+        "model": "User",
+        "signed_id": "eyJfcmFpbHMiOnsiZGF0YSI6MSwiZXhwIjoiMjAyNi0wMS0wMVQxNjowMDowMC4wMDBaIiwicHVyIjoidXNlci90cmFuc2ZlciJ9fQ--84b6cbc2d8ed3a38eca9044b3791b20d41abb332c2f81c01fc13a1534d4dc3a6",
+        "purpose": "transfer",
+        "now": "2026-01-01T17:00:00.000Z",
+        "expected": null
+      },
+      {
+        "case": "avatar far in the future",
+        "model": "User",
+        "signed_id": "eyJfcmFpbHMiOnsiZGF0YSI6MSwicHVyIjoidXNlci9hdmF0YXIifX0--023b16424a00933214f527b2dbc6cb54ffa966a5b4fa3375c0678891f4e168e1",
+        "purpose": "avatar",
+        "now": "2076-01-01T12:00:00.000Z",
+        "expected": 1
+      },
+      {
+        "case": "avatar id used as transfer",
+        "model": "User",
+        "signed_id": "eyJfcmFpbHMiOnsiZGF0YSI6MSwicHVyIjoidXNlci9hdmF0YXIifX0--023b16424a00933214f527b2dbc6cb54ffa966a5b4fa3375c0678891f4e168e1",
+        "purpose": "transfer",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": null
+      },
+      {
+        "case": "avatar id without purpose",
+        "model": "User",
+        "signed_id": "eyJfcmFpbHMiOnsiZGF0YSI6MSwicHVyIjoidXNlci9hdmF0YXIifX0--023b16424a00933214f527b2dbc6cb54ffa966a5b4fa3375c0678891f4e168e1",
+        "purpose": null,
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": null
+      },
+      {
+        "case": "room avatar id verified as user",
+        "model": "User",
+        "signed_id": "eyJfcmFpbHMiOnsiZGF0YSI6MSwicHVyIjoicm9vbS9hdmF0YXIifX0--57f4ae85db0114da3e1a05f74877f24805e20f29f85e65e0f4e5df7a8545a04c",
+        "purpose": "avatar",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": null
+      },
+      {
+        "case": "user avatar id verified as room",
+        "model": "Room",
+        "signed_id": "eyJfcmFpbHMiOnsiZGF0YSI6MSwicHVyIjoidXNlci9hdmF0YXIifX0--023b16424a00933214f527b2dbc6cb54ffa966a5b4fa3375c0678891f4e168e1",
+        "purpose": "avatar",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": null
+      },
+      {
+        "case": "tampered digest",
+        "model": "User",
+        "signed_id": "eyJfcmFpbHMiOnsiZGF0YSI6MSwicHVyIjoidXNlci9hdmF0YXIifX0--023b16424a00933214f527b2dbc6cb54ffa966a5b4fa3375c0678891f4e168e0",
+        "purpose": "avatar",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": null
+      },
+      {
+        "case": "tampered payload",
+        "model": "User",
+        "signed_id": "AyJfcmFpbHMiOnsiZGF0YSI6MSwicHVyIjoidXNlci9hdmF0YXIifX0--023b16424a00933214f527b2dbc6cb54ffa966a5b4fa3375c0678891f4e168e1",
+        "purpose": "avatar",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": null
+      },
+      {
+        "case": "signed with rotated secret",
+        "model": "User",
+        "signed_id": "eyJfcmFpbHMiOnsiZGF0YSI6MSwicHVyIjoidXNlci9hdmF0YXIifX0--3b1f4b420b87794f37a9492df70dba226d014f1fc0d39091b785b92533de6c97",
+        "purpose": "avatar",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": null
+      },
+      {
+        "case": "garbage",
+        "model": "User",
+        "signed_id": "garbage",
+        "purpose": "avatar",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": null
+      },
+      {
+        "case": "empty",
+        "model": "User",
+        "signed_id": "",
+        "purpose": "avatar",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": null
+      },
+      {
+        "case": "legacy fallback verifier (SHA1, standard base64)",
+        "model": "User",
+        "signed_id": "eyJfcmFpbHMiOnsiZGF0YSI6MSwicHVyIjoidXNlci9hdmF0YXIifX0=--48e3908278ac645d127bf75d84b238052a8d2e46",
+        "purpose": "avatar",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": 1
+      },
+      {
+        "case": "legacy fallback verifier, wrong purpose",
+        "model": "User",
+        "signed_id": "eyJfcmFpbHMiOnsiZGF0YSI6MSwicHVyIjoidXNlci90cmFuc2ZlciJ9fQ==--08e9bb301afe4f96b796f66abc2e1063f4687459",
+        "purpose": "avatar",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": null
+      },
+      {
+        "case": "standard base64 of url-safe message",
+        "model": "User",
+        "signed_id": "eyJfcmFpbHMiOnsiZGF0YSI6MSwicHVyIjoidXNlci9hdmF0YXIifX0=--f0d1d41d37df76165d87a0be1be782aace5037b03146a72f5b4303b825f3470e",
+        "purpose": "avatar",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": 1
+      },
+      {
+        "case": "string id",
+        "model": "User",
+        "signed_id": "eyJfcmFpbHMiOnsiZGF0YSI6IjciLCJwdXIiOiJ1c2VyL2F2YXRhciJ9fQ--fc248b0d4e94a913880767c1b0b95bfe71ce692372e175f7931ff31461ba7045",
+        "purpose": "avatar",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": "7"
+      }
+    ]
+  },
+  "global_ids": [
+    {
+      "model_name": "User",
+      "id": "1",
+      "gid": "gid://campfire/User/1",
+      "param": "Z2lkOi8vY2FtcGZpcmUvVXNlci8x"
+    },
+    {
+      "model_name": "User",
+      "id": "2",
+      "gid": "gid://campfire/User/2",
+      "param": "Z2lkOi8vY2FtcGZpcmUvVXNlci8y"
+    },
+    {
+      "model_name": "Rooms::Open",
+      "id": "1",
+      "gid": "gid://campfire/Rooms::Open/1",
+      "param": "Z2lkOi8vY2FtcGZpcmUvUm9vbXM6Ok9wZW4vMQ"
+    },
+    {
+      "model_name": "Account",
+      "id": "1",
+      "gid": "gid://campfire/Account/1",
+      "param": "Z2lkOi8vY2FtcGZpcmUvQWNjb3VudC8x"
+    }
+  ],
+  "sgids": {
+    "app": "campfire",
+    "generate": [
+      {
+        "gid": "gid://campfire/User/1",
+        "data": "gid://campfire/User/1?expires_in",
+        "purpose": "attachable",
+        "expires_at": null,
+        "sgid": "eyJfcmFpbHMiOnsiZGF0YSI6ImdpZDovL2NhbXBmaXJlL1VzZXIvMT9leHBpcmVzX2luIiwicHVyIjoiYXR0YWNoYWJsZSJ9fQ==--f7d8e8773314d3310320f3cdd08e5597bb51ca1a"
+      },
+      {
+        "gid": "gid://campfire/User/2",
+        "data": "gid://campfire/User/2?expires_in",
+        "purpose": "attachable",
+        "expires_at": null,
+        "sgid": "eyJfcmFpbHMiOnsiZGF0YSI6ImdpZDovL2NhbXBmaXJlL1VzZXIvMj9leHBpcmVzX2luIiwicHVyIjoiYXR0YWNoYWJsZSJ9fQ==--1ba63351f035908684be7963e1e62c732d48ec95"
+      },
+      {
+        "gid": "gid://campfire/Rooms::Open/1",
+        "data": "gid://campfire/Rooms::Open/1?expires_in",
+        "purpose": "attachable",
+        "expires_at": null,
+        "sgid": "eyJfcmFpbHMiOnsiZGF0YSI6ImdpZDovL2NhbXBmaXJlL1Jvb21zOjpPcGVuLzE_ZXhwaXJlc19pbiIsInB1ciI6ImF0dGFjaGFibGUifX0=--50e71d14f604feee38fecd887de7718e6470d932"
+      },
+      {
+        "gid": "gid://campfire/User/1",
+        "data": "gid://campfire/User/1",
+        "purpose": "default",
+        "expires_at": "2026-02-01T12:00:00.000Z",
+        "sgid": "eyJfcmFpbHMiOnsiZGF0YSI6ImdpZDovL2NhbXBmaXJlL1VzZXIvMSIsImV4cCI6IjIwMjYtMDItMDFUMTI6MDA6MDAuMDAwWiIsInB1ciI6ImRlZmF1bHQifX0=--5b1f86d74b11dd07db1054e1e224f4f7821faa12"
+      },
+      {
+        "gid": "gid://campfire/User/1",
+        "data": "gid://campfire/User/1",
+        "purpose": "attachable",
+        "expires_at": "2026-01-01T13:00:00.000Z",
+        "sgid": "eyJfcmFpbHMiOnsiZGF0YSI6ImdpZDovL2NhbXBmaXJlL1VzZXIvMSIsImV4cCI6IjIwMjYtMDEtMDFUMTM6MDA6MDAuMDAwWiIsInB1ciI6ImF0dGFjaGFibGUifX0=--6bf1671f3bd9117f7eb41d18fa80973969e20d54"
+      }
+    ],
+    "verify": [
+      {
+        "case": "valid gid://campfire/User/1 for attachable",
+        "sgid": "eyJfcmFpbHMiOnsiZGF0YSI6ImdpZDovL2NhbXBmaXJlL1VzZXIvMT9leHBpcmVzX2luIiwicHVyIjoiYXR0YWNoYWJsZSJ9fQ==--f7d8e8773314d3310320f3cdd08e5597bb51ca1a",
+        "purpose": "attachable",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": "gid://campfire/User/1?expires_in"
+      },
+      {
+        "case": "valid gid://campfire/User/2 for attachable",
+        "sgid": "eyJfcmFpbHMiOnsiZGF0YSI6ImdpZDovL2NhbXBmaXJlL1VzZXIvMj9leHBpcmVzX2luIiwicHVyIjoiYXR0YWNoYWJsZSJ9fQ==--1ba63351f035908684be7963e1e62c732d48ec95",
+        "purpose": "attachable",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": "gid://campfire/User/2?expires_in"
+      },
+      {
+        "case": "valid gid://campfire/Rooms::Open/1 for attachable",
+        "sgid": "eyJfcmFpbHMiOnsiZGF0YSI6ImdpZDovL2NhbXBmaXJlL1Jvb21zOjpPcGVuLzE_ZXhwaXJlc19pbiIsInB1ciI6ImF0dGFjaGFibGUifX0=--50e71d14f604feee38fecd887de7718e6470d932",
+        "purpose": "attachable",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": "gid://campfire/Rooms::Open/1?expires_in"
+      },
+      {
+        "case": "valid gid://campfire/User/1 for default",
+        "sgid": "eyJfcmFpbHMiOnsiZGF0YSI6ImdpZDovL2NhbXBmaXJlL1VzZXIvMSIsImV4cCI6IjIwMjYtMDItMDFUMTI6MDA6MDAuMDAwWiIsInB1ciI6ImRlZmF1bHQifX0=--5b1f86d74b11dd07db1054e1e224f4f7821faa12",
+        "purpose": "default",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": "gid://campfire/User/1"
+      },
+      {
+        "case": "valid gid://campfire/User/1 for attachable",
+        "sgid": "eyJfcmFpbHMiOnsiZGF0YSI6ImdpZDovL2NhbXBmaXJlL1VzZXIvMSIsImV4cCI6IjIwMjYtMDEtMDFUMTM6MDA6MDAuMDAwWiIsInB1ciI6ImF0dGFjaGFibGUifX0=--6bf1671f3bd9117f7eb41d18fa80973969e20d54",
+        "purpose": "attachable",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": "gid://campfire/User/1"
+      },
+      {
+        "case": "wrong purpose",
+        "sgid": "eyJfcmFpbHMiOnsiZGF0YSI6ImdpZDovL2NhbXBmaXJlL1VzZXIvMT9leHBpcmVzX2luIiwicHVyIjoiYXR0YWNoYWJsZSJ9fQ==--f7d8e8773314d3310320f3cdd08e5597bb51ca1a",
+        "purpose": "default",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": null
+      },
+      {
+        "case": "attachable sgid far in the future",
+        "sgid": "eyJfcmFpbHMiOnsiZGF0YSI6ImdpZDovL2NhbXBmaXJlL1VzZXIvMT9leHBpcmVzX2luIiwicHVyIjoiYXR0YWNoYWJsZSJ9fQ==--f7d8e8773314d3310320f3cdd08e5597bb51ca1a",
+        "purpose": "attachable",
+        "now": "2076-01-01T12:00:00.000Z",
+        "expected": "gid://campfire/User/1?expires_in"
+      },
+      {
+        "case": "short-lived before expiry",
+        "sgid": "eyJfcmFpbHMiOnsiZGF0YSI6ImdpZDovL2NhbXBmaXJlL1VzZXIvMSIsImV4cCI6IjIwMjYtMDEtMDFUMTM6MDA6MDAuMDAwWiIsInB1ciI6ImF0dGFjaGFibGUifX0=--6bf1671f3bd9117f7eb41d18fa80973969e20d54",
+        "purpose": "attachable",
+        "now": "2026-01-01T12:59:00.000Z",
+        "expected": "gid://campfire/User/1"
+      },
+      {
+        "case": "short-lived after expiry",
+        "sgid": "eyJfcmFpbHMiOnsiZGF0YSI6ImdpZDovL2NhbXBmaXJlL1VzZXIvMSIsImV4cCI6IjIwMjYtMDEtMDFUMTM6MDA6MDAuMDAwWiIsInB1ciI6ImF0dGFjaGFibGUifX0=--6bf1671f3bd9117f7eb41d18fa80973969e20d54",
+        "purpose": "attachable",
+        "now": "2026-01-01T14:00:00.000Z",
+        "expected": null
+      },
+      {
+        "case": "default purpose after a month",
+        "sgid": "eyJfcmFpbHMiOnsiZGF0YSI6ImdpZDovL2NhbXBmaXJlL1VzZXIvMSIsImV4cCI6IjIwMjYtMDItMDFUMTI6MDA6MDAuMDAwWiIsInB1ciI6ImRlZmF1bHQifX0=--5b1f86d74b11dd07db1054e1e224f4f7821faa12",
+        "purpose": "default",
+        "now": "2026-02-01T12:00:01.000Z",
+        "expected": null
+      },
+      {
+        "case": "tampered digest",
+        "sgid": "eyJfcmFpbHMiOnsiZGF0YSI6ImdpZDovL2NhbXBmaXJlL1VzZXIvMT9leHBpcmVzX2luIiwicHVyIjoiYXR0YWNoYWJsZSJ9fQ==--f7d8e8773314d3310320f3cdd08e5597bb51ca10",
+        "purpose": "attachable",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": null
+      },
+      {
+        "case": "tampered payload",
+        "sgid": "AyJfcmFpbHMiOnsiZGF0YSI6ImdpZDovL2NhbXBmaXJlL1VzZXIvMT9leHBpcmVzX2luIiwicHVyIjoiYXR0YWNoYWJsZSJ9fQ==--f7d8e8773314d3310320f3cdd08e5597bb51ca1a",
+        "purpose": "attachable",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": null
+      },
+      {
+        "case": "signed with rotated secret",
+        "sgid": "eyJfcmFpbHMiOnsiZGF0YSI6ImdpZDovL2NhbXBmaXJlL1VzZXIvMSIsInB1ciI6ImF0dGFjaGFibGUifX0=--2163dc554b77f6ff7acb3e73bf8338c950c9ad21",
+        "purpose": "attachable",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": null
+      },
+      {
+        "case": "garbage",
+        "sgid": "garbage",
+        "purpose": "attachable",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": null
+      },
+      {
+        "case": "marshal era (Rails 7.0)",
+        "sgid": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaEpJaHBuYVdRNkx5OWpZVzF3Wm1seVpTOVZjMlZ5THpFR09nWkZWQT09IiwiZXhwIjpudWxsLCJwdXIiOiJhdHRhY2hhYmxlIn19--c356af9923976625ae9c7dd70913d100653eaa6c",
+        "purpose": "attachable",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": "gid://campfire/User/1"
+      },
+      {
+        "case": "marshal era with expires_in param",
+        "sgid": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaEpJaVZuYVdRNkx5OWpZVzF3Wm1seVpTOVZjMlZ5THpFX1pYaHdhWEpsYzE5cGJnWTZCa1ZVIiwiZXhwIjpudWxsLCJwdXIiOiJhdHRhY2hhYmxlIn19--2aa25a2a07b575971d8cf362324597a4aaa2d79c",
+        "purpose": "attachable",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": "gid://campfire/User/1?expires_in"
+      },
+      {
+        "case": "marshal era, wrong purpose",
+        "sgid": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaEpJaHBuYVdRNkx5OWpZVzF3Wm1seVpTOVZjMlZ5THpFR09nWkZWQT09IiwiZXhwIjpudWxsLCJwdXIiOiJkZWZhdWx0In19--7a45c100bbf418810c6a2d8de9d7f31a023bec52",
+        "purpose": "attachable",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": null
+      },
+      {
+        "case": "marshal era, expired",
+        "sgid": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaEpJaHBuYVdRNkx5OWpZVzF3Wm1seVpTOVZjMlZ5THpFR09nWkZWQT09IiwiZXhwIjoiMjAyNi0wMS0wMVQxMTo1OTowMC4wMDBaIiwicHVyIjoiYXR0YWNoYWJsZSJ9fQ==--300b4c457ee6a3baeb7e37e80896b7151377d9d4",
+        "purpose": "attachable",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": null
+      },
+      {
+        "case": "json legacy envelope",
+        "sgid": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IkltZHBaRG92TDJOaGJYQm1hWEpsTDFWelpYSXZNU0k9IiwiZXhwIjpudWxsLCJwdXIiOiJhdHRhY2hhYmxlIn19--a2ef4faa7763d99e7470b934f6db9313aa4b61bc",
+        "purpose": "attachable",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": "gid://campfire/User/1"
+      },
+      {
+        "case": "self-validated metadata (globalid < 1.0)",
+        "sgid": "eyJnaWQiOiJnaWQ6Ly9jYW1wZmlyZS9Vc2VyLzEiLCJwdXJwb3NlIjoiYXR0YWNoYWJsZSIsImV4cGlyZXNfYXQiOm51bGx9--c826580da2bbaf4c18177a98c074535228f82e2e",
+        "purpose": "attachable",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": "gid://campfire/User/1"
+      },
+      {
+        "case": "self-validated metadata, wrong purpose",
+        "sgid": "eyJnaWQiOiJnaWQ6Ly9jYW1wZmlyZS9Vc2VyLzEiLCJwdXJwb3NlIjoiZGVmYXVsdCIsImV4cGlyZXNfYXQiOm51bGx9--1da2452933a0396c172d8800add81495d8dca51d",
+        "purpose": "attachable",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": null
+      },
+      {
+        "case": "self-validated metadata, expired",
+        "sgid": "eyJnaWQiOiJnaWQ6Ly9jYW1wZmlyZS9Vc2VyLzEiLCJwdXJwb3NlIjoiYXR0YWNoYWJsZSIsImV4cGlyZXNfYXQiOiIyMDI2LTAxLTAxVDExOjU5OjAwLjAwMFoifQ==--532c300b314b31f26e1fb22af8e28f8f960899e1",
+        "purpose": "attachable",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": null
+      },
+      {
+        "case": "self-validated metadata, not yet expired",
+        "sgid": "eyJnaWQiOiJnaWQ6Ly9jYW1wZmlyZS9Vc2VyLzEiLCJwdXJwb3NlIjoiYXR0YWNoYWJsZSIsImV4cGlyZXNfYXQiOiIyMDI2LTAxLTAxVDEyOjAxOjAwLjAwMFoifQ==--f5baf7e0f76ef7ea720ab92ae56aa94e29e418f3",
+        "purpose": "attachable",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": "gid://campfire/User/1"
+      },
+      {
+        "case": "unpadded url-safe base64",
+        "sgid": "eyJfcmFpbHMiOnsiZGF0YSI6ImdpZDovL2NhbXBmaXJlL1VzZXIvMT9leHBpcmVzX2luIiwicHVyIjoiYXR0YWNoYWJsZSJ9fQ--12e2dfc4e593d2f388e28b6f62836d13132d85e7",
+        "purpose": "attachable",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected": "gid://campfire/User/1?expires_in"
+      }
+    ]
+  },
+  "unverified_sgids": [
+    {
+      "case": "valid user sgid",
+      "sgid": "eyJfcmFpbHMiOnsiZGF0YSI6ImdpZDovL2NhbXBmaXJlL1VzZXIvMT9leHBpcmVzX2luIiwicHVyIjoiYXR0YWNoYWJsZSJ9fQ==--f7d8e8773314d3310320f3cdd08e5597bb51ca1a",
+      "expected": "gid://campfire/User/1"
+    },
+    {
+      "case": "user sgid signed with rotated secret",
+      "sgid": "eyJfcmFpbHMiOnsiZGF0YSI6ImdpZDovL2NhbXBmaXJlL1VzZXIvMiIsInB1ciI6ImF0dGFjaGFibGUifX0=--c6a7bbfe14aea6c79d26bba97356eacaea004544",
+      "expected": "gid://campfire/User/2"
+    },
+    {
+      "case": "user sgid with another purpose",
+      "sgid": "eyJfcmFpbHMiOnsiZGF0YSI6ImdpZDovL2NhbXBmaXJlL1VzZXIvMiIsInB1ciI6ImRlZmF1bHQifX0=--f5a3fab8b9b69182de9312d2f8a05bd480945086",
+      "expected": "gid://campfire/User/2"
+    },
+    {
+      "case": "tampered user sgid",
+      "sgid": "eyJfcmFpbHMiOnsiZGF0YSI6ImdpZDovL2NhbXBmaXJlL1VzZXIvMT9leHBpcmVzX2luIiwicHVyIjoiYXR0YWNoYWJsZSJ9fQ==--f7d8e8773314d3310320f3cdd08e5597bb51ca10",
+      "expected": "gid://campfire/User/1"
+    },
+    {
+      "case": "marshal era user sgid, rotated secret",
+      "sgid": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaEpJaHBuYVdRNkx5OWpZVzF3Wm1seVpTOVZjMlZ5THpFR09nWkZWQT09IiwiZXhwIjpudWxsLCJwdXIiOiJhdHRhY2hhYmxlIn19--42866401cf022a05a40981e9e75808f8c22aa70c",
+      "expected": "gid://campfire/User/1"
+    },
+    {
+      "case": "marshal era user sgid with params, rotated secret",
+      "sgid": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaEpJaVZuYVdRNkx5OWpZVzF3Wm1seVpTOVZjMlZ5THpJX1pYaHdhWEpsYzE5cGJnWTZCa1ZVIiwiZXhwIjpudWxsLCJwdXIiOiJhdHRhY2hhYmxlIn19--d4bfc67cc11e48c2bb74bc35a25a3446bc521225",
+      "expected": "gid://campfire/User/2"
+    },
+    {
+      "case": "marshal era user sgid, marshal with a long string",
+      "sgid": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaEpJZ0pDQVdkcFpEb3ZMMk5oYlhCbWFYSmxMMVZ6WlhJdk1qOTRlSGg0ZUhoNGVIaDRlSGg0ZUhoNGVIaDRlSGg0ZUhoNGVIaDRlSGg0ZUhoNGVIaDRlSGg0ZUhoNGVIaDRlSGg0ZUhoNGVIaDRlSGg0ZUhoNGVIaDRlSGg0ZUhoNGVIaDRlSGg0ZUhoNGVIaDRlSGg0ZUhoNGVIaDRlSGg0ZUhoNGVIaDRlSGg0ZUhoNGVIaDRlSGg0ZUhoNGVIaDRlSGg0ZUhoNGVIaDRlSGg0ZUhoNGVIaDRlSGg0ZUhoNGVIaDRlSGg0ZUhoNGVIaDRlSGg0ZUhoNGVIaDRlSGg0ZUhoNGVIaDRlSGg0ZUhoNGVIaDRlSGg0ZUhoNGVIaDRlSGg0ZUhoNGVIaDRlSGg0ZUhoNGVIaDRlSGg0ZUhoNGVIaDRlSGg0ZUhoNGVIaDRlSGg0ZUhoNGVIaDRlSGg0ZUhoNGVIaDRlSGg0ZUhoNGVIaDRlSGg0ZUhoNGVIaDRlSGg0ZUhoNGVIaDRlSGg0ZUhoNGVIaDRlSGg0ZUhoNGVIaDRlSGg0ZUhoNGVIaDRlSGdHT2daRlZBPT0iLCJleHAiOm51bGwsInB1ciI6ImF0dGFjaGFibGUifX0=--efb5233c45b6b5f0e319eee1d8d362d8e0f3b55c",
+      "expected": "gid://campfire/User/2"
+    },
+    {
+      "case": "marshal era room sgid, rotated secret",
+      "sgid": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaEpJaUZuYVdRNkx5OWpZVzF3Wm1seVpTOVNiMjl0Y3pvNlQzQmxiaTh4QmpvR1JWUT0iLCJleHAiOm51bGwsInB1ciI6ImF0dGFjaGFibGUifX0=--8e650bcffe390913c969264890d3129537c0c5a8",
+      "expected": null
+    },
+    {
+      "case": "marshal era gid of another app",
+      "sgid": "eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaEpJaGRuYVdRNkx5OXZkR2hsY2k5VmMyVnlMekVHT2daRlZBPT0iLCJleHAiOm51bGwsInB1ciI6ImF0dGFjaGFibGUifX0=--172503524ec0f15ff3feabe74d4780851b9d1d30",
+      "expected": null
+    },
+    {
+      "case": "room sgid signed with rotated secret",
+      "sgid": "eyJfcmFpbHMiOnsiZGF0YSI6ImdpZDovL2NhbXBmaXJlL1Jvb21zOjpPcGVuLzEiLCJwdXIiOiJhdHRhY2hhYmxlIn19--1a351affa95a1bbf791b17982f8f284621a53e09",
+      "expected": null
+    },
+    {
+      "case": "account sgid signed with rotated secret",
+      "sgid": "eyJfcmFpbHMiOnsiZGF0YSI6ImdpZDovL2NhbXBmaXJlL0FjY291bnQvMSIsInB1ciI6ImF0dGFjaGFibGUifX0=--c1a1798f8fc2276b50bc7e51f341006977f7b8c3",
+      "expected": null
+    },
+    {
+      "case": "missing user",
+      "sgid": "eyJfcmFpbHMiOnsiZGF0YSI6ImdpZDovL2NhbXBmaXJlL1VzZXIvOTk5IiwicHVyIjoiYXR0YWNoYWJsZSJ9fQ==--a140280054d4ab71e62cf1568d7310f538e3d48d",
+      "expected": null
+    },
+    {
+      "case": "user gid of another app",
+      "sgid": "eyJfcmFpbHMiOnsiZGF0YSI6ImdpZDovL290aGVyL1VzZXIvMSIsInB1ciI6ImF0dGFjaGFibGUifX0=--d94f0a045483fff64869f5a025c843cd8a2b24e9",
+      "expected": "gid://campfire/User/1"
+    },
+    {
+      "case": "no signature part",
+      "sgid": "eyJfcmFpbHMiOnsiZGF0YSI6ImdpZDovL2NhbXBmaXJlL1VzZXIvMT9leHBpcmVzX2luIiwicHVyIjoiYXR0YWNoYWJsZSJ9fQ==",
+      "expected": "gid://campfire/User/1"
+    },
+    {
+      "case": "standard base64 payload",
+      "sgid": "eyJfcmFpbHMiOnsiZGF0YSI6ImdpZDovL2NhbXBmaXJlL1VzZXIvMSIsInB1ciI6ImF0dGFjaGFibGUifX0=--x",
+      "expected": "gid://campfire/User/1"
+    },
+    {
+      "case": "envelope without data or message",
+      "sgid": "eyJfcmFpbHMiOnsicHVyIjoiYXR0YWNoYWJsZSJ9fQ==--x",
+      "expected": null
+    },
+    {
+      "case": "not an envelope",
+      "sgid": "eyJnaWQiOiJnaWQ6Ly9jYW1wZmlyZS9Vc2VyLzEifQ==--x",
+      "expected": null
+    },
+    {
+      "case": "not a gid",
+      "sgid": "eyJfcmFpbHMiOnsiZGF0YSI6ImhlbGxvIn19--x",
+      "expected": null
+    },
+    {
+      "case": "nil",
+      "sgid": null,
+      "expected": null
+    },
+    {
+      "case": "empty",
+      "sgid": "",
+      "expected": null
+    },
+    {
+      "case": "not json",
+      "sgid": "aGVsbG8=--x",
+      "expected": {
+        "raises": "JSON::ParserError"
+      }
+    },
+    {
+      "case": "not base64",
+      "sgid": "!!!--x",
+      "expected": {
+        "raises": "ArgumentError"
+      }
+    },
+    {
+      "case": "json array",
+      "sgid": "WzFd--x",
+      "expected": {
+        "raises": "TypeError"
+      }
+    }
+  ],
+  "turbo_stream_names": {
+    "generate": [
+      {
+        "parts": [
+          "Z2lkOi8vY2FtcGZpcmUvUm9vbXM6Ok9wZW4vMQ",
+          "messages"
+        ],
+        "stream_name": "Z2lkOi8vY2FtcGZpcmUvUm9vbXM6Ok9wZW4vMQ:messages",
+        "signed": "IloybGtPaTh2WTJGdGNHWnBjbVV2VW05dmJYTTZPazl3Wlc0dk1ROm1lc3NhZ2VzIg==--6ff497f9ec2f68f7ec64a5aee2fe25bd5ca8e2647ff82db8e211aabd83382b8b"
+      },
+      {
+        "parts": [
+          "rooms"
+        ],
+        "stream_name": "rooms",
+        "signed": "InJvb21zIg==--60a2ff565fb2226042c779b5711156db1d1cc48f89e6f59c94e4bf1da3f0945c"
+      },
+      {
+        "parts": [
+          "Z2lkOi8vY2FtcGZpcmUvVXNlci8x",
+          "rooms"
+        ],
+        "stream_name": "Z2lkOi8vY2FtcGZpcmUvVXNlci8x:rooms",
+        "signed": "IloybGtPaTh2WTJGdGNHWnBjbVV2VlhObGNpOHg6cm9vbXMi--1cc07be3a8b410a4bbfe4ca0988a833987c1c5000f804159f99177c56f9515f8"
+      },
+      {
+        "parts": [
+          "Z2lkOi8vY2FtcGZpcmUvVXNlci8x"
+        ],
+        "stream_name": "Z2lkOi8vY2FtcGZpcmUvVXNlci8x",
+        "signed": "IloybGtPaTh2WTJGdGNHWnBjbVV2VlhObGNpOHgi--ed25739a1c510b640a6e203a6d0303368639e943b45294a9d8d62cc66efb1873"
+      },
+      {
+        "parts": [
+          "unicode ☃ <&>"
+        ],
+        "stream_name": "unicode ☃ <&>",
+        "signed": "InVuaWNvZGUg4piDIDwmPiI=--075667747bb80d01e60af41e6adfe78248ef12c70936b037af197a7584eda21b"
+      },
+      {
+        "parts": [
+          "a",
+          "b:c"
+        ],
+        "stream_name": "a:b:c",
+        "signed": "ImE6YjpjIg==--d65ed5bf97ca33601d27f7cc9bf1c01d7318ec8f2220584c424b7cccfbe3bc20"
+      }
+    ],
+    "verify": [
+      {
+        "case": "valid Z2lkOi8vY2FtcGZpcmUvUm9vbXM6Ok9wZW4vMQ:messages",
+        "signed": "IloybGtPaTh2WTJGdGNHWnBjbVV2VW05dmJYTTZPazl3Wlc0dk1ROm1lc3NhZ2VzIg==--6ff497f9ec2f68f7ec64a5aee2fe25bd5ca8e2647ff82db8e211aabd83382b8b",
+        "expected": "Z2lkOi8vY2FtcGZpcmUvUm9vbXM6Ok9wZW4vMQ:messages"
+      },
+      {
+        "case": "valid rooms",
+        "signed": "InJvb21zIg==--60a2ff565fb2226042c779b5711156db1d1cc48f89e6f59c94e4bf1da3f0945c",
+        "expected": "rooms"
+      },
+      {
+        "case": "valid Z2lkOi8vY2FtcGZpcmUvVXNlci8x:rooms",
+        "signed": "IloybGtPaTh2WTJGdGNHWnBjbVV2VlhObGNpOHg6cm9vbXMi--1cc07be3a8b410a4bbfe4ca0988a833987c1c5000f804159f99177c56f9515f8",
+        "expected": "Z2lkOi8vY2FtcGZpcmUvVXNlci8x:rooms"
+      },
+      {
+        "case": "valid Z2lkOi8vY2FtcGZpcmUvVXNlci8x",
+        "signed": "IloybGtPaTh2WTJGdGNHWnBjbVV2VlhObGNpOHgi--ed25739a1c510b640a6e203a6d0303368639e943b45294a9d8d62cc66efb1873",
+        "expected": "Z2lkOi8vY2FtcGZpcmUvVXNlci8x"
+      },
+      {
+        "case": "valid unicode ☃ <&>",
+        "signed": "InVuaWNvZGUg4piDIDwmPiI=--075667747bb80d01e60af41e6adfe78248ef12c70936b037af197a7584eda21b",
+        "expected": "unicode ☃ <&>"
+      },
+      {
+        "case": "valid a:b:c",
+        "signed": "ImE6YjpjIg==--d65ed5bf97ca33601d27f7cc9bf1c01d7318ec8f2220584c424b7cccfbe3bc20",
+        "expected": "a:b:c"
+      },
+      {
+        "case": "tampered digest",
+        "signed": "IloybGtPaTh2WTJGdGNHWnBjbVV2VW05dmJYTTZPazl3Wlc0dk1ROm1lc3NhZ2VzIg==--6ff497f9ec2f68f7ec64a5aee2fe25bd5ca8e2647ff82db8e211aabd83382b80",
+        "expected": null
+      },
+      {
+        "case": "tampered payload",
+        "signed": "AloybGtPaTh2WTJGdGNHWnBjbVV2VW05dmJYTTZPazl3Wlc0dk1ROm1lc3NhZ2VzIg==--6ff497f9ec2f68f7ec64a5aee2fe25bd5ca8e2647ff82db8e211aabd83382b8b",
+        "expected": null
+      },
+      {
+        "case": "signed with rotated secret",
+        "signed": "InJvb21zIg==--fb7a8f45d793f0970e5e570387bfa0b76dfab784bcbc5ad650b062d39a67ef02",
+        "expected": null
+      },
+      {
+        "case": "garbage",
+        "signed": "garbage",
+        "expected": null
+      },
+      {
+        "case": "with purpose metadata",
+        "signed": "eyJfcmFpbHMiOnsiZGF0YSI6InJvb21zIiwicHVyIjoieCJ9fQ==--0e8621b1eccb70339156afafadd4bbc3d8a7f90ba5d7d39531b241634dee9c4d",
+        "expected": null
+      },
+      {
+        "case": "json non-string",
+        "signed": "NDI=--1e2d201a41131403cad0032a4744939daac57dab9695a576ae74ddee0e9d477f",
+        "expected": 42
+      }
+    ]
+  },
+  "app_verifiers": {
+    "generate": [
+      {
+        "name": "ActiveStorage",
+        "data_json": "42",
+        "purpose": "blob_id",
+        "expires_at": null,
+        "message": "eyJfcmFpbHMiOnsiZGF0YSI6NDIsInB1ciI6ImJsb2JfaWQifX0=--c252dc1b14dd0e8cd599eb40203378880bafed1f"
+      },
+      {
+        "name": "ActiveStorage",
+        "data_json": "9007199254740993",
+        "purpose": "blob_id",
+        "expires_at": null,
+        "message": "eyJfcmFpbHMiOnsiZGF0YSI6OTAwNzE5OTI1NDc0MDk5MywicHVyIjoiYmxvYl9pZCJ9fQ==--67d16c27fcbbe505dc8568bda736787eb3624cb0"
+      },
+      {
+        "name": "ActiveStorage",
+        "data_json": "{\"key\":\"xtapjjcjiudrlk3tmwyjgpuobabd\",\"disposition\":\"inline; filename=\\\"a\\u0026b.png\\\"; filename*=UTF-8''a%26b.png\",\"content_type\":\"image/png\",\"service_name\":\"local\"}",
+        "purpose": "blob_key",
+        "expires_at": "2026-01-01T12:05:00.000Z",
+        "message": "eyJfcmFpbHMiOnsiZGF0YSI6eyJrZXkiOiJ4dGFwampjaml1ZHJsazN0bXd5amdwdW9iYWJkIiwiZGlzcG9zaXRpb24iOiJpbmxpbmU7IGZpbGVuYW1lPVwiYVx1MDAyNmIucG5nXCI7IGZpbGVuYW1lKj1VVEYtOCcnYSUyNmIucG5nIiwiY29udGVudF90eXBlIjoiaW1hZ2UvcG5nIiwic2VydmljZV9uYW1lIjoibG9jYWwifSwiZXhwIjoiMjAyNi0wMS0wMVQxMjowNTowMC4wMDBaIiwicHVyIjoiYmxvYl9rZXkifX0=--764195902735b3201f5cf6129ff3b5089150e3e1"
+      },
+      {
+        "name": "ActiveStorage",
+        "data_json": "{\"key\":\"k\",\"content_type\":\"text/plain\",\"content_length\":12,\"checksum\":\"abc==\",\"service_name\":\"local\"}",
+        "purpose": "blob_token",
+        "expires_at": "2026-01-01T12:05:00.000Z",
+        "message": "eyJfcmFpbHMiOnsiZGF0YSI6eyJrZXkiOiJrIiwiY29udGVudF90eXBlIjoidGV4dC9wbGFpbiIsImNvbnRlbnRfbGVuZ3RoIjoxMiwiY2hlY2tzdW0iOiJhYmM9PSIsInNlcnZpY2VfbmFtZSI6ImxvY2FsIn0sImV4cCI6IjIwMjYtMDEtMDFUMTI6MDU6MDAuMDAwWiIsInB1ciI6ImJsb2JfdG9rZW4ifX0=--fc9c359d9a82afb6ad1f7cbb5c2056c05eb12081"
+      },
+      {
+        "name": "ActiveStorage",
+        "data_json": "\"0123abc\"",
+        "purpose": "variation",
+        "expires_at": null,
+        "message": "eyJfcmFpbHMiOnsiZGF0YSI6IjAxMjNhYmMiLCJwdXIiOiJ2YXJpYXRpb24ifX0=--a7fae304e60ae716c5ff86c403cbdf5caa286719"
+      },
+      {
+        "name": "ActiveStorage",
+        "data_json": "\"no purpose\"",
+        "purpose": null,
+        "expires_at": null,
+        "message": "Im5vIHB1cnBvc2Ui--e731d4394a5529e3d27f6226ed3fe612cf01c1e1"
+      },
+      {
+        "name": "something else",
+        "data_json": "{\"b\":1,\"a\":[\"\\u003c\\u0026\\u003e\"]}",
+        "purpose": "x",
+        "expires_at": null,
+        "message": "eyJfcmFpbHMiOnsiZGF0YSI6eyJiIjoxLCJhIjpbIlx1MDAzY1x1MDAyNlx1MDAzZSJdfSwicHVyIjoieCJ9fQ==--7ff86fef5fdbb102ede55845c3d0fb825b5672c5"
+      },
+      {
+        "name": "ActiveStorage",
+        "data_json": "42",
+        "purpose": "blob_id",
+        "expires_at": null,
+        "message": "eyJfcmFpbHMiOnsiZGF0YSI6NDIsInB1ciI6ImJsb2JfaWQifX0=--c252dc1b14dd0e8cd599eb40203378880bafed1f",
+        "via": "ActiveStorage::Blob#signed_id"
+      }
+    ],
+    "verify": [
+      {
+        "case": "valid ActiveStorage blob_id",
+        "name": "ActiveStorage",
+        "message": "eyJfcmFpbHMiOnsiZGF0YSI6NDIsInB1ciI6ImJsb2JfaWQifX0=--c252dc1b14dd0e8cd599eb40203378880bafed1f",
+        "purpose": "blob_id",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected_json": "42"
+      },
+      {
+        "case": "valid ActiveStorage blob_id",
+        "name": "ActiveStorage",
+        "message": "eyJfcmFpbHMiOnsiZGF0YSI6OTAwNzE5OTI1NDc0MDk5MywicHVyIjoiYmxvYl9pZCJ9fQ==--67d16c27fcbbe505dc8568bda736787eb3624cb0",
+        "purpose": "blob_id",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected_json": "9007199254740993"
+      },
+      {
+        "case": "valid ActiveStorage blob_key",
+        "name": "ActiveStorage",
+        "message": "eyJfcmFpbHMiOnsiZGF0YSI6eyJrZXkiOiJ4dGFwampjaml1ZHJsazN0bXd5amdwdW9iYWJkIiwiZGlzcG9zaXRpb24iOiJpbmxpbmU7IGZpbGVuYW1lPVwiYVx1MDAyNmIucG5nXCI7IGZpbGVuYW1lKj1VVEYtOCcnYSUyNmIucG5nIiwiY29udGVudF90eXBlIjoiaW1hZ2UvcG5nIiwic2VydmljZV9uYW1lIjoibG9jYWwifSwiZXhwIjoiMjAyNi0wMS0wMVQxMjowNTowMC4wMDBaIiwicHVyIjoiYmxvYl9rZXkifX0=--764195902735b3201f5cf6129ff3b5089150e3e1",
+        "purpose": "blob_key",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected_json": "{\"key\":\"xtapjjcjiudrlk3tmwyjgpuobabd\",\"disposition\":\"inline; filename=\\\"a\\u0026b.png\\\"; filename*=UTF-8''a%26b.png\",\"content_type\":\"image/png\",\"service_name\":\"local\"}"
+      },
+      {
+        "case": "valid ActiveStorage blob_token",
+        "name": "ActiveStorage",
+        "message": "eyJfcmFpbHMiOnsiZGF0YSI6eyJrZXkiOiJrIiwiY29udGVudF90eXBlIjoidGV4dC9wbGFpbiIsImNvbnRlbnRfbGVuZ3RoIjoxMiwiY2hlY2tzdW0iOiJhYmM9PSIsInNlcnZpY2VfbmFtZSI6ImxvY2FsIn0sImV4cCI6IjIwMjYtMDEtMDFUMTI6MDU6MDAuMDAwWiIsInB1ciI6ImJsb2JfdG9rZW4ifX0=--fc9c359d9a82afb6ad1f7cbb5c2056c05eb12081",
+        "purpose": "blob_token",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected_json": "{\"key\":\"k\",\"content_type\":\"text/plain\",\"content_length\":12,\"checksum\":\"abc==\",\"service_name\":\"local\"}"
+      },
+      {
+        "case": "valid ActiveStorage variation",
+        "name": "ActiveStorage",
+        "message": "eyJfcmFpbHMiOnsiZGF0YSI6IjAxMjNhYmMiLCJwdXIiOiJ2YXJpYXRpb24ifX0=--a7fae304e60ae716c5ff86c403cbdf5caa286719",
+        "purpose": "variation",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected_json": "\"0123abc\""
+      },
+      {
+        "case": "valid ActiveStorage ",
+        "name": "ActiveStorage",
+        "message": "Im5vIHB1cnBvc2Ui--e731d4394a5529e3d27f6226ed3fe612cf01c1e1",
+        "purpose": null,
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected_json": "\"no purpose\""
+      },
+      {
+        "case": "valid something else x",
+        "name": "something else",
+        "message": "eyJfcmFpbHMiOnsiZGF0YSI6eyJiIjoxLCJhIjpbIlx1MDAzY1x1MDAyNlx1MDAzZSJdfSwicHVyIjoieCJ9fQ==--7ff86fef5fdbb102ede55845c3d0fb825b5672c5",
+        "purpose": "x",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected_json": "{\"b\":1,\"a\":[\"\\u003c\\u0026\\u003e\"]}"
+      },
+      {
+        "case": "valid ActiveStorage blob_id",
+        "name": "ActiveStorage",
+        "message": "eyJfcmFpbHMiOnsiZGF0YSI6NDIsInB1ciI6ImJsb2JfaWQifX0=--c252dc1b14dd0e8cd599eb40203378880bafed1f",
+        "purpose": "blob_id",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected_json": "42"
+      },
+      {
+        "case": "wrong purpose",
+        "name": "ActiveStorage",
+        "message": "eyJfcmFpbHMiOnsiZGF0YSI6NDIsInB1ciI6ImJsb2JfaWQifX0=--c252dc1b14dd0e8cd599eb40203378880bafed1f",
+        "purpose": "blob_key",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected_json": null
+      },
+      {
+        "case": "wrong verifier name",
+        "name": "ActionText",
+        "message": "eyJfcmFpbHMiOnsiZGF0YSI6NDIsInB1ciI6ImJsb2JfaWQifX0=--c252dc1b14dd0e8cd599eb40203378880bafed1f",
+        "purpose": "blob_id",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected_json": null
+      },
+      {
+        "case": "expired",
+        "name": "ActiveStorage",
+        "message": "eyJfcmFpbHMiOnsiZGF0YSI6eyJrZXkiOiJ4dGFwampjaml1ZHJsazN0bXd5amdwdW9iYWJkIiwiZGlzcG9zaXRpb24iOiJpbmxpbmU7IGZpbGVuYW1lPVwiYVx1MDAyNmIucG5nXCI7IGZpbGVuYW1lKj1VVEYtOCcnYSUyNmIucG5nIiwiY29udGVudF90eXBlIjoiaW1hZ2UvcG5nIiwic2VydmljZV9uYW1lIjoibG9jYWwifSwiZXhwIjoiMjAyNi0wMS0wMVQxMjowNTowMC4wMDBaIiwicHVyIjoiYmxvYl9rZXkifX0=--764195902735b3201f5cf6129ff3b5089150e3e1",
+        "purpose": "blob_key",
+        "now": "2026-01-01T12:05:00.000Z",
+        "expected_json": null
+      },
+      {
+        "case": "before expiry",
+        "name": "ActiveStorage",
+        "message": "eyJfcmFpbHMiOnsiZGF0YSI6eyJrZXkiOiJ4dGFwampjaml1ZHJsazN0bXd5amdwdW9iYWJkIiwiZGlzcG9zaXRpb24iOiJpbmxpbmU7IGZpbGVuYW1lPVwiYVx1MDAyNmIucG5nXCI7IGZpbGVuYW1lKj1VVEYtOCcnYSUyNmIucG5nIiwiY29udGVudF90eXBlIjoiaW1hZ2UvcG5nIiwic2VydmljZV9uYW1lIjoibG9jYWwifSwiZXhwIjoiMjAyNi0wMS0wMVQxMjowNTowMC4wMDBaIiwicHVyIjoiYmxvYl9rZXkifX0=--764195902735b3201f5cf6129ff3b5089150e3e1",
+        "purpose": "blob_key",
+        "now": "2026-01-01T12:04:00.000Z",
+        "expected_json": "{\"key\":\"xtapjjcjiudrlk3tmwyjgpuobabd\",\"disposition\":\"inline; filename=\\\"a\\u0026b.png\\\"; filename*=UTF-8''a%26b.png\",\"content_type\":\"image/png\",\"service_name\":\"local\"}"
+      },
+      {
+        "case": "tampered",
+        "name": "ActiveStorage",
+        "message": "eyJfcmFpbHMiOnsiZGF0YSI6NDIsInB1ciI6ImJsb2JfaWQifX0=--c252dc1b14dd0e8cd599eb40203378880bafed10",
+        "purpose": "blob_id",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected_json": null
+      },
+      {
+        "case": "rotated secret",
+        "name": "ActiveStorage",
+        "message": "eyJfcmFpbHMiOnsiZGF0YSI6NDIsInB1ciI6ImJsb2JfaWQifX0=--2bc1680ef971c93f5c69812ace5660de2c1278f4",
+        "purpose": "blob_id",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected_json": null
+      },
+      {
+        "case": "url-safe encoding",
+        "name": "ActiveStorage",
+        "message": "eyJfcmFpbHMiOnsiZGF0YSI6Inh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4P1x1MDAzZSIsInB1ciI6InAifX0--d0d09cdae8153ac9eed98a685e120a2cd785e1a4",
+        "purpose": "p",
+        "now": "2026-01-01T12:00:00.000Z",
+        "expected_json": "\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx?\\u003e\""
+      }
+    ]
+  },
+  "passwords": {
+    "cost": 12,
+    "digests": [
+      {
+        "password": "secret123456",
+        "digest": "$2a$12$I/2qP3ixlNN..JU2dXSN0umG7/Folk3aUaqgSHn/Rl0G82O9WYk66"
+      },
+      {
+        "password": "pässwörd ☃",
+        "digest": "$2a$12$kolfXguIoTYueHR5JN6QAeV84/81BRcUbA.dz4fVMiqp5RUtos1I6"
+      },
+      {
+        "password": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "digest": "$2a$12$TZrwCKzycdLOZ2HeWOMW1OYHE8nrAWHoOY05FWLQ6N38GSUKn4DMW"
+      },
+      {
+        "password": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaignored",
+        "digest": "$2a$12$7ymzJw79L3lWy0kZKREoMOyowLTl015hCs3J1dIPjo8LLPxayN5f6"
+      },
+      {
+        "password": "x",
+        "digest": "$2a$12$Oi.yyHOhd2c.0yUMCk2FuOwFrMD3jDDjMTjQLrLmLprRMpX0eS296"
+      }
+    ],
+    "checks": [
+      {
+        "digest": "$2a$12$I/2qP3ixlNN..JU2dXSN0umG7/Folk3aUaqgSHn/Rl0G82O9WYk66",
+        "password": "secret123456",
+        "expected": true
+      },
+      {
+        "digest": "$2a$12$I/2qP3ixlNN..JU2dXSN0umG7/Folk3aUaqgSHn/Rl0G82O9WYk66",
+        "password": "pässwörd ☃",
+        "expected": false
+      },
+      {
+        "digest": "$2a$12$I/2qP3ixlNN..JU2dXSN0umG7/Folk3aUaqgSHn/Rl0G82O9WYk66",
+        "password": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "expected": false
+      },
+      {
+        "digest": "$2a$12$I/2qP3ixlNN..JU2dXSN0umG7/Folk3aUaqgSHn/Rl0G82O9WYk66",
+        "password": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaignored",
+        "expected": false
+      },
+      {
+        "digest": "$2a$12$I/2qP3ixlNN..JU2dXSN0umG7/Folk3aUaqgSHn/Rl0G82O9WYk66",
+        "password": "x",
+        "expected": false
+      },
+      {
+        "digest": "$2a$12$I/2qP3ixlNN..JU2dXSN0umG7/Folk3aUaqgSHn/Rl0G82O9WYk66",
+        "password": "wrong",
+        "expected": false
+      },
+      {
+        "digest": "$2a$12$I/2qP3ixlNN..JU2dXSN0umG7/Folk3aUaqgSHn/Rl0G82O9WYk66",
+        "password": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "expected": false
+      },
+      {
+        "digest": "$2a$12$I/2qP3ixlNN..JU2dXSN0umG7/Folk3aUaqgSHn/Rl0G82O9WYk66",
+        "password": "secret123456 ",
+        "expected": false
+      },
+      {
+        "digest": "$2a$12$kolfXguIoTYueHR5JN6QAeV84/81BRcUbA.dz4fVMiqp5RUtos1I6",
+        "password": "secret123456",
+        "expected": false
+      },
+      {
+        "digest": "$2a$12$kolfXguIoTYueHR5JN6QAeV84/81BRcUbA.dz4fVMiqp5RUtos1I6",
+        "password": "pässwörd ☃",
+        "expected": true
+      },
+      {
+        "digest": "$2a$12$kolfXguIoTYueHR5JN6QAeV84/81BRcUbA.dz4fVMiqp5RUtos1I6",
+        "password": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "expected": false
+      },
+      {
+        "digest": "$2a$12$kolfXguIoTYueHR5JN6QAeV84/81BRcUbA.dz4fVMiqp5RUtos1I6",
+        "password": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaignored",
+        "expected": false
+      },
+      {
+        "digest": "$2a$12$kolfXguIoTYueHR5JN6QAeV84/81BRcUbA.dz4fVMiqp5RUtos1I6",
+        "password": "x",
+        "expected": false
+      },
+      {
+        "digest": "$2a$12$kolfXguIoTYueHR5JN6QAeV84/81BRcUbA.dz4fVMiqp5RUtos1I6",
+        "password": "wrong",
+        "expected": false
+      },
+      {
+        "digest": "$2a$12$kolfXguIoTYueHR5JN6QAeV84/81BRcUbA.dz4fVMiqp5RUtos1I6",
+        "password": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "expected": false
+      },
+      {
+        "digest": "$2a$12$kolfXguIoTYueHR5JN6QAeV84/81BRcUbA.dz4fVMiqp5RUtos1I6",
+        "password": "secret123456 ",
+        "expected": false
+      },
+      {
+        "digest": "$2a$12$TZrwCKzycdLOZ2HeWOMW1OYHE8nrAWHoOY05FWLQ6N38GSUKn4DMW",
+        "password": "secret123456",
+        "expected": false
+      },
+      {
+        "digest": "$2a$12$TZrwCKzycdLOZ2HeWOMW1OYHE8nrAWHoOY05FWLQ6N38GSUKn4DMW",
+        "password": "pässwörd ☃",
+        "expected": false
+      },
+      {
+        "digest": "$2a$12$TZrwCKzycdLOZ2HeWOMW1OYHE8nrAWHoOY05FWLQ6N38GSUKn4DMW",
+        "password": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "expected": true
+      },
+      {
+        "digest": "$2a$12$TZrwCKzycdLOZ2HeWOMW1OYHE8nrAWHoOY05FWLQ6N38GSUKn4DMW",
+        "password": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaignored",
+        "expected": true
+      },
+      {
+        "digest": "$2a$12$TZrwCKzycdLOZ2HeWOMW1OYHE8nrAWHoOY05FWLQ6N38GSUKn4DMW",
+        "password": "x",
+        "expected": false
+      },
+      {
+        "digest": "$2a$12$TZrwCKzycdLOZ2HeWOMW1OYHE8nrAWHoOY05FWLQ6N38GSUKn4DMW",
+        "password": "wrong",
+        "expected": false
+      },
+      {
+        "digest": "$2a$12$TZrwCKzycdLOZ2HeWOMW1OYHE8nrAWHoOY05FWLQ6N38GSUKn4DMW",
+        "password": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "expected": false
+      },
+      {
+        "digest": "$2a$12$TZrwCKzycdLOZ2HeWOMW1OYHE8nrAWHoOY05FWLQ6N38GSUKn4DMW",
+        "password": "secret123456 ",
+        "expected": false
+      },
+      {
+        "digest": "$2a$12$7ymzJw79L3lWy0kZKREoMOyowLTl015hCs3J1dIPjo8LLPxayN5f6",
+        "password": "secret123456",
+        "expected": false
+      },
+      {
+        "digest": "$2a$12$7ymzJw79L3lWy0kZKREoMOyowLTl015hCs3J1dIPjo8LLPxayN5f6",
+        "password": "pässwörd ☃",
+        "expected": false
+      },
+      {
+        "digest": "$2a$12$7ymzJw79L3lWy0kZKREoMOyowLTl015hCs3J1dIPjo8LLPxayN5f6",
+        "password": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "expected": true
+      },
+      {
+        "digest": "$2a$12$7ymzJw79L3lWy0kZKREoMOyowLTl015hCs3J1dIPjo8LLPxayN5f6",
+        "password": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaignored",
+        "expected": true
+      },
+      {
+        "digest": "$2a$12$7ymzJw79L3lWy0kZKREoMOyowLTl015hCs3J1dIPjo8LLPxayN5f6",
+        "password": "x",
+        "expected": false
+      },
+      {
+        "digest": "$2a$12$7ymzJw79L3lWy0kZKREoMOyowLTl015hCs3J1dIPjo8LLPxayN5f6",
+        "password": "wrong",
+        "expected": false
+      },
+      {
+        "digest": "$2a$12$7ymzJw79L3lWy0kZKREoMOyowLTl015hCs3J1dIPjo8LLPxayN5f6",
+        "password": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "expected": false
+      },
+      {
+        "digest": "$2a$12$7ymzJw79L3lWy0kZKREoMOyowLTl015hCs3J1dIPjo8LLPxayN5f6",
+        "password": "secret123456 ",
+        "expected": false
+      },
+      {
+        "digest": "$2a$12$Oi.yyHOhd2c.0yUMCk2FuOwFrMD3jDDjMTjQLrLmLprRMpX0eS296",
+        "password": "secret123456",
+        "expected": false
+      },
+      {
+        "digest": "$2a$12$Oi.yyHOhd2c.0yUMCk2FuOwFrMD3jDDjMTjQLrLmLprRMpX0eS296",
+        "password": "pässwörd ☃",
+        "expected": false
+      },
+      {
+        "digest": "$2a$12$Oi.yyHOhd2c.0yUMCk2FuOwFrMD3jDDjMTjQLrLmLprRMpX0eS296",
+        "password": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "expected": false
+      },
+      {
+        "digest": "$2a$12$Oi.yyHOhd2c.0yUMCk2FuOwFrMD3jDDjMTjQLrLmLprRMpX0eS296",
+        "password": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaignored",
+        "expected": false
+      },
+      {
+        "digest": "$2a$12$Oi.yyHOhd2c.0yUMCk2FuOwFrMD3jDDjMTjQLrLmLprRMpX0eS296",
+        "password": "x",
+        "expected": true
+      },
+      {
+        "digest": "$2a$12$Oi.yyHOhd2c.0yUMCk2FuOwFrMD3jDDjMTjQLrLmLprRMpX0eS296",
+        "password": "wrong",
+        "expected": false
+      },
+      {
+        "digest": "$2a$12$Oi.yyHOhd2c.0yUMCk2FuOwFrMD3jDDjMTjQLrLmLprRMpX0eS296",
+        "password": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "expected": false
+      },
+      {
+        "digest": "$2a$12$Oi.yyHOhd2c.0yUMCk2FuOwFrMD3jDDjMTjQLrLmLprRMpX0eS296",
+        "password": "secret123456 ",
+        "expected": false
+      }
+    ],
+    "seeded_user_digest": "$2a$12$kDVPfUd.VKsV9HzG8RHRFu0fyaW7gije1Krza2.A0J5S8XEcOQT4S"
+  }
+}

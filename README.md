@@ -1,0 +1,138 @@
+# Campfire for Java
+
+A port of [Campfire](https://github.com/basecamp/once-campfire) to Java 25 and Quarkus. It is a drop-in
+replacement for the Rails app: it uses the same SQLite database, Active Storage files, signed and encrypted
+cookies, Action Cable protocol, and Web Push keys. For the same request and the same data it answers with the
+same bytes as the [Rust port](https://github.com/basecamp/once-campfire-rust): status, headers and body.
+
+The code is meant to read as an ordinary Quarkus application, not as a transliteration of Rails or Rust.
+
+## Layout
+
+Packages are organized by feature. Inside a feature:
+
+- **`*Resource`**: Quarkus REST (`@Path`) classes on virtual threads. They do HTTP only: read parameters, check
+  access, call a service, render a template or redirect. They never touch the database.
+- **`*Service`**: `@ApplicationScoped` beans that own the transactions and the side effects, such as cable
+  broadcasts, disconnecting sockets, webhooks and push.
+- **Records and static queries** for each table (`Room`, `Message`, `User`, …), plus view models and presenters
+  that build what the templates render.
+
+| package | what's in it |
+|---|---|
+| `rooms` | room pages, open/closed/direct rooms, involvement, refresh |
+| `messages` | posting, editing, boosts, message rendering and its fragment cache |
+| `sidebar`, `search` | the sidebar frame and full-text search |
+| `users`, `sessions`, `accounts`, `bots`, `push` | people, sign-in and transfers, account settings, bot API and webhooks, Web Push |
+| `storage` | the Active Storage HTTP surface, analysis and variants (libvips, ffmpeg) |
+| `cable` | the Action Cable server and channels |
+| `richtext`, `rails`, `useragent`, `integrations` | Action Text HTML, Rails-compatible crypto and serialization, browser detection, OpenGraph/QR/Web Push clients |
+| `web` | request context, access filter, the Thruster-like front layer (cache, compression), error pages |
+| `view` | the templates' helpers, the fragment cache and page digests |
+
+Access rules are annotations (`@Access.Public`, `@GuestOnly`, `@BotsAllowed`, `@NoForgeryProtection`) checked by
+`web.AccessFilter`. Classes are `@NullMarked`, and NullAway (via Error Prone) enforces nullability at compile time.
+
+### Templates
+
+The templates are [jte](https://jte.gg) in `src/main/jte`, compiled ahead of time with `trimControlStructures` off,
+so output is exactly the template text. Rails' Erubi removes a line that holds only a `<% %>` tag. To get the same
+result, a control tag (`@if`, `@else`, `@endfor`, `!{…}`) goes at the end of the previous line instead of on a line
+of its own:
+
+```
+      <div class="quick-boosts">@for(var reaction : BoostView.QUICK_REACTIONS)
+          <form …>
+</button></form>@endfor
+
+        <a …>
+```
+
+These are the same positions the Rust port's askama `{%-` tags take. Partials end with as many newlines as their
+Rust counterpart renders, and pages end at their layout call.
+
+## Build and run
+
+Requires JDK 25 and Maven 3.9.
+
+```sh
+mvn package                       # tests included; -DskipTests to skip them
+CAMPFIRE_STORAGE=./storage SECRET_KEY_BASE=… HTTP_PORT=3000 java -jar target/quarkus-app/quarkus-run.jar
+```
+
+Configuration is the Rails app's environment: `SECRET_KEY_BASE`, `DISABLE_SSL`, `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY`,
+`APP_VERSION`, `GIT_REVISION`, `HTTP_PORT`, plus `CAMPFIRE_STORAGE` (default `/rails/storage`, which holds `db/` and
+`files/`).
+
+Images, with the same user, layout and port contract as the Rails image:
+
+```sh
+docker build -t once-campfire-java:app .                              # JVM (ZGC)
+docker build -f Dockerfile.native -t once-campfire-java:native .      # GraalVM native image
+docker build -f Dockerfile.aot -t once-campfire-java:aot .            # JDK 26, jlink runtime, AOT cache
+```
+
+The AOT image trains its cache during the build on a fresh, empty install, never on production data. It runs on
+a 99 MB jlink runtime. The Dockerfile explains the module list and a JDK 26.0.2.1 bug it has to work around.
+
+## Verifying parity
+
+`tools/parity` runs Rust and Java side by side on fresh copies of a [verification](https://github.com/basecamp/once-campfire-verification)
+seed. It requests 125 cases from both and diffs normalized headers and bodies: every room, every message variant,
+the sidebar, search, the account and user pages, Turbo-Frame requests, and anonymous pages.
+
+```sh
+export CAMPFIRE_SEED=/path/to/fixtures/default JAVA_HOME=…
+tools/parity/up.sh                                         # Rust on :4100 (campfire-rust:app), Java on :4101
+python tools/parity/parity.py [--gzip] [--host campfire.test] [--ua chrome-win] [--only /rooms]
+```
+
+Sign a session cookie for `parity.py` with `SignCookie.java` (see its header). The script writes it to
+`tools/parity/work/cookie.txt`.
+
+At the time of writing, every case matches except for timing:
+
+- Cookie `expires` values that land in different seconds.
+- Session-transfer tokens, which embed a millisecond expiry, on the user and profile pages.
+
+The verification harness's benchmark preflight returns identical body hashes for Rust, the JVM build and the
+native build.
+
+## Benchmarks
+
+`bin/benchmark` from once-campfire-verification:
+
+- 16 clients, 8 s per route, 3 interleaved rounds.
+- Server pinned to 4 vCPUs (`--cpus 8-11`), load generator on 4 others.
+- Intel Core Ultra 9 275HX, Docker Desktop on Windows 11.
+- Every response was contract-validated and every acknowledged write audited.
+
+Median req/s:
+
+| route | Rust | Java (JVM) | Java (native) |
+|---|---:|---:|---:|
+| room_show | 28,977 | 26,472 | 21,412 |
+| messages_page | 25,208 | 29,533 | 24,681 |
+| sidebar | 32,546 | 45,103 | 25,802 |
+| search | 31,248 | 45,857 | 26,952 |
+| post_message | 3,209 | 2,711 | 2,108 |
+| avatar | 118,177 | 179,154 | 124,276 |
+| static_css | 135,590 | 203,655 | 133,319 |
+| up | 61,239 | 69,322 | 42,175 |
+
+Expect about ±20% between rounds, because Hyper-V schedules vCPUs onto both P- and E-cores. Compare results only
+from the same interleaved run. The native build starts in about 30 ms, against about 0.7 s for the JVM, but it is
+slower under sustained load: it has no JIT, and the Community Edition has neither PGO nor G1.
+
+## Known differences from the Rust port
+
+None of these show up in the parity suite or the harness:
+
+- Gzipped responses carry a `Content-Length`; Rust sends them chunked.
+- For clients that prefer zstd, Rust's proxy layer zstd-compresses bodies the app left unencoded. Java leaves them
+  uncompressed. This only affects bodies the app's own gzip skipped.
+- Rust's proxy sniffs a `Content-Type` for responses that lack one. Java doesn't; no app response lacks one.
+- A chunked request body over `MAX_REQUEST_BODY` isn't stopped by the proxy layer's 413. The app's own body limit
+  still applies.
+- Header order on the wire can differ. Names are lowercase, as in Rust and Rack 3.
+- Thruster's per-request log line isn't reproduced.

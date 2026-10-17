@@ -1,0 +1,1966 @@
+{
+  "routes": [
+    {
+      "verb": "GET",
+      "path": "/",
+      "endpoint": "welcome#show",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/first_run/new(.:format)",
+      "endpoint": "first_runs#new",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/first_run/edit(.:format)",
+      "endpoint": "first_runs#edit",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/first_run(.:format)",
+      "endpoint": "first_runs#show",
+      "defaults": {}
+    },
+    {
+      "verb": "PATCH",
+      "path": "/first_run(.:format)",
+      "endpoint": "first_runs#update",
+      "defaults": {}
+    },
+    {
+      "verb": "PUT",
+      "path": "/first_run(.:format)",
+      "endpoint": "first_runs#update",
+      "defaults": {}
+    },
+    {
+      "verb": "DELETE",
+      "path": "/first_run(.:format)",
+      "endpoint": "first_runs#destroy",
+      "defaults": {}
+    },
+    {
+      "verb": "POST",
+      "path": "/first_run(.:format)",
+      "endpoint": "first_runs#create",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/session/transfers/:id(.:format)",
+      "endpoint": "sessions/transfers#show",
+      "defaults": {}
+    },
+    {
+      "verb": "PATCH",
+      "path": "/session/transfers/:id(.:format)",
+      "endpoint": "sessions/transfers#update",
+      "defaults": {}
+    },
+    {
+      "verb": "PUT",
+      "path": "/session/transfers/:id(.:format)",
+      "endpoint": "sessions/transfers#update",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/session/new(.:format)",
+      "endpoint": "sessions#new",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/session/edit(.:format)",
+      "endpoint": "sessions#edit",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/session(.:format)",
+      "endpoint": "sessions#show",
+      "defaults": {}
+    },
+    {
+      "verb": "PATCH",
+      "path": "/session(.:format)",
+      "endpoint": "sessions#update",
+      "defaults": {}
+    },
+    {
+      "verb": "PUT",
+      "path": "/session(.:format)",
+      "endpoint": "sessions#update",
+      "defaults": {}
+    },
+    {
+      "verb": "DELETE",
+      "path": "/session(.:format)",
+      "endpoint": "sessions#destroy",
+      "defaults": {}
+    },
+    {
+      "verb": "POST",
+      "path": "/session(.:format)",
+      "endpoint": "sessions#create",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/account/users(.:format)",
+      "endpoint": "accounts/users#index",
+      "defaults": {}
+    },
+    {
+      "verb": "POST",
+      "path": "/account/users(.:format)",
+      "endpoint": "accounts/users#create",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/account/users/new(.:format)",
+      "endpoint": "accounts/users#new",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/account/users/:id/edit(.:format)",
+      "endpoint": "accounts/users#edit",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/account/users/:id(.:format)",
+      "endpoint": "accounts/users#show",
+      "defaults": {}
+    },
+    {
+      "verb": "PATCH",
+      "path": "/account/users/:id(.:format)",
+      "endpoint": "accounts/users#update",
+      "defaults": {}
+    },
+    {
+      "verb": "PUT",
+      "path": "/account/users/:id(.:format)",
+      "endpoint": "accounts/users#update",
+      "defaults": {}
+    },
+    {
+      "verb": "DELETE",
+      "path": "/account/users/:id(.:format)",
+      "endpoint": "accounts/users#destroy",
+      "defaults": {}
+    },
+    {
+      "verb": "PATCH",
+      "path": "/account/bots/:bot_id/key(.:format)",
+      "endpoint": "accounts/bots/keys#update",
+      "defaults": {}
+    },
+    {
+      "verb": "PUT",
+      "path": "/account/bots/:bot_id/key(.:format)",
+      "endpoint": "accounts/bots/keys#update",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/account/bots(.:format)",
+      "endpoint": "accounts/bots#index",
+      "defaults": {}
+    },
+    {
+      "verb": "POST",
+      "path": "/account/bots(.:format)",
+      "endpoint": "accounts/bots#create",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/account/bots/new(.:format)",
+      "endpoint": "accounts/bots#new",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/account/bots/:id/edit(.:format)",
+      "endpoint": "accounts/bots#edit",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/account/bots/:id(.:format)",
+      "endpoint": "accounts/bots#show",
+      "defaults": {}
+    },
+    {
+      "verb": "PATCH",
+      "path": "/account/bots/:id(.:format)",
+      "endpoint": "accounts/bots#update",
+      "defaults": {}
+    },
+    {
+      "verb": "PUT",
+      "path": "/account/bots/:id(.:format)",
+      "endpoint": "accounts/bots#update",
+      "defaults": {}
+    },
+    {
+      "verb": "DELETE",
+      "path": "/account/bots/:id(.:format)",
+      "endpoint": "accounts/bots#destroy",
+      "defaults": {}
+    },
+    {
+      "verb": "POST",
+      "path": "/account/join_code(.:format)",
+      "endpoint": "accounts/join_codes#create",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/account/logo(.:format)",
+      "endpoint": "accounts/logos#show",
+      "defaults": {}
+    },
+    {
+      "verb": "DELETE",
+      "path": "/account/logo(.:format)",
+      "endpoint": "accounts/logos#destroy",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/account/custom_styles/edit(.:format)",
+      "endpoint": "accounts/custom_styles#edit",
+      "defaults": {}
+    },
+    {
+      "verb": "PATCH",
+      "path": "/account/custom_styles(.:format)",
+      "endpoint": "accounts/custom_styles#update",
+      "defaults": {}
+    },
+    {
+      "verb": "PUT",
+      "path": "/account/custom_styles(.:format)",
+      "endpoint": "accounts/custom_styles#update",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/account/new(.:format)",
+      "endpoint": "accounts#new",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/account/edit(.:format)",
+      "endpoint": "accounts#edit",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/account(.:format)",
+      "endpoint": "accounts#show",
+      "defaults": {}
+    },
+    {
+      "verb": "PATCH",
+      "path": "/account(.:format)",
+      "endpoint": "accounts#update",
+      "defaults": {}
+    },
+    {
+      "verb": "PUT",
+      "path": "/account(.:format)",
+      "endpoint": "accounts#update",
+      "defaults": {}
+    },
+    {
+      "verb": "DELETE",
+      "path": "/account(.:format)",
+      "endpoint": "accounts#destroy",
+      "defaults": {}
+    },
+    {
+      "verb": "POST",
+      "path": "/account(.:format)",
+      "endpoint": "accounts#create",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/join/:join_code(.:format)",
+      "endpoint": "users#new",
+      "defaults": {}
+    },
+    {
+      "verb": "POST",
+      "path": "/join/:join_code(.:format)",
+      "endpoint": "users#create",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/qr_code/:id(.:format)",
+      "endpoint": "qr_code#show",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/users/:user_id/avatar(.:format)",
+      "endpoint": "users/avatars#show",
+      "defaults": {}
+    },
+    {
+      "verb": "DELETE",
+      "path": "/users/:user_id/avatar(.:format)",
+      "endpoint": "users/avatars#destroy",
+      "defaults": {}
+    },
+    {
+      "verb": "DELETE",
+      "path": "/users/:user_id/ban(.:format)",
+      "endpoint": "users/bans#destroy",
+      "defaults": {}
+    },
+    {
+      "verb": "POST",
+      "path": "/users/:user_id/ban(.:format)",
+      "endpoint": "users/bans#create",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/users/:user_id/sidebar(.:format)",
+      "endpoint": "users/sidebars#show",
+      "defaults": {
+        "user_id": "me"
+      }
+    },
+    {
+      "verb": "GET",
+      "path": "/users/:user_id/profile/new(.:format)",
+      "endpoint": "users/profiles#new",
+      "defaults": {
+        "user_id": "me"
+      }
+    },
+    {
+      "verb": "GET",
+      "path": "/users/:user_id/profile/edit(.:format)",
+      "endpoint": "users/profiles#edit",
+      "defaults": {
+        "user_id": "me"
+      }
+    },
+    {
+      "verb": "GET",
+      "path": "/users/:user_id/profile(.:format)",
+      "endpoint": "users/profiles#show",
+      "defaults": {
+        "user_id": "me"
+      }
+    },
+    {
+      "verb": "PATCH",
+      "path": "/users/:user_id/profile(.:format)",
+      "endpoint": "users/profiles#update",
+      "defaults": {
+        "user_id": "me"
+      }
+    },
+    {
+      "verb": "PUT",
+      "path": "/users/:user_id/profile(.:format)",
+      "endpoint": "users/profiles#update",
+      "defaults": {
+        "user_id": "me"
+      }
+    },
+    {
+      "verb": "DELETE",
+      "path": "/users/:user_id/profile(.:format)",
+      "endpoint": "users/profiles#destroy",
+      "defaults": {
+        "user_id": "me"
+      }
+    },
+    {
+      "verb": "POST",
+      "path": "/users/:user_id/profile(.:format)",
+      "endpoint": "users/profiles#create",
+      "defaults": {
+        "user_id": "me"
+      }
+    },
+    {
+      "verb": "POST",
+      "path": "/users/:user_id/push_subscriptions/:push_subscription_id/test_notifications(.:format)",
+      "endpoint": "users/push_subscriptions/test_notifications#create",
+      "defaults": {
+        "user_id": "me"
+      }
+    },
+    {
+      "verb": "GET",
+      "path": "/users/:user_id/push_subscriptions(.:format)",
+      "endpoint": "users/push_subscriptions#index",
+      "defaults": {
+        "user_id": "me"
+      }
+    },
+    {
+      "verb": "POST",
+      "path": "/users/:user_id/push_subscriptions(.:format)",
+      "endpoint": "users/push_subscriptions#create",
+      "defaults": {
+        "user_id": "me"
+      }
+    },
+    {
+      "verb": "GET",
+      "path": "/users/:user_id/push_subscriptions/new(.:format)",
+      "endpoint": "users/push_subscriptions#new",
+      "defaults": {
+        "user_id": "me"
+      }
+    },
+    {
+      "verb": "GET",
+      "path": "/users/:user_id/push_subscriptions/:id/edit(.:format)",
+      "endpoint": "users/push_subscriptions#edit",
+      "defaults": {
+        "user_id": "me"
+      }
+    },
+    {
+      "verb": "GET",
+      "path": "/users/:user_id/push_subscriptions/:id(.:format)",
+      "endpoint": "users/push_subscriptions#show",
+      "defaults": {
+        "user_id": "me"
+      }
+    },
+    {
+      "verb": "PATCH",
+      "path": "/users/:user_id/push_subscriptions/:id(.:format)",
+      "endpoint": "users/push_subscriptions#update",
+      "defaults": {
+        "user_id": "me"
+      }
+    },
+    {
+      "verb": "PUT",
+      "path": "/users/:user_id/push_subscriptions/:id(.:format)",
+      "endpoint": "users/push_subscriptions#update",
+      "defaults": {
+        "user_id": "me"
+      }
+    },
+    {
+      "verb": "DELETE",
+      "path": "/users/:user_id/push_subscriptions/:id(.:format)",
+      "endpoint": "users/push_subscriptions#destroy",
+      "defaults": {
+        "user_id": "me"
+      }
+    },
+    {
+      "verb": "GET",
+      "path": "/users/:id(.:format)",
+      "endpoint": "users#show",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/autocompletable/users(.:format)",
+      "endpoint": "autocompletable/users#index",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/:room_id/messages(.:format)",
+      "endpoint": "messages#index",
+      "defaults": {}
+    },
+    {
+      "verb": "POST",
+      "path": "/rooms/:room_id/messages(.:format)",
+      "endpoint": "messages#create",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/:room_id/messages/new(.:format)",
+      "endpoint": "messages#new",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/:room_id/messages/:id/edit(.:format)",
+      "endpoint": "messages#edit",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/:room_id/messages/:id(.:format)",
+      "endpoint": "messages#show",
+      "defaults": {}
+    },
+    {
+      "verb": "PATCH",
+      "path": "/rooms/:room_id/messages/:id(.:format)",
+      "endpoint": "messages#update",
+      "defaults": {}
+    },
+    {
+      "verb": "PUT",
+      "path": "/rooms/:room_id/messages/:id(.:format)",
+      "endpoint": "messages#update",
+      "defaults": {}
+    },
+    {
+      "verb": "DELETE",
+      "path": "/rooms/:room_id/messages/:id(.:format)",
+      "endpoint": "messages#destroy",
+      "defaults": {}
+    },
+    {
+      "verb": "POST",
+      "path": "/rooms/:room_id/:bot_key/messages/:message_id/boosts(.:format)",
+      "endpoint": "messages/boosts/by_bots#create",
+      "defaults": {
+        "format": "json"
+      }
+    },
+    {
+      "verb": "DELETE",
+      "path": "/rooms/:room_id/:bot_key/messages/:message_id/boosts/:id(.:format)",
+      "endpoint": "messages/boosts/by_bots#destroy",
+      "defaults": {
+        "format": "json"
+      }
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/:room_id/:bot_key/messages(.:format)",
+      "endpoint": "messages/by_bots#index",
+      "defaults": {
+        "format": "json"
+      }
+    },
+    {
+      "verb": "POST",
+      "path": "/rooms/:room_id/:bot_key/messages(.:format)",
+      "endpoint": "messages/by_bots#create",
+      "defaults": {
+        "format": "json"
+      }
+    },
+    {
+      "verb": "PATCH",
+      "path": "/rooms/:room_id/:bot_key/messages/:id(.:format)",
+      "endpoint": "messages/by_bots#update",
+      "defaults": {
+        "format": "json"
+      }
+    },
+    {
+      "verb": "PUT",
+      "path": "/rooms/:room_id/:bot_key/messages/:id(.:format)",
+      "endpoint": "messages/by_bots#update",
+      "defaults": {
+        "format": "json"
+      }
+    },
+    {
+      "verb": "DELETE",
+      "path": "/rooms/:room_id/:bot_key/messages/:id(.:format)",
+      "endpoint": "messages/by_bots#destroy",
+      "defaults": {
+        "format": "json"
+      }
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/:room_id/refresh(.:format)",
+      "endpoint": "rooms/refreshes#show",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/:room_id/settings(.:format)",
+      "endpoint": "rooms/settings#show",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/:room_id/involvement(.:format)",
+      "endpoint": "rooms/involvements#show",
+      "defaults": {}
+    },
+    {
+      "verb": "PATCH",
+      "path": "/rooms/:room_id/involvement(.:format)",
+      "endpoint": "rooms/involvements#update",
+      "defaults": {}
+    },
+    {
+      "verb": "PUT",
+      "path": "/rooms/:room_id/involvement(.:format)",
+      "endpoint": "rooms/involvements#update",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/:room_id/@:message_id(.:format)",
+      "endpoint": "rooms#show",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms(.:format)",
+      "endpoint": "rooms#index",
+      "defaults": {}
+    },
+    {
+      "verb": "POST",
+      "path": "/rooms(.:format)",
+      "endpoint": "rooms#create",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/new(.:format)",
+      "endpoint": "rooms#new",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/:id/edit(.:format)",
+      "endpoint": "rooms#edit",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/:id(.:format)",
+      "endpoint": "rooms#show",
+      "defaults": {}
+    },
+    {
+      "verb": "PATCH",
+      "path": "/rooms/:id(.:format)",
+      "endpoint": "rooms#update",
+      "defaults": {}
+    },
+    {
+      "verb": "PUT",
+      "path": "/rooms/:id(.:format)",
+      "endpoint": "rooms#update",
+      "defaults": {}
+    },
+    {
+      "verb": "DELETE",
+      "path": "/rooms/:id(.:format)",
+      "endpoint": "rooms#destroy",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/opens(.:format)",
+      "endpoint": "rooms/opens#index",
+      "defaults": {}
+    },
+    {
+      "verb": "POST",
+      "path": "/rooms/opens(.:format)",
+      "endpoint": "rooms/opens#create",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/opens/new(.:format)",
+      "endpoint": "rooms/opens#new",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/opens/:id/edit(.:format)",
+      "endpoint": "rooms/opens#edit",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/opens/:id(.:format)",
+      "endpoint": "rooms/opens#show",
+      "defaults": {}
+    },
+    {
+      "verb": "PATCH",
+      "path": "/rooms/opens/:id(.:format)",
+      "endpoint": "rooms/opens#update",
+      "defaults": {}
+    },
+    {
+      "verb": "PUT",
+      "path": "/rooms/opens/:id(.:format)",
+      "endpoint": "rooms/opens#update",
+      "defaults": {}
+    },
+    {
+      "verb": "DELETE",
+      "path": "/rooms/opens/:id(.:format)",
+      "endpoint": "rooms/opens#destroy",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/closeds(.:format)",
+      "endpoint": "rooms/closeds#index",
+      "defaults": {}
+    },
+    {
+      "verb": "POST",
+      "path": "/rooms/closeds(.:format)",
+      "endpoint": "rooms/closeds#create",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/closeds/new(.:format)",
+      "endpoint": "rooms/closeds#new",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/closeds/:id/edit(.:format)",
+      "endpoint": "rooms/closeds#edit",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/closeds/:id(.:format)",
+      "endpoint": "rooms/closeds#show",
+      "defaults": {}
+    },
+    {
+      "verb": "PATCH",
+      "path": "/rooms/closeds/:id(.:format)",
+      "endpoint": "rooms/closeds#update",
+      "defaults": {}
+    },
+    {
+      "verb": "PUT",
+      "path": "/rooms/closeds/:id(.:format)",
+      "endpoint": "rooms/closeds#update",
+      "defaults": {}
+    },
+    {
+      "verb": "DELETE",
+      "path": "/rooms/closeds/:id(.:format)",
+      "endpoint": "rooms/closeds#destroy",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/directs(.:format)",
+      "endpoint": "rooms/directs#index",
+      "defaults": {}
+    },
+    {
+      "verb": "POST",
+      "path": "/rooms/directs(.:format)",
+      "endpoint": "rooms/directs#create",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/directs/new(.:format)",
+      "endpoint": "rooms/directs#new",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/directs/:id/edit(.:format)",
+      "endpoint": "rooms/directs#edit",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/directs/:id(.:format)",
+      "endpoint": "rooms/directs#show",
+      "defaults": {}
+    },
+    {
+      "verb": "PATCH",
+      "path": "/rooms/directs/:id(.:format)",
+      "endpoint": "rooms/directs#update",
+      "defaults": {}
+    },
+    {
+      "verb": "PUT",
+      "path": "/rooms/directs/:id(.:format)",
+      "endpoint": "rooms/directs#update",
+      "defaults": {}
+    },
+    {
+      "verb": "DELETE",
+      "path": "/rooms/directs/:id(.:format)",
+      "endpoint": "rooms/directs#destroy",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/messages/:message_id/boosts(.:format)",
+      "endpoint": "messages/boosts#index",
+      "defaults": {}
+    },
+    {
+      "verb": "POST",
+      "path": "/messages/:message_id/boosts(.:format)",
+      "endpoint": "messages/boosts#create",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/messages/:message_id/boosts/new(.:format)",
+      "endpoint": "messages/boosts#new",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/messages/:message_id/boosts/:id/edit(.:format)",
+      "endpoint": "messages/boosts#edit",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/messages/:message_id/boosts/:id(.:format)",
+      "endpoint": "messages/boosts#show",
+      "defaults": {}
+    },
+    {
+      "verb": "PATCH",
+      "path": "/messages/:message_id/boosts/:id(.:format)",
+      "endpoint": "messages/boosts#update",
+      "defaults": {}
+    },
+    {
+      "verb": "PUT",
+      "path": "/messages/:message_id/boosts/:id(.:format)",
+      "endpoint": "messages/boosts#update",
+      "defaults": {}
+    },
+    {
+      "verb": "DELETE",
+      "path": "/messages/:message_id/boosts/:id(.:format)",
+      "endpoint": "messages/boosts#destroy",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/messages(.:format)",
+      "endpoint": "messages#index",
+      "defaults": {}
+    },
+    {
+      "verb": "POST",
+      "path": "/messages(.:format)",
+      "endpoint": "messages#create",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/messages/new(.:format)",
+      "endpoint": "messages#new",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/messages/:id/edit(.:format)",
+      "endpoint": "messages#edit",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/messages/:id(.:format)",
+      "endpoint": "messages#show",
+      "defaults": {}
+    },
+    {
+      "verb": "PATCH",
+      "path": "/messages/:id(.:format)",
+      "endpoint": "messages#update",
+      "defaults": {}
+    },
+    {
+      "verb": "PUT",
+      "path": "/messages/:id(.:format)",
+      "endpoint": "messages#update",
+      "defaults": {}
+    },
+    {
+      "verb": "DELETE",
+      "path": "/messages/:id(.:format)",
+      "endpoint": "messages#destroy",
+      "defaults": {}
+    },
+    {
+      "verb": "DELETE",
+      "path": "/searches/clear(.:format)",
+      "endpoint": "searches#clear",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/searches(.:format)",
+      "endpoint": "searches#index",
+      "defaults": {}
+    },
+    {
+      "verb": "POST",
+      "path": "/searches(.:format)",
+      "endpoint": "searches#create",
+      "defaults": {}
+    },
+    {
+      "verb": "POST",
+      "path": "/unfurl_link(.:format)",
+      "endpoint": "unfurl_links#create",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/webmanifest(.:format)",
+      "endpoint": "pwa#manifest",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/service-worker(.:format)",
+      "endpoint": "pwa#service_worker",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/up(.:format)",
+      "endpoint": "rails/health#show",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/recede_historical_location(.:format)",
+      "endpoint": "turbo/native/navigation#recede",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/resume_historical_location(.:format)",
+      "endpoint": "turbo/native/navigation#resume",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/refresh_historical_location(.:format)",
+      "endpoint": "turbo/native/navigation#refresh",
+      "defaults": {}
+    },
+    {
+      "verb": "POST",
+      "path": "/rails/action_mailbox/postmark/inbound_emails(.:format)",
+      "endpoint": "action_mailbox/ingresses/postmark/inbound_emails#create",
+      "defaults": {}
+    },
+    {
+      "verb": "POST",
+      "path": "/rails/action_mailbox/relay/inbound_emails(.:format)",
+      "endpoint": "action_mailbox/ingresses/relay/inbound_emails#create",
+      "defaults": {}
+    },
+    {
+      "verb": "POST",
+      "path": "/rails/action_mailbox/sendgrid/inbound_emails(.:format)",
+      "endpoint": "action_mailbox/ingresses/sendgrid/inbound_emails#create",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/rails/action_mailbox/mandrill/inbound_emails(.:format)",
+      "endpoint": "action_mailbox/ingresses/mandrill/inbound_emails#health_check",
+      "defaults": {}
+    },
+    {
+      "verb": "POST",
+      "path": "/rails/action_mailbox/mandrill/inbound_emails(.:format)",
+      "endpoint": "action_mailbox/ingresses/mandrill/inbound_emails#create",
+      "defaults": {}
+    },
+    {
+      "verb": "POST",
+      "path": "/rails/action_mailbox/mailgun/inbound_emails/mime(.:format)",
+      "endpoint": "action_mailbox/ingresses/mailgun/inbound_emails#create",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/rails/conductor/action_mailbox/inbound_emails(.:format)",
+      "endpoint": "rails/conductor/action_mailbox/inbound_emails#index",
+      "defaults": {}
+    },
+    {
+      "verb": "POST",
+      "path": "/rails/conductor/action_mailbox/inbound_emails(.:format)",
+      "endpoint": "rails/conductor/action_mailbox/inbound_emails#create",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/rails/conductor/action_mailbox/inbound_emails/new(.:format)",
+      "endpoint": "rails/conductor/action_mailbox/inbound_emails#new",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/rails/conductor/action_mailbox/inbound_emails/:id(.:format)",
+      "endpoint": "rails/conductor/action_mailbox/inbound_emails#show",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/rails/conductor/action_mailbox/inbound_emails/sources/new(.:format)",
+      "endpoint": "rails/conductor/action_mailbox/inbound_emails/sources#new",
+      "defaults": {}
+    },
+    {
+      "verb": "POST",
+      "path": "/rails/conductor/action_mailbox/inbound_emails/sources(.:format)",
+      "endpoint": "rails/conductor/action_mailbox/inbound_emails/sources#create",
+      "defaults": {}
+    },
+    {
+      "verb": "POST",
+      "path": "/rails/conductor/action_mailbox/:inbound_email_id/reroute(.:format)",
+      "endpoint": "rails/conductor/action_mailbox/reroutes#create",
+      "defaults": {}
+    },
+    {
+      "verb": "POST",
+      "path": "/rails/conductor/action_mailbox/:inbound_email_id/incinerate(.:format)",
+      "endpoint": "rails/conductor/action_mailbox/incinerates#create",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/rails/active_storage/blobs/redirect/:signed_id/*filename(.:format)",
+      "endpoint": "active_storage/blobs/redirect#show",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/rails/active_storage/blobs/proxy/:signed_id/*filename(.:format)",
+      "endpoint": "active_storage/blobs/proxy#show",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/rails/active_storage/blobs/:signed_id/*filename(.:format)",
+      "endpoint": "active_storage/blobs/redirect#show",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/rails/active_storage/representations/redirect/:signed_blob_id/:variation_key/*filename(.:format)",
+      "endpoint": "active_storage/representations/redirect#show",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/rails/active_storage/representations/proxy/:signed_blob_id/:variation_key/*filename(.:format)",
+      "endpoint": "active_storage/representations/proxy#show",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/rails/active_storage/representations/:signed_blob_id/:variation_key/*filename(.:format)",
+      "endpoint": "active_storage/representations/redirect#show",
+      "defaults": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/rails/active_storage/disk/:encoded_key/*filename(.:format)",
+      "endpoint": "active_storage/disk#show",
+      "defaults": {}
+    },
+    {
+      "verb": "PUT",
+      "path": "/rails/active_storage/disk/:encoded_token(.:format)",
+      "endpoint": "active_storage/disk#update",
+      "defaults": {}
+    },
+    {
+      "verb": "POST",
+      "path": "/rails/active_storage/direct_uploads(.:format)",
+      "endpoint": "active_storage/direct_uploads#create",
+      "defaults": {}
+    }
+  ],
+  "recognitions": [
+    {
+      "verb": "GET",
+      "path": "/",
+      "endpoint": "welcome#show",
+      "params": {}
+    },
+    {
+      "verb": "HEAD",
+      "path": "/",
+      "endpoint": "welcome#show",
+      "params": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms",
+      "endpoint": "rooms#index",
+      "params": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/",
+      "endpoint": "rooms#index",
+      "params": {}
+    },
+    {
+      "verb": "GET",
+      "path": "//rooms//1//",
+      "endpoint": "rooms#show",
+      "params": {
+        "id": "1"
+      }
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/1",
+      "endpoint": "rooms#show",
+      "params": {
+        "id": "1"
+      }
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/1.json",
+      "endpoint": "rooms#show",
+      "params": {
+        "id": "1",
+        "format": "json"
+      }
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/1.turbo_stream",
+      "endpoint": "rooms#show",
+      "params": {
+        "id": "1",
+        "format": "turbo_stream"
+      }
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/1.2.3",
+      "endpoint": null,
+      "params": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/opens",
+      "endpoint": "rooms#show",
+      "params": {
+        "id": "opens"
+      }
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/closeds",
+      "endpoint": "rooms#show",
+      "params": {
+        "id": "closeds"
+      }
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/directs",
+      "endpoint": "rooms#show",
+      "params": {
+        "id": "directs"
+      }
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/opens/new",
+      "endpoint": "rooms/opens#new",
+      "params": {}
+    },
+    {
+      "verb": "POST",
+      "path": "/rooms/opens",
+      "endpoint": "rooms/opens#create",
+      "params": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/opens/5",
+      "endpoint": "rooms/opens#show",
+      "params": {
+        "id": "5"
+      }
+    },
+    {
+      "verb": "PATCH",
+      "path": "/rooms/opens/5",
+      "endpoint": "rooms/opens#update",
+      "params": {
+        "id": "5"
+      }
+    },
+    {
+      "verb": "PUT",
+      "path": "/rooms/directs/5",
+      "endpoint": "rooms/directs#update",
+      "params": {
+        "id": "5"
+      }
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/new",
+      "endpoint": "rooms#new",
+      "params": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/1/edit",
+      "endpoint": "rooms#edit",
+      "params": {
+        "id": "1"
+      }
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/1/@42",
+      "endpoint": "rooms#show",
+      "params": {
+        "room_id": "1",
+        "message_id": "42"
+      }
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/1/@42.json",
+      "endpoint": "rooms#show",
+      "params": {
+        "room_id": "1",
+        "message_id": "42",
+        "format": "json"
+      }
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/1/messages",
+      "endpoint": "messages#index",
+      "params": {
+        "room_id": "1"
+      }
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/1/messages.json",
+      "endpoint": "messages#index",
+      "params": {
+        "room_id": "1",
+        "format": "json"
+      }
+    },
+    {
+      "verb": "POST",
+      "path": "/rooms/1/messages",
+      "endpoint": "messages#create",
+      "params": {
+        "room_id": "1"
+      }
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/1/messages/new",
+      "endpoint": "messages#new",
+      "params": {
+        "room_id": "1"
+      }
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/1/messages/2",
+      "endpoint": "messages#show",
+      "params": {
+        "room_id": "1",
+        "id": "2"
+      }
+    },
+    {
+      "verb": "DELETE",
+      "path": "/rooms/1/messages/2",
+      "endpoint": "messages#destroy",
+      "params": {
+        "room_id": "1",
+        "id": "2"
+      }
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/1/1-abc/messages",
+      "endpoint": "messages/by_bots#index",
+      "params": {
+        "format": "json",
+        "room_id": "1",
+        "bot_key": "1-abc"
+      }
+    },
+    {
+      "verb": "POST",
+      "path": "/rooms/1/1-abc/messages",
+      "endpoint": "messages/by_bots#create",
+      "params": {
+        "format": "json",
+        "room_id": "1",
+        "bot_key": "1-abc"
+      }
+    },
+    {
+      "verb": "POST",
+      "path": "/rooms/1/1-abc/messages.txt",
+      "endpoint": "messages/by_bots#create",
+      "params": {
+        "format": "txt",
+        "room_id": "1",
+        "bot_key": "1-abc"
+      }
+    },
+    {
+      "verb": "PUT",
+      "path": "/rooms/1/1-abc/messages/7",
+      "endpoint": "messages/by_bots#update",
+      "params": {
+        "format": "json",
+        "room_id": "1",
+        "bot_key": "1-abc",
+        "id": "7"
+      }
+    },
+    {
+      "verb": "POST",
+      "path": "/rooms/1/1-abc/messages/7/boosts",
+      "endpoint": "messages/boosts/by_bots#create",
+      "params": {
+        "format": "json",
+        "room_id": "1",
+        "bot_key": "1-abc",
+        "message_id": "7"
+      }
+    },
+    {
+      "verb": "DELETE",
+      "path": "/rooms/1/1-abc/messages/7/boosts/3",
+      "endpoint": "messages/boosts/by_bots#destroy",
+      "params": {
+        "format": "json",
+        "room_id": "1",
+        "bot_key": "1-abc",
+        "message_id": "7",
+        "id": "3"
+      }
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/1/refresh",
+      "endpoint": "rooms/refreshes#show",
+      "params": {
+        "room_id": "1"
+      }
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/1/settings",
+      "endpoint": null,
+      "params": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/1/involvement",
+      "endpoint": "rooms/involvements#show",
+      "params": {
+        "room_id": "1"
+      }
+    },
+    {
+      "verb": "PATCH",
+      "path": "/rooms/1/involvement",
+      "endpoint": "rooms/involvements#update",
+      "params": {
+        "room_id": "1"
+      }
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/1/involvement.turbo_stream",
+      "endpoint": "rooms/involvements#show",
+      "params": {
+        "room_id": "1",
+        "format": "turbo_stream"
+      }
+    },
+    {
+      "verb": "GET",
+      "path": "/messages/1/boosts",
+      "endpoint": "messages/boosts#index",
+      "params": {
+        "message_id": "1"
+      }
+    },
+    {
+      "verb": "GET",
+      "path": "/messages/1/boosts/new",
+      "endpoint": "messages/boosts#new",
+      "params": {
+        "message_id": "1"
+      }
+    },
+    {
+      "verb": "POST",
+      "path": "/messages/1/boosts",
+      "endpoint": "messages/boosts#create",
+      "params": {
+        "message_id": "1"
+      }
+    },
+    {
+      "verb": "DELETE",
+      "path": "/messages/1/boosts/9",
+      "endpoint": "messages/boosts#destroy",
+      "params": {
+        "message_id": "1",
+        "id": "9"
+      }
+    },
+    {
+      "verb": "GET",
+      "path": "/messages/new",
+      "endpoint": "messages#new",
+      "params": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/messages/5",
+      "endpoint": "messages#show",
+      "params": {
+        "id": "5"
+      }
+    },
+    {
+      "verb": "GET",
+      "path": "/session/new",
+      "endpoint": "sessions#new",
+      "params": {}
+    },
+    {
+      "verb": "POST",
+      "path": "/session",
+      "endpoint": "sessions#create",
+      "params": {}
+    },
+    {
+      "verb": "DELETE",
+      "path": "/session",
+      "endpoint": "sessions#destroy",
+      "params": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/session/transfers/abc-def",
+      "endpoint": "sessions/transfers#show",
+      "params": {
+        "id": "abc-def"
+      }
+    },
+    {
+      "verb": "PUT",
+      "path": "/session/transfers/abc",
+      "endpoint": "sessions/transfers#update",
+      "params": {
+        "id": "abc"
+      }
+    },
+    {
+      "verb": "GET",
+      "path": "/first_run",
+      "endpoint": "first_runs#show",
+      "params": {}
+    },
+    {
+      "verb": "POST",
+      "path": "/first_run",
+      "endpoint": "first_runs#create",
+      "params": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/account/edit",
+      "endpoint": "accounts#edit",
+      "params": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/account/users",
+      "endpoint": "accounts/users#index",
+      "params": {}
+    },
+    {
+      "verb": "PATCH",
+      "path": "/account/users/3",
+      "endpoint": "accounts/users#update",
+      "params": {
+        "id": "3"
+      }
+    },
+    {
+      "verb": "GET",
+      "path": "/account/bots/new",
+      "endpoint": "accounts/bots#new",
+      "params": {}
+    },
+    {
+      "verb": "PATCH",
+      "path": "/account/bots/3/key",
+      "endpoint": "accounts/bots/keys#update",
+      "params": {
+        "bot_id": "3"
+      }
+    },
+    {
+      "verb": "POST",
+      "path": "/account/join_code",
+      "endpoint": "accounts/join_codes#create",
+      "params": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/account/logo",
+      "endpoint": "accounts/logos#show",
+      "params": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/account/logo.png",
+      "endpoint": "accounts/logos#show",
+      "params": {
+        "format": "png"
+      }
+    },
+    {
+      "verb": "DELETE",
+      "path": "/account/logo",
+      "endpoint": "accounts/logos#destroy",
+      "params": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/account/custom_styles/edit",
+      "endpoint": "accounts/custom_styles#edit",
+      "params": {}
+    },
+    {
+      "verb": "PATCH",
+      "path": "/account/custom_styles",
+      "endpoint": "accounts/custom_styles#update",
+      "params": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/join/abc-def-ghi",
+      "endpoint": "users#new",
+      "params": {
+        "join_code": "abc-def-ghi"
+      }
+    },
+    {
+      "verb": "POST",
+      "path": "/join/abc-def-ghi",
+      "endpoint": "users#create",
+      "params": {
+        "join_code": "abc-def-ghi"
+      }
+    },
+    {
+      "verb": "GET",
+      "path": "/qr_code/aGVsbG8",
+      "endpoint": "qr_code#show",
+      "params": {
+        "id": "aGVsbG8"
+      }
+    },
+    {
+      "verb": "GET",
+      "path": "/users/3",
+      "endpoint": "users#show",
+      "params": {
+        "id": "3"
+      }
+    },
+    {
+      "verb": "GET",
+      "path": "/users/3/avatar",
+      "endpoint": "users/avatars#show",
+      "params": {
+        "user_id": "3"
+      }
+    },
+    {
+      "verb": "GET",
+      "path": "/users/me/avatar.svg",
+      "endpoint": "users/avatars#show",
+      "params": {
+        "user_id": "me",
+        "format": "svg"
+      }
+    },
+    {
+      "verb": "DELETE",
+      "path": "/users/3/avatar",
+      "endpoint": "users/avatars#destroy",
+      "params": {
+        "user_id": "3"
+      }
+    },
+    {
+      "verb": "POST",
+      "path": "/users/3/ban",
+      "endpoint": "users/bans#create",
+      "params": {
+        "user_id": "3"
+      }
+    },
+    {
+      "verb": "DELETE",
+      "path": "/users/3/ban",
+      "endpoint": "users/bans#destroy",
+      "params": {
+        "user_id": "3"
+      }
+    },
+    {
+      "verb": "GET",
+      "path": "/users/me/sidebar",
+      "endpoint": "users/sidebars#show",
+      "params": {
+        "user_id": "me"
+      }
+    },
+    {
+      "verb": "GET",
+      "path": "/users/me/profile",
+      "endpoint": "users/profiles#show",
+      "params": {
+        "user_id": "me"
+      }
+    },
+    {
+      "verb": "PATCH",
+      "path": "/users/me/profile",
+      "endpoint": "users/profiles#update",
+      "params": {
+        "user_id": "me"
+      }
+    },
+    {
+      "verb": "GET",
+      "path": "/users/me/push_subscriptions",
+      "endpoint": "users/push_subscriptions#index",
+      "params": {
+        "user_id": "me"
+      }
+    },
+    {
+      "verb": "POST",
+      "path": "/users/me/push_subscriptions",
+      "endpoint": "users/push_subscriptions#create",
+      "params": {
+        "user_id": "me"
+      }
+    },
+    {
+      "verb": "DELETE",
+      "path": "/users/me/push_subscriptions/4",
+      "endpoint": "users/push_subscriptions#destroy",
+      "params": {
+        "user_id": "me",
+        "id": "4"
+      }
+    },
+    {
+      "verb": "POST",
+      "path": "/users/me/push_subscriptions/4/test_notifications",
+      "endpoint": "users/push_subscriptions/test_notifications#create",
+      "params": {
+        "user_id": "me",
+        "push_subscription_id": "4"
+      }
+    },
+    {
+      "verb": "GET",
+      "path": "/autocompletable/users",
+      "endpoint": "autocompletable/users#index",
+      "params": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/autocompletable/users.json",
+      "endpoint": "autocompletable/users#index",
+      "params": {
+        "format": "json"
+      }
+    },
+    {
+      "verb": "GET",
+      "path": "/searches",
+      "endpoint": "searches#index",
+      "params": {}
+    },
+    {
+      "verb": "POST",
+      "path": "/searches",
+      "endpoint": "searches#create",
+      "params": {}
+    },
+    {
+      "verb": "DELETE",
+      "path": "/searches/clear",
+      "endpoint": "searches#clear",
+      "params": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/searches/clear",
+      "endpoint": null,
+      "params": {}
+    },
+    {
+      "verb": "POST",
+      "path": "/unfurl_link",
+      "endpoint": "unfurl_links#create",
+      "params": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/webmanifest",
+      "endpoint": "pwa#manifest",
+      "params": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/webmanifest.json",
+      "endpoint": "pwa#manifest",
+      "params": {
+        "format": "json"
+      }
+    },
+    {
+      "verb": "GET",
+      "path": "/service-worker",
+      "endpoint": "pwa#service_worker",
+      "params": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/service-worker.js",
+      "endpoint": "pwa#service_worker",
+      "params": {
+        "format": "js"
+      }
+    },
+    {
+      "verb": "GET",
+      "path": "/up",
+      "endpoint": "rails/health#show",
+      "params": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/up.json",
+      "endpoint": "rails/health#show",
+      "params": {
+        "format": "json"
+      }
+    },
+    {
+      "verb": "GET",
+      "path": "/recede_historical_location",
+      "endpoint": "turbo/native/navigation#recede",
+      "params": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/rails/active_storage/blobs/redirect/abc--def/photo.jpg",
+      "endpoint": "active_storage/blobs/redirect#show",
+      "params": {
+        "signed_id": "abc--def",
+        "filename": "photo",
+        "format": "jpg"
+      }
+    },
+    {
+      "verb": "GET",
+      "path": "/rails/active_storage/blobs/redirect/abc--def/dir/photo.tar.gz",
+      "endpoint": "active_storage/blobs/redirect#show",
+      "params": {
+        "signed_id": "abc--def",
+        "filename": "dir/photo.tar",
+        "format": "gz"
+      }
+    },
+    {
+      "verb": "GET",
+      "path": "/rails/active_storage/blobs/proxy/abc--def/photo.jpg",
+      "endpoint": "active_storage/blobs/proxy#show",
+      "params": {
+        "signed_id": "abc--def",
+        "filename": "photo",
+        "format": "jpg"
+      }
+    },
+    {
+      "verb": "GET",
+      "path": "/rails/active_storage/blobs/abc--def/photo",
+      "endpoint": "active_storage/blobs/redirect#show",
+      "params": {
+        "signed_id": "abc--def",
+        "filename": "photo"
+      }
+    },
+    {
+      "verb": "GET",
+      "path": "/rails/active_storage/representations/redirect/abc--def/var--x/photo.png",
+      "endpoint": "active_storage/representations/redirect#show",
+      "params": {
+        "signed_blob_id": "abc--def",
+        "variation_key": "var--x",
+        "filename": "photo",
+        "format": "png"
+      }
+    },
+    {
+      "verb": "GET",
+      "path": "/rails/active_storage/representations/abc--def/var--x/photo.png",
+      "endpoint": "active_storage/representations/redirect#show",
+      "params": {
+        "signed_blob_id": "abc--def",
+        "variation_key": "var--x",
+        "filename": "photo",
+        "format": "png"
+      }
+    },
+    {
+      "verb": "GET",
+      "path": "/rails/active_storage/disk/key--x/photo.jpg",
+      "endpoint": "active_storage/disk#show",
+      "params": {
+        "encoded_key": "key--x",
+        "filename": "photo",
+        "format": "jpg"
+      }
+    },
+    {
+      "verb": "PUT",
+      "path": "/rails/active_storage/disk/token--x",
+      "endpoint": "active_storage/disk#update",
+      "params": {
+        "encoded_token": "token--x"
+      }
+    },
+    {
+      "verb": "POST",
+      "path": "/rails/active_storage/direct_uploads",
+      "endpoint": "active_storage/direct_uploads#create",
+      "params": {}
+    },
+    {
+      "verb": "POST",
+      "path": "/rails/action_mailbox/postmark/inbound_emails",
+      "endpoint": "action_mailbox/ingresses/postmark/inbound_emails#create",
+      "params": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/rails/action_mailbox/mandrill/inbound_emails",
+      "endpoint": "action_mailbox/ingresses/mandrill/inbound_emails#health_check",
+      "params": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/rails/conductor/action_mailbox/inbound_emails",
+      "endpoint": "rails/conductor/action_mailbox/inbound_emails#index",
+      "params": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/nope",
+      "endpoint": null,
+      "params": {}
+    },
+    {
+      "verb": "PATCH",
+      "path": "/rooms",
+      "endpoint": null,
+      "params": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/ROOMS/1",
+      "endpoint": null,
+      "params": {}
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/%31",
+      "endpoint": "rooms#show",
+      "params": {
+        "id": "1"
+      }
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/a%2Fb",
+      "endpoint": "rooms#show",
+      "params": {
+        "id": "a/b"
+      }
+    },
+    {
+      "verb": "GET",
+      "path": "/rooms/caf%C3%A9",
+      "endpoint": "rooms#show",
+      "params": {
+        "id": "café"
+      }
+    },
+    {
+      "verb": "GET",
+      "path": "/cable",
+      "endpoint": null,
+      "params": {}
+    }
+  ]
+}
