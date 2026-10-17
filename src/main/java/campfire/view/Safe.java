@@ -29,32 +29,6 @@ public final class Safe implements Content {
         return new Safe(bytes);
     }
 
-    /// Escapes plain text.
-    public static Safe text(String text) {
-        return of(campfire.richtext.Html.escape(text));
-    }
-
-    public static Safe concat(Object... parts) {
-        var out = new StringBuilder();
-        for (Object part : parts) {
-            if (part instanceof Safe s) out.append(s);
-            else if (part != null) out.append(campfire.richtext.Html.escape(part.toString()));
-        }
-        return of(out.toString());
-    }
-
-    /// Content as markup: {@link Safe} and template blocks as they are, anything else escaped.
-    public static Safe from(Object content) {
-        if (content == null) return EMPTY;
-        if (content instanceof Safe s) return s;
-        if (content instanceof Content c) {
-            var out = new HtmlOut(512);
-            c.writeTo(out);
-            return bytes(out.toByteArray());
-        }
-        return text(content.toString());
-    }
-
     /// The markup as UTF-8.
     public byte[] utf8() {
         if (bytes == null) bytes = html.getBytes(StandardCharsets.UTF_8);

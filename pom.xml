@@ -198,9 +198,9 @@
         <version>${jte.version}</version>
         <configuration>
           <sourceDirectory>${project.basedir}/src/main/jte</sourceDirectory>
-          <contentType>Plain</contentType>
+          <contentType>Html</contentType>
           <binaryStaticContent>true</binaryStaticContent>
-          <trimControlStructures>false</trimControlStructures>
+          <trimControlStructures>true</trimControlStructures>
         </configuration>
         <executions>
           <execution>

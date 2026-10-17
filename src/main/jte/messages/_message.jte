@@ -2,12 +2,13 @@
 @param campfire.view.View v
 @param MessageView message
 @if(message.unrenderable())
-  @template.messages._unrenderable()@else
+  @template.messages._unrenderable()
+@else
   <div id="${message.domId("")}" class="message ${message.allEmoji() ? "message--emoji" : ""}" data-controller="reply" data-user-id="${message.creator().id()}" data-message-id="${message.id()}" data-message-timestamp="${message.createdAtEpoch()}" data-message-updated-at="${message.updatedAtEpoch()}" data-sort-value="${message.createdAtEpoch()}" data-messages-target="message" data-search-results-target="message" data-refresh-room-target="message" data-reply-composer-outlet="#composer">
     <h2 class="message__day-separator"><time datetime="${message.createdAtIso()}" data-local-time-target="date"></time></h2>
 
     <figure class="avatar message__avatar">
-      <a title="${message.creator().title()}" class="btn avatar" data-turbo-frame="_top" href="${message.creator().path()}"><img aria-hidden="true" src="${message.creator().avatarUrl()}" width="48" height="48" /></a>
+      <a title="${message.creator().title()}" class="btn avatar" data-turbo-frame="_top" href="${message.creator().path()}"><img aria-hidden="true" src="${message.creator().avatarUrl()}" width="48" height="48"></a>
     </figure>
 
     <turbo-frame id="${message.domId("edit")}">
@@ -30,4 +31,5 @@
         </div>
       </div>
     </turbo-frame>
-</div>@endif
+  </div>
+@endif

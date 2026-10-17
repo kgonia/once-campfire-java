@@ -1,6 +1,6 @@
-@import campfire.view.*
-@param View v
+@import campfire.view.View
+@import campfire.web.Paths
 @param campfire.sidebar.SidebarPage.SharedRoom room
-${v.linkToRoom(room.id(), Attrs.of().set("id", View.domId(room.paramKey(), room.id(), "list")).data("sorted_list_name", room.name()).set("style", "--column-gap: 0.5em").set("class", room.classNames()), @`
+<a id="${View.domId(room.paramKey(), room.id(), "list")}" data-rooms-list-target="room" data-room-id="${room.id()}" data-badge-dot-target="unread" data-sorted-list-target="item" data-sorted-list-name="${room.name()}" style="--column-gap: 0.5em" class="${room.classNames()}" href="${Paths.room(room.id())}">
   <span class="overflow-ellipsis">${room.name()}</span>
-`)}
+</a>

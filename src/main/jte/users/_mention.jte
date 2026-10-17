@@ -1,4 +1,3 @@
-@import campfire.view.*
-@param View v
+@param campfire.view.View v
 @param campfire.users.UserPages.MentionUser user
-<span class="mention" sgid="${user.attachableSgid()}">${v.avatarTag(user.user(), Attrs.of())} ${user.user().name()}</span>
+<span class="mention" sgid="${user.attachableSgid()}">@template.users._avatar(v = v, user = user.user()) ${user.user().name()}</span>

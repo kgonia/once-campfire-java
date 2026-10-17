@@ -1,13 +1,14 @@
 @import campfire.rooms.RoomForms.ClosedForm
 @import campfire.users.UserView
-@import campfire.view.*
-@param View v
+@param campfire.view.View v
 @param ClosedForm form
 @param String typeChangePath
-@template.rooms.layouts._form(v = v, room = form.room(), canAdminister = form.canAdminister(), open = false, content = @`${v.userFilterMenuTag(@`@if(form.canAdminister())
+@template.rooms.layouts._form(v = v, room = form.room(), canAdminister = form.canAdminister(), open = false, content = @`
+  <menu class="flex flex-column gap margin-none pad overflow-y constrain-height" data-controller="filter" data-filter-active-class="filter--active" data-filter-selected-class="selected">
+    @if(form.canAdminister())
       <li class="flex align-center gap margin-none">
         <figure class="avatar flex-item-no-shrink" style="--avatar-border-radius: 0; --avatar-size: 4ch;">
-          <img aria-hidden="true" class="colorize--black" style="background-color: transparent" src="${v.asset("everyone.svg")}" />
+          <img aria-hidden="true" class="colorize--black" style="background-color: transparent" src="${v.asset("everyone.svg")}">
           <span class="for-screen-reader">Everyone</span>
         </figure>
 
@@ -23,15 +24,25 @@
             <span class="switch__btn round"></span>
             <span class="for-screen-reader">Give everyone access to this room</span>
           </label>
-</a>
+        </a>
       </li>
 
-      <hr class="separator full-width" style="--border-style: solid">@endif@if(form.userCount() > 20)
-    ${v.userFilterSearchTag()}@endif
+      <hr class="separator full-width" style="--border-style: solid">
+    @endif
+    @if(form.userCount() > 20)
+      @template.rooms._user_filter_search()
+    @endif
 
-    <div data-filter-target="list" contents>@for(UserView user : form.selectedUsers())
-      @template.rooms.closeds._user(v = v, form = form, user = user, selected = true)@endfor@if(!form.selectedUsers().isEmpty() && !form.unselectedUsers().isEmpty())
-        <hr class="separator full-width" style="--border-style: solid">@endif@for(UserView user : form.unselectedUsers())
-      @template.rooms.closeds._user(v = v, form = form, user = user, selected = false)@endfor
+    <div data-filter-target="list" contents>
+      @for(UserView user : form.selectedUsers())
+        @template.rooms.closeds._user(v = v, form = form, user = user, selected = true)
+      @endfor
+      @if(!form.selectedUsers().isEmpty() && !form.unselectedUsers().isEmpty())
+        <hr class="separator full-width" style="--border-style: solid">
+      @endif
+      @for(UserView user : form.unselectedUsers())
+        @template.rooms.closeds._user(v = v, form = form, user = user, selected = false)
+      @endfor
     </div>
-`)}`)
+  </menu>
+`)

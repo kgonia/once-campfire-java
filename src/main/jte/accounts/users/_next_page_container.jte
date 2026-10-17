@@ -1,5 +1,5 @@
-@import campfire.view.*
+@import campfire.view.View
 @param String page
-${View.turboFrameTag("next_page_container", "/account/users.turbo_stream?page=" + View.cgiEscape(page), null, Attrs.of().set("loading", "lazy").set("class", "flex center"), @`
+<turbo-frame loading="lazy" class="flex center" id="next_page_container" src="/account/users.turbo_stream?page=${View.cgiEscape(page)}">
   <div class="spinner center"></div>
-`)}
+</turbo-frame>

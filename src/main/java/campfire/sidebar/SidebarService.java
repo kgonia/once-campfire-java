@@ -57,7 +57,7 @@ public class SidebarService {
     /// The shared room's entry as broadcasts carry it: read, for every member alike.
     public static String sharedRoomHtml(View v, Room room) {
         SidebarPage.SharedRoom entry = sharedRoom(room, false);
-        return new String(Pages.bytes(v, (out, view) -> Jte_sharedGenerated.render(out, null, view, entry)), StandardCharsets.UTF_8);
+        return new String(Pages.bytes(v, (out, view) -> Jte_sharedGenerated.render(out, null, entry)), StandardCharsets.UTF_8);
     }
 
     public static SidebarPage.SharedRoom sharedRoom(Room room, boolean unread) {

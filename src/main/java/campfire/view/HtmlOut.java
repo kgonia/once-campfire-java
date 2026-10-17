@@ -7,8 +7,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-/// Collects a rendered template as UTF-8 bytes. User content is escaped as `ERB::Util.html_escape`
-/// does (`&`, `<`, `>`, `"` and `'`), in text and attributes alike.
+/// Collects a rendered template as UTF-8 bytes. Templates render to it directly, not through jte's
+/// `OwaspHtmlTemplateOutput`: escaping `&`, `<`, `>`, `"` and `'` everywhere is right in text and in
+/// quoted attributes, and the templates write no output into scripts or event handlers (the one
+/// `<script>` is a `text/template` of markup), so the context jte passes isn't needed.
 public final class HtmlOut implements HtmlTemplateOutput {
     private byte[] buffer;
     private int length;

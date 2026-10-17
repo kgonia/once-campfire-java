@@ -1,15 +1,17 @@
-@import campfire.view.*
+@import campfire.view.View
 @import campfire.web.Paths
 @param View v
 @param campfire.users.UserPages.ProfileMembership membership
 <li class="flex align-center gap margin-none min-width membership-item">
-  ${View.linkTo(Paths.room(membership.roomId()), Attrs.of("class", "overflow-ellipsis fill-shade txt-primary txt-undecorated"), @`
+  <a class="overflow-ellipsis fill-shade txt-primary txt-undecorated" href="${Paths.room(membership.roomId())}">
     <strong>${membership.roomDisplayName()}</strong>
-`)}
+  </a>
+
   <hr class="separator" aria-hidden="true">
 
   <span class="txt-small">
-    ${View.turboFrameTag(View.domId(membership.roomParamKey(), membership.roomId(), "involvement"), null, null, Attrs.of(), @`
-      ${v.buttonToChangeInvolvement(membership.roomId(), membership.roomParamKey(), membership.direct(), membership.involvement())}
-`)}  </span>
+    <turbo-frame id="${View.domId(membership.roomParamKey(), membership.roomId(), "involvement")}">
+      @template.rooms.involvements._button(v = v, roomId = membership.roomId(), paramKey = membership.roomParamKey(), direct = membership.direct(), involvement = membership.involvement())
+    </turbo-frame>
+  </span>
 </li>

@@ -1,5 +1,6 @@
 @param long userId
 @param String initials
+!{boolean squeezed = initials.codePointCount(0, initials.length()) >= 3;}
 <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
   viewBox="0 0 512 512" class="avatar" aria-hidden="true">
   <defs>
@@ -13,7 +14,7 @@
 
     <text x="50%" y="50%" fill="#FFFFFF"
       text-anchor="middle" dy="0.35em"
-      ${initials.codePointCount(0, initials.length()) >= 3 ? campfire.view.Safe.of("textLength=\"85%\" lengthAdjust=\"spacingAndGlyphs\"") : campfire.view.Safe.EMPTY}
+      textLength="${squeezed ? "85%" : null}" lengthAdjust="${squeezed ? "spacingAndGlyphs" : null}"
       font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif"
       font-size="230"
       font-weight="800"

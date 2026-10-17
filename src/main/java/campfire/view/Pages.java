@@ -10,7 +10,6 @@ import campfire.web.Params;
 import campfire.web.RailsSession;
 import campfire.web.RequestOrigin;
 import campfire.web.Responses;
-import gg.jte.TemplateOutput;
 import gg.jte.generated.precompiled.sessions.Jteincompatible_browserGenerated;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.ext.web.RoutingContext;
@@ -24,7 +23,7 @@ import jakarta.ws.rs.core.Response;
 public class Pages {
     @FunctionalInterface
     public interface Template {
-        void render(TemplateOutput out, View v);
+        void render(HtmlOut out, View v);
     }
 
     @Inject

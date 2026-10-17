@@ -1,14 +1,14 @@
 @import campfire.bots.BotAdminService
-@import campfire.view.*
 @import campfire.web.Paths
-@param View v
-!{var form = View.formWith(Paths.accountBots()).model("user").cssClass("flex flex-column gap");}@template.layouts.application(v = v, title = "New chat bot",
-  nav = @`  <div class="flex-item-justify-start">
-    ${v.linkBackTo(Paths.accountBots())}
+@param campfire.view.View v
+@template.layouts.application(v = v, title = "New chat bot", nav = @`
+  <div class="flex-item-justify-start">
+    @template.helpers._back_link(v = v, destination = Paths.accountBots())
   </div>
-`,
-  content = @`<section class="panel">
-  ${form.wrap(@`
-    @template.accounts.bots._form(v = v, form = form, bot = BotAdminService.Form.NEW)
-`)}</section>
+`, content = @`
+  <section class="panel">
+    <form class="flex flex-column gap" enctype="multipart/form-data" action="${Paths.accountBots()}" accept-charset="UTF-8" method="post">
+      @template.accounts.bots._form(v = v, bot = BotAdminService.Form.NEW)
+    </form>
+  </section>
 `)

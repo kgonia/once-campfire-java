@@ -1,10 +1,9 @@
-@import campfire.view.*
-@param View v
+@param campfire.view.View v
 @param campfire.users.UserPages.MentionUser user
 <lexxy-prompt-item search="${user.user().name()}" sgid="${user.attachableSgid()}">
   <template type="menu">
     <span class="autocomplete__item flex align-center gap unpad">
-      ${v.avatarTag(user.user(), Attrs.of())}
+      @template.users._avatar(v = v, user = user.user())
       <span class="autocompletable__name">${user.user().name()}</span>
     </span>
   </template>

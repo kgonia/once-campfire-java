@@ -4,92 +4,116 @@
 @import campfire.web.Paths
 @param View v
 @param AccountPage page
-!{boolean restricted = page.account().restrictRoomCreationToAdministrators();}!{var logoForm = View.formWith(page.action()).model("account").method("patch").cssClass("txt--medium").data("controller", "form");}!{var previewForm = View.formWith(page.action()).model("account").method("patch").data("controller", "form");}!{var nameForm = View.formWith(page.action()).model("account").method("patch").data("controller", "form").cssClass("flex flex-column gap");}!{var settingsForm = View.formWith(page.action()).model("account").method("put").data("controller", "form").cssClass("flex align-center gap center");}@template.layouts.application(v = v, title = "Account settings",
-  nav = @`  <div class="flex-item-justify-start">
-    ${v.linkBackToLastRoomVisited()}
+!{boolean restricted = page.account().restrictRoomCreationToAdministrators();}
+@template.layouts.application(v = v, title = "Account settings", nav = @`
+  <div class="flex-item-justify-start">
+    @template.helpers._back_link(v = v, destination = v.lastRoomVisitedPath())
   </div>
 
-@if(v.canAdminister())${Safe.from(@`    <div class="flex align-center gap flex-item-justify-end">
-      ${View.linkTo(Paths.accountBots(), Attrs.of().set("class", "btn").set("style", "view-transition-name: chat-bots"), @`
-        ${v.imageTag("bot.svg", Attrs.of().aria("hidden", "true").set("size", 20))}
+  @if(v.canAdminister())
+    <div class="flex align-center gap flex-item-justify-end">
+      <a class="btn" style="view-transition-name: chat-bots" href="${Paths.accountBots()}">
+        <img aria-hidden="true" src="${v.asset("bot.svg")}" width="20" height="20">
         <span class="for-screen-reader">Set up chat bots</span>
-`)}
-      ${View.linkTo(Paths.editAccountCustomStyles(), Attrs.of().set("class", "btn").set("style", "view-transition-name: custom-styles"), @`
-        ${v.imageTag("art.svg", Attrs.of().set("size", 20).aria("hidden", "true"))}
+      </a>
+      <a class="btn" style="view-transition-name: custom-styles" href="${Paths.editAccountCustomStyles()}">
+        <img aria-hidden="true" src="${v.asset("art.svg")}" width="20" height="20">
         <span class="for-screen-reader">Custom styles</span>
-`)}    </div>
-`)}@endif`,
-  content = @`<section class="panel txt-align-center flex flex-column gap" style="view-transition-name: account-settings">
-@if(v.canAdminister())${Safe.from(@`    <div class="align-center center avatar__form gap" data-controller="upload-preview">
-      ${logoForm.wrap(Safe.from(@`
-        <label class="btn input--file">
-          ${v.imageTag("camera.svg", Attrs.of().aria("hidden", "true").set("size", 20))}
-          ${logoForm.fileField("logo", Attrs.of().set("class", "input").set("accept", "image/*").data("action", "upload-preview#previewImage change->form#submit"))}
-          <span class="for-screen-reader">Upload logo</span>
-        </label>
-`))}
-      ${previewForm.wrap(Safe.from(@`
-        <label class="btn avatar input--file account-logo txt-xx-large">
-          ${v.imageTag(v.freshAccountLogoPath(), Attrs.of().set("role", "presentation").set("size", 48).data("upload_preview_target", "image"))}
-          ${previewForm.fileField("logo", Attrs.of().set("class", "input").set("accept", "image/*").data("action", "upload-preview#previewImage change->form#submit"))}
-          <span class="for-screen-reader">Upload logo</span>
-        </label>
-`))}
-${v.accountHasLogo ? Safe.concat(Safe.of("        "), View.buttonTo(v.freshAccountLogoPath(), "delete", Attrs.of().set("class", "btn btn--negative txt-small avatar__delete-btn"), Safe.from(@`
-          ${v.imageTag("minus.svg", Attrs.of().aria("hidden", "true").set("size", 20))}
-          <span class="for-screen-reader">Delete logo</span>
-`))) : Safe.of("")}    </div>
+      </a>
+    </div>
+  @endif
+`, content = @`
+  <section class="panel txt-align-center flex flex-column gap" style="view-transition-name: account-settings">
+    @if(v.canAdminister())
+      <div class="align-center center avatar__form gap" data-controller="upload-preview">
+        <form class="txt--medium" data-controller="form" enctype="multipart/form-data" action="${page.action()}" accept-charset="UTF-8" method="post">
+          <input type="hidden" name="_method" value="patch">
+          <label class="btn input--file">
+            <img aria-hidden="true" src="${v.asset("camera.svg")}" width="20" height="20">
+            <input class="input" accept="image/*" data-action="upload-preview#previewImage change->form#submit" type="file" name="account[logo]" id="account_logo">
+            <span class="for-screen-reader">Upload logo</span>
+          </label>
+        </form>
 
-    ${nameForm.wrap(Safe.from(@`
-      <div class="flex align-center gap">
-        ${v.translationButton("account_name")}
+        <form data-controller="form" enctype="multipart/form-data" action="${page.action()}" accept-charset="UTF-8" method="post">
+          <input type="hidden" name="_method" value="patch">
+          <label class="btn avatar input--file account-logo txt-xx-large">
+            <img role="presentation" data-upload-preview-target="image" src="${v.freshAccountLogoPath()}" width="48" height="48">
+            <input class="input" accept="image/*" data-action="upload-preview#previewImage change->form#submit" type="file" name="account[logo]" id="account_logo">
+            <span class="for-screen-reader">Upload logo</span>
+          </label>
+        </form>
 
-        <label class="flex align-center gap flex-item-grow">
-          ${nameForm.textField("name", page.account().name(), Attrs.of().set("class", "input txt-large").set("autocomplete", "off").set("placeholder", "Name this account").set("autofocus", true).data("action", "keydown.enter->form#submit"))}
-        </label>
+        @if(v.accountHasLogo)
+          <form class="button_to" method="post" action="${v.freshAccountLogoPath()}">
+            <input type="hidden" name="_method" value="delete">
+            <button class="btn btn--negative txt-small avatar__delete-btn" type="submit">
+              <img aria-hidden="true" src="${v.asset("minus.svg")}" width="20" height="20">
+              <span class="for-screen-reader">Delete logo</span>
+            </button>
+          </form>
+        @endif
+      </div>
 
-        ${nameForm.button(Attrs.of().set("class", "btn btn--reversed center").set("type", "submit"), Safe.from(@`
-          ${v.imageTag("check.svg", Attrs.of().aria("hidden", "true").set("size", 20))}
-          <span class="for-screen-reader">Save changes</span>
-`))}      </div>
-`))}
-    <div class="margin-block-start pad-block pad-inline-double fill-shade border-radius">
-      ${settingsForm.wrap(Safe.from(@`
-        <div class="flex-item-grow flex align-center gap txt-align-start">
-          ${v.imageTag("crown.svg", Attrs.of().set("class", "colorize--black").aria("hidden", "true").set("size", 18))} Must be admin to create new rooms
+      <form class="flex flex-column gap" data-controller="form" action="${page.action()}" accept-charset="UTF-8" method="post">
+        <input type="hidden" name="_method" value="patch">
+        <div class="flex align-center gap">
+          @template.helpers._translation_button(v = v, key = "account_name")
+
+          <label class="flex align-center gap flex-item-grow">
+            <input class="input txt-large" autocomplete="off" placeholder="Name this account" autofocus data-action="keydown.enter->form#submit" type="text" value="${page.account().name()}" name="account[name]" id="account_name">
+          </label>
+
+          <button name="button" type="submit" class="btn btn--reversed center">
+            <img aria-hidden="true" src="${v.asset("check.svg")}" width="20" height="20">
+            <span class="for-screen-reader">Save changes</span>
+          </button>
         </div>
-          ${settingsForm.fieldsFor("settings").hiddenField("restrict_room_creation_to_administrators", null, Attrs.of().set("value", String.valueOf(!restricted)))}
+      </form>
 
-        <label class="switch">
-          <input type="checkbox"
-                class="switch__input"
-                ${restricted ? "checked" : ""}
-                data-action="change->form#submit">
-          <span class="switch__btn round"></span>
-          <span class="for-screen-reader">
-            Must be admin to create new rooms
-          </span>
-        </label>
+      <div class="margin-block-start pad-block pad-inline-double fill-shade border-radius">
+        <form class="flex align-center gap center" data-controller="form" action="${page.action()}" accept-charset="UTF-8" method="post">
+          <input type="hidden" name="_method" value="put">
+          <div class="flex-item-grow flex align-center gap txt-align-start">
+            <img class="colorize--black" aria-hidden="true" src="${v.asset("crown.svg")}" width="18" height="18"> Must be admin to create new rooms
+          </div>
+          <input value="${String.valueOf(!restricted)}" type="hidden" name="account[settings][restrict_room_creation_to_administrators]" id="account_settings_restrict_room_creation_to_administrators">
 
-`))}    </div>
-`)}@else${Safe.from(@`    ${v.accountLogoTag("txt-xx-large center")}
-    <h1 class="flex-item-grow txt-x-large">${page.account().name()}</h1>
-`)}@endif
-  <div class="margin-block pad-inline pad-block-start fill-shade border-radius">
-    @template.accounts._invite(v = v, joinCode = page.account().joinCode())
+          <label class="switch">
+            <input type="checkbox" class="switch__input" checked="${restricted}" data-action="change->form#submit">
+            <span class="switch__btn round"></span>
+            <span class="for-screen-reader">Must be admin to create new rooms</span>
+          </label>
+        </form>
+      </div>
+    @else
+      @template.helpers._account_logo(v = v, style = "txt-xx-large center")
+      <h1 class="flex-item-grow txt-x-large">${page.account().name()}</h1>
+    @endif
 
-    <hr class="margin-block separator full-width" style="--border-style: solid">
+    <div class="margin-block pad-inline pad-block-start fill-shade border-radius">
+      @template.accounts._invite(v = v, joinCode = page.account().joinCode())
 
-    <menu class="flex flex-column gap margin-none pad">
-      <turbo-frame id="account_users">
-        @for(User user : page.administrators())@template.accounts.users._user(v = v, user = user)@endfor
-@if(!page.administrators().isEmpty() && !page.members().isEmpty())${Safe.from(@`          <hr class="separator full-width" style="--border-style: solid">
-`)}@endif
-        @for(User user : page.members())@template.accounts.users._user(v = v, user = user)@endfor        @if(page.nextPage() != null)@template.accounts.users._next_page_container(page = page.nextPage())@endif
-      </turbo-frame>
-    </menu>
-  </div>
-</section>
-`,
-  footer = @`  <div class="txt-align-center center margin-block-double txt-subtle">Campfire&trade; version ${v.versionBadge()}</div>
+      <hr class="margin-block separator full-width" style="--border-style: solid">
+
+      <menu class="flex flex-column gap margin-none pad">
+        <turbo-frame id="account_users">
+          @for(User user : page.administrators())
+            @template.accounts.users._user(v = v, user = user)
+          @endfor
+          @if(!page.administrators().isEmpty() && !page.members().isEmpty())
+            <hr class="separator full-width" style="--border-style: solid">
+          @endif
+          @for(User user : page.members())
+            @template.accounts.users._user(v = v, user = user)
+          @endfor
+          @if(page.nextPage() != null)
+            @template.accounts.users._next_page_container(page = page.nextPage())
+          @endif
+        </turbo-frame>
+      </menu>
+    </div>
+  </section>
+`, footer = @`
+  <div class="txt-align-center center margin-block-double txt-subtle">Campfire&trade; version <span class="version-badge">${v.appVersion()}</span></div>
 `)
