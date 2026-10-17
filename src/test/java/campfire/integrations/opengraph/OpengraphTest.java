@@ -11,7 +11,7 @@ import campfire.integrations.TestSupport.MappingRoute;
 import campfire.integrations.TestSupport.Route;
 import campfire.integrations.net.Guard;
 import campfire.integrations.net.Network;
-import campfire.rails.Json;
+import io.vertx.core.json.Json;
 import java.io.ByteArrayOutputStream;
 import java.net.InetAddress;
 import java.nio.charset.StandardCharsets;
@@ -45,7 +45,7 @@ class OpengraphTest {
     private static Object withoutRailsLeftovers(Object response) {
         var map = new LinkedHashMap<>((Map<String, Object>) response);
         if (map.get("body") instanceof String body) {
-            var json = new LinkedHashMap<>((Map<String, Object>) Json.parse(body));
+            var json = new LinkedHashMap<>((Map<String, Object>) Json.decodeValue(body, Map.class));
             json.remove("context_for_validation");
             json.remove("errors");
             for (String key : List.of("title", "description")) {
@@ -124,8 +124,8 @@ class OpengraphTest {
                 want.put("response", DEPARTURES.getOrDefault((String) testCase.get("name"), withoutRailsLeftovers(wanted.get("response"))));
                 want.put("lookups", wanted.get("lookups"));
                 want.put("requests", wanted.get("requests"));
-                if (!Json.generate(actual).equals(Json.generate(want))) {
-                    failures.add(testCase.get("name") + ":\n  expected " + Json.generate(want) + "\n  actual   " + Json.generate(actual));
+                if (!Json.encode(actual).equals(Json.encode(want))) {
+                    failures.add(testCase.get("name") + ":\n  expected " + Json.encode(want) + "\n  actual   " + Json.encode(actual));
                 }
             }
         }

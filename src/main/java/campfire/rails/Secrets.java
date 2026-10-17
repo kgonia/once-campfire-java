@@ -1,5 +1,7 @@
 package campfire.rails;
 
+import io.vertx.core.json.Json;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.ZoneOffset;
 
@@ -89,8 +91,11 @@ public final class Secrets {
     /// `SerializerWithFallback[:json].load`; Marshal isn't allowed for cookies.
     private static Object loadCookie(Object dumped) {
         if (!(dumped instanceof String s)) return null;
-        if (s.length() >= 2 && s.charAt(0) == 4 && s.charAt(1) == 8) return null;
-        return Json.parseOrNull(s);
+        try {
+            return Messages.Serializer.JSON_WITH_FALLBACK.load(s.getBytes(StandardCharsets.UTF_8));
+        } catch (MessageException e) {
+            return null;
+        }
     }
 
     // -- Signed ids (`signed_id(purpose:, expires_in:)` / `find_signed`) -------------------------

@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import campfire.rails.Json;
+import io.vertx.core.json.Json;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -34,7 +34,7 @@ class UserAgentTest {
     @SuppressWarnings("unchecked")
     static List<Map<String, Object>> vectors() {
         try (var in = UserAgentTest.class.getResourceAsStream("/vectors/campfire_user_agents.json")) {
-            var all = (Map<String, Object>) Json.parse(new String(in.readAllBytes(), StandardCharsets.UTF_8));
+            var all = (Map<String, Object>) Json.decodeValue(new String(in.readAllBytes(), StandardCharsets.UTF_8), Map.class);
             return (List<Map<String, Object>>) all.get("user_agents");
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -52,7 +52,7 @@ class UserAgentTest {
             compared++;
             Platform platform = Platform.of(ua);
             UserAgent agent = UserAgent.parse(ua);
-            String label = Json.generate(ua);
+            String label = Json.encode(ua);
             if (c.get("application_platform") instanceof Map<?, ?> expected) {
                 var actual = Map.of("ios", platform.ios(), "android", platform.android(), "mac", platform.mac(), "chrome", platform.chrome(),
                     "firefox", platform.firefox(), "safari", platform.safari(), "edge", platform.edge(),

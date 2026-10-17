@@ -315,7 +315,7 @@ public final class AssetCompiler {
             Integer index = find(pin.path());
             if (index == null) continue;
             String path = PREFIX + "/" + digestedPath(index);
-            imports.add("    " + campfire.rails.Json.generate(pin.name()) + ": " + campfire.rails.Json.generate(path));
+            imports.add("    " + io.vertx.core.json.Json.encode(pin.name()) + ": " + io.vertx.core.json.Json.encode(path));
             if (pin.preload() && !preloads.contains(path)) preloads.add(path);
         }
         String json = imports.isEmpty() ? "{\n  \"imports\": {}\n}" : "{\n  \"imports\": {\n" + String.join(",\n", imports) + "\n  }\n}";
@@ -383,7 +383,7 @@ public final class AssetCompiler {
             entry.put("integrity", null);
             manifestJson.put(compiler.assets.get(i).logicalPath(), entry);
         }
-        Files.writeString(assetsDir.resolve(".manifest.json"), campfire.rails.Json.generate(manifestJson));
+        Files.writeString(assetsDir.resolve(".manifest.json"), io.vertx.core.json.Json.encode(manifestJson));
 
         Path meta = output.resolve("campfire/assets");
         Files.createDirectories(meta);

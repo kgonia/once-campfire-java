@@ -3,7 +3,7 @@ package campfire.cable;
 import campfire.rooms.Membership;
 import campfire.rooms.Room;
 import campfire.rails.GlobalId;
-import campfire.rails.Json;
+import io.vertx.core.json.Json;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -55,6 +55,7 @@ final class Channels {
     /// The client sends `room_id` as a JSON number; a decimal string is taken too.
     static Long id(Object value) {
         return switch (value) {
+            case Integer id -> (long) id;
             case Long id -> id;
             case String text -> {
                 try {

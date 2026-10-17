@@ -78,7 +78,8 @@ byte for byte, or a measured performance loss. Each deviation is listed below wi
 - jOOQ code generation from the database schema, with queries built on the generated tables and columns. This is
   jOOQ's ["SQL builder with code generation"](https://www.jooq.org/doc/latest/manual/getting-started/use-cases/jooq-as-a-sql-builder-with-code-generation/)
   mode, so a renamed column breaks the build instead of a request.
-- Caffeine for caches, jte for templates, jsoup for HTML, and JSpecify with NullAway for nullability.
+- Caffeine for caches, jte for templates, jsoup for HTML, Vert.x's JSON (Jackson underneath) for JSON, and JSpecify
+  with NullAway for nullability.
 
 **Exceptions:**
 
@@ -97,7 +98,6 @@ byte for byte, or a measured performance loss. Each deviation is listed below wi
 | Rails' nested form fields (`user[name]`, `user_ids[]`) and JSON bodies read into `web.Params`, from Quarkus REST's parsed form (`MultipartFormDataInput`) or the body; flat values are `@RestQuery`/`@RestHeader` parameters | `@RestForm` and `@BeanParam` throughout | The services take Rails' parameter hashes, with Rack's merge of query and form and its type checks (a string where a hash belongs is a 500, an empty hash a 400). Field names stay the frontend's. |
 | `_method` read by a pre-matching filter (`AccessFilter.methodOverride`) that reads a form POST's body off the event loop and hands it on | a filter on parsed form params | Quarkus REST reads the form only after it has matched the method, and reading the body in a Vert.x handler first breaks HTTP/2: Quarkus REST then pauses a request that has already ended. |
 | `web.Formats.respondTo` for endpoints that offer several types, a Turbo Stream, or JavaScript or JSON at a plain URL | `@Produces` | Rails ignores a browser's `Accept` once it lists `*/*`, and answers those 406. `@Produces` would match the `*/*` and serve the stream. HTML-only pages use `@Produces`, and the `.json` suffix and `format` parameter replace `Accept` before matching. |
-| Its own JSON writer (`rails.Json`) | Jackson | Historical: it escaped `<`, `>` and `&` and formatted numbers as Ruby does, for byte parity with the Rust port, which is no longer a goal. Being replaced. |
 
 What the datasources need for SQLite (in `application.properties`):
 - `db-kind=other` with the SQLite driver.

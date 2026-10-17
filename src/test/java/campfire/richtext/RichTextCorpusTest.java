@@ -2,7 +2,7 @@ package campfire.richtext;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import campfire.rails.Json;
+import io.vertx.core.json.Json;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -23,7 +23,7 @@ class RichTextCorpusTest {
 
     static Map<String, Object> load() {
         try (var in = RichTextCorpusTest.class.getResourceAsStream("/richtext-corpus/expected.json")) {
-            return (Map<String, Object>) Json.parse(new String(in.readAllBytes(), StandardCharsets.UTF_8));
+            return (Map<String, Object>) Json.decodeValue(new String(in.readAllBytes(), StandardCharsets.UTF_8), Map.class);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -36,7 +36,7 @@ class RichTextCorpusTest {
 
         TestResolver() {
             for (var u : (List<Map<String, Object>>) CORPUS.get("users")) {
-                users.add(new RichText.MentionUser((Long) u.get("id"), (String) u.get("name"), (String) u.get("title"),
+                users.add(new RichText.MentionUser(((Number) u.get("id")).longValue(), (String) u.get("name"), (String) u.get("title"),
                     (String) u.get("attachable_sgid"), (String) u.get("user_path"), (String) u.get("avatar_path")));
             }
             signed = (List<Map<String, Object>>) CORPUS.get("signed");
@@ -50,7 +50,7 @@ class RichTextCorpusTest {
         @Override
         public RichText.MentionUser locateSigned(String sgid) {
             for (var s : signed) {
-                if (s.get("sgid").equals(sgid) && "User".equals(s.get("model")) && Boolean.TRUE.equals(s.get("exists"))) return user((Long) s.get("id"));
+                if (s.get("sgid").equals(sgid) && "User".equals(s.get("model")) && Boolean.TRUE.equals(s.get("exists"))) return user(((Number) s.get("id")).longValue());
             }
             return null;
         }
@@ -142,7 +142,7 @@ class RichTextCorpusTest {
             if (c.get("mentioned") instanceof Map<?, ?> p && p.get("ok") instanceof List<?> expected) {
                 var ids = RichText.mentionedUserIds(body, ctx);
                 var expectedIds = new ArrayList<Long>();
-                for (Object o : expected) expectedIds.add(o instanceof Map<?, ?> m ? (Long) m.get("id") : (Long) o);
+                for (Object o : expected) expectedIds.add(((Number) (o instanceof Map<?, ?> m ? m.get("id") : o)).longValue());
                 if (expectedIds.equals(ids)) mentionedExact++;
             }
         }

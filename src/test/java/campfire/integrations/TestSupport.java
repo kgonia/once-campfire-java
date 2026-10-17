@@ -2,8 +2,10 @@ package campfire.integrations;
 
 import campfire.integrations.net.Guard;
 import campfire.integrations.net.Network;
-import campfire.rails.Json;
 import io.vertx.core.Vertx;
+import io.vertx.core.json.Json;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.TrustOptions;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
@@ -49,7 +51,8 @@ public final class TestSupport {
 
     public static Object json(String name) {
         try {
-            return Json.parse(Files.readString(TESTDATA.resolve(name), StandardCharsets.UTF_8));
+            Object value = Json.decodeValue(Files.readString(TESTDATA.resolve(name), StandardCharsets.UTF_8));
+            return value instanceof JsonObject o ? o.getMap() : value instanceof JsonArray a ? a.getList() : value;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

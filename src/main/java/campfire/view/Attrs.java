@@ -1,7 +1,7 @@
 package campfire.view;
 
-import campfire.rails.Json;
 import campfire.richtext.Html;
+import io.vertx.core.json.Json;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -83,7 +83,7 @@ public final class Attrs {
                     if (v == null) continue;
                     String name = key + "-" + nested.getKey().toString().replace('_', '-');
                     String rendered = v instanceof String s ? s : v instanceof Safe safe ? safe.toString()
-                        : v instanceof Map<?, ?> || v instanceof List<?> ? Json.generate(v) : String.valueOf(v);
+                        : v instanceof Map<?, ?> || v instanceof List<?> ? Json.encode(v) : String.valueOf(v);
                     if (key.equals("aria") && v instanceof List<?> l) rendered = String.join(" ", l.stream().map(String::valueOf).toList());
                     if (v instanceof Safe) appendRaw(out, name, rendered);
                     else append(out, name, rendered);

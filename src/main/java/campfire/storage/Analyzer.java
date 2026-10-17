@@ -1,7 +1,9 @@
 package campfire.storage;
 
-import campfire.rails.Json;
 import io.quarkus.logging.Log;
+import io.vertx.core.json.DecodeException;
+import io.vertx.core.json.Json;
+import io.vertx.core.json.JsonObject;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.LinkedHashMap;
@@ -86,8 +88,8 @@ public final class Analyzer {
             return Map.of();
         }
         try {
-            return Json.parse(result.stdoutText()) instanceof Map<?, ?> m ? m : Map.of();
-        } catch (Json.ParseException e) {
+            return Json.decodeValue(result.stdoutText()) instanceof JsonObject probe ? probe.getMap() : Map.of();
+        } catch (DecodeException e) {
             throw new StorageException("ffprobe output: " + e.getMessage());
         }
     }

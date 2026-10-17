@@ -7,8 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import campfire.rails.Json;
 import io.vertx.core.http.UpgradeRejectedException;
+import io.vertx.core.json.Json;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -32,7 +32,7 @@ class CableProtocolTest {
     // -- Framing and naming -------------------------------------------------------------------------
 
     @Test
-    void framesAreActiveSupportJsonInRailsKeyOrder() {
+    void framesAreJsonInRailsKeyOrder() {
         assertEquals("{\"type\":\"welcome\"}", Protocol.welcome());
         assertEquals("{\"type\":\"ping\",\"message\":1700000000}", Protocol.ping(1700000000));
         assertEquals("{\"type\":\"disconnect\",\"reason\":\"unauthorized\",\"reconnect\":false}", Protocol.disconnect(Protocol.UNAUTHORIZED, false));
@@ -42,7 +42,7 @@ class CableProtocolTest {
             Protocol.confirmation(identifier));
         assertEquals("{\"identifier\":\"{\\\"channel\\\":\\\"RoomChannel\\\",\\\"room_id\\\":1}\",\"type\":\"reject_subscription\"}",
             Protocol.rejection(identifier));
-        assertEquals("{\"identifier\":\"\\u003cx\\u003e\",\"type\":\"confirm_subscription\"}", Protocol.confirmation("<x>"));
+        assertEquals("{\"identifier\":\"<x>\",\"type\":\"confirm_subscription\"}", Protocol.confirmation("<x>"));
         assertEquals("{\"identifier\":\"id\",\"message\":{\"a\":1}}", Protocol.message(Json.encode("id"), "{\"a\":1}"));
     }
 
@@ -212,7 +212,7 @@ class CableProtocolTest {
     }
 
     @Test
-    void broadcastsReachSubscribersAsEscapedJson() throws Exception {
+    void broadcastsReachSubscribersAsJson() throws Exception {
         app = start();
         var client = app.connect(app.david);
         String room = roomIdentifier("RoomChannel", app.designers.id());
@@ -221,7 +221,7 @@ class CableProtocolTest {
         assertEquals(1, app.cable.deliver("room:" + gid, "{\"roomId\":1}"));
         assertEquals(delivery(room, "{\"roomId\":1}"), client.next());
         app.cable.broadcast("room:" + gid, Json.encode("<b>&</b>"));
-        assertEquals(delivery(room, "\"\\u003cb\\u003e\\u0026\\u003c/b\\u003e\""), client.next());
+        assertEquals(delivery(room, "\"<b>&</b>\""), client.next());
     }
 
     @Test
@@ -324,10 +324,10 @@ class CableProtocolTest {
         long started = System.nanoTime();
         String ping = client.next(false);
         assertTrue(System.nanoTime() - started <= 3_200_000_000L);
-        var frame = (Map<?, ?>) Json.parse(ping);
+        var frame = (Map<?, ?>) Json.decodeValue(ping, Map.class);
         assertEquals(List.of("type", "message"), List.copyOf(frame.keySet()));
         assertEquals("ping", frame.get("type"));
-        assertTrue(Math.abs((Long) frame.get("message") - System.currentTimeMillis() / 1000) <= 1);
+        assertTrue(Math.abs(((Number) frame.get("message")).longValue() - System.currentTimeMillis() / 1000) <= 1);
     }
 
     @Test
@@ -337,7 +337,7 @@ class CableProtocolTest {
         String rooms = identifier("channel", "Turbo::StreamsChannel", "signed_stream_name", app.signedStreamName("rooms"));
         client.confirm(rooms);
         app.broadcasts.streamTo("rooms", Broadcasts.actionTag("remove", "list_room_1", null));
-        assertEquals(delivery(rooms, "\"\\u003cturbo-stream action=\\\"remove\\\" target=\\\"list_room_1\\\"\\u003e\\u003c/turbo-stream\\u003e\""),
+        assertEquals(delivery(rooms, "\"<turbo-stream action=\\\"remove\\\" target=\\\"list_room_1\\\"></turbo-stream>\""),
             client.next());
 
         client.reject(identifier("channel", "Turbo::StreamsChannel", "signed_stream_name", "rooms"));
@@ -379,7 +379,7 @@ class CableProtocolTest {
 
         @Override
         public void subscribed(Subscription sub) {
-            if (Long.valueOf(1).equals(sub.param("room_id"))) {
+            if (Long.valueOf(1).equals(Channels.id(sub.param("room_id")))) {
                 room = "echo:room-1";
                 sub.streamFrom(room);
             } else {

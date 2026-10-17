@@ -2,8 +2,8 @@ package campfire.storage;
 
 import campfire.db.Database;
 import campfire.db.Times;
-import campfire.rails.Json;
 import campfire.web.RecordNotFound;
+import io.vertx.core.json.Json;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.io.ByteArrayInputStream;

@@ -1,6 +1,6 @@
 package campfire.cable;
 
-import campfire.rails.Json;
+import io.vertx.core.json.Json;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;

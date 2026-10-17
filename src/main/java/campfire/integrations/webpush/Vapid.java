@@ -1,7 +1,7 @@
 package campfire.integrations.webpush;
 
 import campfire.rails.Base64s;
-import campfire.rails.Json;
+import io.vertx.core.json.Json;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.Signature;
@@ -75,7 +75,7 @@ final class Vapid {
         claims.put("exp", nowSeconds + EXPIRATION_SECONDS);
         claims.put("sub", subject);
         String signingInput = encode64(JWT_HEADER.getBytes(StandardCharsets.UTF_8)) + "."
-            + encode64(Json.generate(claims).getBytes(StandardCharsets.UTF_8));
+            + encode64(Json.encode(claims).getBytes(StandardCharsets.UTF_8));
         byte[] signature;
         try {
             var signer = Signature.getInstance("SHA256withECDSAinP1363Format");

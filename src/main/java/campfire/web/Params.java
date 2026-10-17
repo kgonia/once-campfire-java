@@ -1,8 +1,11 @@
 package campfire.web;
 
 import campfire.rails.HttpFormats;
-import campfire.rails.Json;
 import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.json.DecodeException;
+import io.vertx.core.json.Json;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
@@ -64,12 +67,12 @@ public final class Params {
                 if (!text.isBlank()) {
                     Object parsed;
                     try {
-                        parsed = Json.parse(text);
-                    } catch (Json.ParseException e) {
+                        parsed = Json.decodeValue(text);
+                    } catch (DecodeException e) {
                         throw new HttpError(400);
                     }
-                    if (parsed instanceof Map<?, ?> map) map.forEach((key, value) -> json.put(String.valueOf(key), value));
-                    else json.put("_json", parsed);
+                    if (parsed instanceof JsonObject object) json.putAll(object.getMap());
+                    else json.put("_json", parsed instanceof JsonArray array ? array.getList() : parsed);
                 }
                 json.forEach(params::putValue);
                 params.json = json;

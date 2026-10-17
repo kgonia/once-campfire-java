@@ -1,5 +1,9 @@
 package campfire.rails;
 
+import io.vertx.core.json.DecodeException;
+import io.vertx.core.json.Json;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -31,8 +35,9 @@ public final class Messages {
         byte[] dump(Object value) {
             return switch (this) {
                 case NULL -> ((String) value).getBytes(StandardCharsets.UTF_8);
-                case JSON -> Json.generate(value).getBytes(StandardCharsets.UTF_8);
-                case JSON_WITH_FALLBACK, JSON_ALLOW_MARSHAL -> Json.encode(value).getBytes(StandardCharsets.UTF_8);
+                // `::JSON` and `ActiveSupport::JSON` differ only in whether `<`, `>` and `&` are
+                // escaped; Rails reads both back.
+                case JSON, JSON_WITH_FALLBACK, JSON_ALLOW_MARSHAL -> Json.encode(value).getBytes(StandardCharsets.UTF_8);
             };
         }
 
@@ -54,20 +59,23 @@ public final class Messages {
             }
         }
 
-        String encodeJson(Object value) {
-            return this == JSON ? Json.generate(value) : Json.encode(value);
-        }
-
         boolean usesEnvelope() {
             return this != NULL;
         }
 
+        /// Plain `Map`s and `List`s, as everything that reads a message expects.
         private static Object parseJson(byte[] bytes) {
+            Object value;
             try {
-                return Json.parse(new String(bytes, StandardCharsets.UTF_8));
-            } catch (Json.ParseException e) {
+                value = Json.decodeValue(new String(bytes, StandardCharsets.UTF_8));
+            } catch (DecodeException e) {
                 throw new MessageException(MessageException.Kind.INVALID_MESSAGE);
             }
+            return switch (value) {
+                case JsonObject object -> object.getMap();
+                case JsonArray array -> array.getList();
+                case null, default -> value;
+            };
         }
     }
 
@@ -87,8 +95,8 @@ public final class Messages {
         String expiry = expiresAt == null ? null : iso8601Millis(expiresAt);
         if (serializer.usesEnvelope()) {
             var out = new StringBuilder("{\"_rails\":{\"data\":").append(new String(dumped, StandardCharsets.UTF_8));
-            if (expiry != null) out.append(",\"exp\":").append(serializer.encodeJson(expiry));
-            if (purpose != null) out.append(",\"pur\":").append(serializer.encodeJson(purpose));
+            if (expiry != null) out.append(",\"exp\":").append(Json.encode(expiry));
+            if (purpose != null) out.append(",\"pur\":").append(Json.encode(purpose));
             return out.append("}}").toString().getBytes(StandardCharsets.UTF_8);
         }
         return ("{\"_rails\":{\"message\":" + Json.encode(Base64s.strictEncode(dumped))
@@ -100,8 +108,12 @@ public final class Messages {
     static Object deserializeWithMetadata(Serializer serializer, byte[] bytes, String purpose, Instant now,
                                           Function<String, byte[]> decodeLegacyMessage) {
         if (startsWith(bytes, LEGACY_PREFIX)) {
-            Object envelope = Json.parseOrNull(new String(bytes, StandardCharsets.UTF_8));
-            if (!(envelope instanceof Map<?, ?>)) throw new MessageException(MessageException.Kind.INVALID_SIGNATURE);
+            Object envelope;
+            try {
+                envelope = Json.decodeValue(new String(bytes, StandardCharsets.UTF_8), Map.class);
+            } catch (DecodeException e) {
+                throw new MessageException(MessageException.Kind.INVALID_SIGNATURE);
+            }
             Map<?, ?> rails = extract(envelope, purpose, now);
             if (!(rails.get("message") instanceof String message)) throw new MessageException(MessageException.Kind.INVALID_SIGNATURE);
             byte[] dumped = decodeLegacyMessage.apply(message);

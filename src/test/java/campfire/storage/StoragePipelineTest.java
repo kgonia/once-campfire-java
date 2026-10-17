@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import campfire.db.Database;
 import campfire.db.TestDatabase;
-import campfire.rails.Json;
+import io.vertx.core.json.Json;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;

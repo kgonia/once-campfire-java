@@ -2,7 +2,6 @@ package campfire.storage;
 
 import campfire.assets.Assets;
 import campfire.rails.HttpFormats;
-import campfire.rails.Json;
 import campfire.rails.RubyStrings;
 import campfire.sessions.Authentication;
 import campfire.web.Access;
@@ -13,6 +12,8 @@ import campfire.web.Params;
 import campfire.web.RequestOrigin;
 import campfire.web.Responses;
 import io.smallrye.common.annotation.RunOnVirtualThread;
+import io.vertx.core.json.DecodeException;
+import io.vertx.core.json.Json;
 import io.vertx.ext.web.RoutingContext;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
@@ -240,8 +241,11 @@ public class ActiveStorageResource {
     private @Nullable Map<?, ?> blobParams(byte[] body) {
         String type = routing.request().getHeader("content-type");
         if (type != null && type.toLowerCase(Locale.ROOT).contains("json") && body.length > 0) {
-            Object parsed = Json.parseOrNull(new String(body, StandardCharsets.UTF_8));
-            return parsed instanceof Map<?, ?> m && m.get("blob") instanceof Map<?, ?> blob ? blob : null;
+            try {
+                return Json.decodeValue(new String(body, StandardCharsets.UTF_8), Map.class).get("blob") instanceof Map<?, ?> blob ? blob : null;
+            } catch (DecodeException e) {
+                return null;
+            }
         }
         return Params.of(routing.request(), body).get("blob") instanceof Map<?, ?> blob ? blob : null;
     }

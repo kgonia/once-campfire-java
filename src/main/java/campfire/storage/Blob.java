@@ -13,8 +13,10 @@ import static org.jooq.impl.DSL.update;
 import campfire.db.Conn;
 import campfire.db.Database.Tx;
 import campfire.db.Sql;
-import campfire.rails.Json;
 import campfire.rails.Messages;
+import io.vertx.core.json.DecodeException;
+import io.vertx.core.json.Json;
+import io.vertx.core.json.JsonObject;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
@@ -44,12 +46,11 @@ public record Blob(long id, String key, String filename, String contentType, Str
     /// The parsed metadata (empty when absent or malformed).
     public Map<String, Object> metadataMap() {
         if (metadata == null || metadata.isBlank()) return new LinkedHashMap<>();
-        return Json.parseOrNull(metadata) instanceof Map<?, ?> m ? castMap(m) : new LinkedHashMap<>();
-    }
-
-    @SuppressWarnings("unchecked")
-    private static Map<String, Object> castMap(Map<?, ?> m) {
-        return (Map<String, Object>) m;
+        try {
+            return Json.decodeValue(metadata) instanceof JsonObject m ? m.getMap() : new LinkedHashMap<>();
+        } catch (DecodeException e) {
+            return new LinkedHashMap<>();
+        }
     }
 
     public Number metadataNumber(String name) {

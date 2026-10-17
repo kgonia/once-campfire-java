@@ -1,7 +1,10 @@
 package campfire.richtext;
 
 import campfire.rails.Base64s;
-import campfire.rails.Json;
+import io.vertx.core.json.DecodeException;
+import io.vertx.core.json.Json;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -182,7 +185,7 @@ public final class RichText {
             var attributes = new java.util.LinkedHashMap<String, Object>();
             for (String name : List.of("data-trix-attachment", "data-trix-attributes")) {
                 if (!node.hasAttr(name)) continue;
-                Object parsed = Json.parseOrNull(stripJsonComments(node.attr(name)));
+                Object parsed = parseOrNull(stripJsonComments(node.attr(name)));
                 if (parsed == null || Boolean.FALSE.equals(parsed)) continue;
                 if (!(parsed instanceof Map<?, ?> map)) throw new RenderException("NoMethodError: merge");
                 for (var entry : map.entrySet()) {
@@ -237,8 +240,19 @@ public final class RichText {
         return switch (value) {
             case null -> "";
             case String s -> s;
-            default -> Json.generate(value);
+            default -> Json.encode(value);
         };
+    }
+
+    /// Plain `Map`s and `List`s, or null for malformed JSON as for `null` itself.
+    private static Object parseOrNull(String text) {
+        Object value;
+        try {
+            value = Json.decodeValue(text);
+        } catch (DecodeException e) {
+            return null;
+        }
+        return value instanceof JsonObject o ? o.getMap() : value instanceof JsonArray a ? a.getList() : value;
     }
 
     private static boolean isGalleryAttachment(Node node) {
@@ -432,7 +446,7 @@ public final class RichText {
         String[] parts = sgid.split("--");
         if (parts.length == 0 || parts[0].isEmpty()) return null;
         byte[] decoded = decodeBase64(parts[0]);
-        Object json = Json.parseOrNull(new String(decoded, StandardCharsets.UTF_8));
+        Object json = parseOrNull(new String(decoded, StandardCharsets.UTF_8));
         if (json == null) throw new RenderException("JSON::ParserError");
         if (!(json instanceof Map<?, ?> map)) throw new RenderException("NoMethodError: dig");
         Object rails = map.get("_rails");

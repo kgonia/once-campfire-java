@@ -2,7 +2,7 @@ package campfire.assets;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import campfire.rails.Json;
+import io.vertx.core.json.Json;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -37,8 +37,8 @@ class AssetCompilerTest {
     @SuppressWarnings("unchecked")
     void digestsAndCompilesLikePropshaft() throws Exception {
         var compiler = referenceCompiler();
-        var manifest = (Map<String, Map<String, Object>>) Json.parse(resource("manifest.json"));
-        var compiled = (Map<String, String>) Json.parse(resource("compiled_sha256.json"));
+        var manifest = (Map<String, Map<String, Object>>) Json.decodeValue(resource("manifest.json"), Map.class);
+        var compiled = (Map<String, String>) Json.decodeValue(resource("compiled_sha256.json"), Map.class);
         int checked = 0;
         for (var entry : manifest.entrySet()) {
             Integer index = compiler.find(entry.getKey());

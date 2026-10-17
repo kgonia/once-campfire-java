@@ -6,8 +6,8 @@ import campfire.integrations.net.PinnedHttp;
 import campfire.integrations.net.PinnedHttp.Header;
 import campfire.integrations.net.PinnedHttp.HttpException;
 import campfire.integrations.net.Url;
-import campfire.rails.Json;
 import io.quarkus.logging.Log;
+import io.vertx.core.json.Json;
 import java.net.InetAddress;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -164,7 +164,7 @@ public final class WebPush implements AutoCloseable {
         var message = new LinkedHashMap<String, Object>();
         message.put("title", truncateJsonString(title, MAX_TITLE_BYTES));
         message.put("options", options);
-        return Json.generate(message);
+        return Json.encode(message);
     }
 
     /// `text`, cut short with an ellipsis if it takes more than `maxBytes` as a JSON string's

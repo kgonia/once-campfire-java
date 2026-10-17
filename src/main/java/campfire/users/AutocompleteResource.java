@@ -1,6 +1,5 @@
 package campfire.users;
 
-import campfire.rails.Json;
 import campfire.rails.RubyStrings;
 import campfire.rails.Secrets;
 import campfire.richtext.Html;
@@ -13,6 +12,7 @@ import campfire.web.RequestOrigin;
 import campfire.web.Responses;
 import gg.jte.generated.precompiled.autocompletable.users.JteindexGenerated;
 import io.smallrye.common.annotation.RunOnVirtualThread;
+import io.vertx.core.json.Json;
 import io.vertx.ext.web.RoutingContext;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;

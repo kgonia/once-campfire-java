@@ -1,10 +1,10 @@
 package campfire.storage;
 
 import campfire.rails.Base64s;
-import campfire.rails.Json;
 import campfire.rails.MessageException;
 import campfire.rails.MessageVerifier;
 import campfire.storage.RubyMarshal.Sym;
+import io.vertx.core.json.Json;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;

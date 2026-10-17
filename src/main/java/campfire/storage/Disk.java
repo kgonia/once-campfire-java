@@ -98,7 +98,7 @@ public final class Disk {
         payload.put("disposition", contentDispositionWith(disposition, sanitized));
         payload.put("content_type", contentType);
         payload.put("service_name", name);
-        String encodedKey = verifier.generateRaw(campfire.rails.Json.encode(payload), "blob_key", expiresAt);
+        String encodedKey = verifier.generateRaw(io.vertx.core.json.Json.encode(payload), "blob_key", expiresAt);
         return Urls.PREFIX + "/disk/" + Urls.escapeSegment(encodedKey) + "/" + Urls.escapePath(sanitized);
     }
 
@@ -111,7 +111,7 @@ public final class Disk {
         payload.put("content_length", contentLength);
         payload.put("checksum", checksum);
         payload.put("service_name", name);
-        String token = verifier.generateRaw(campfire.rails.Json.encode(payload), "blob_token", expiresAt);
+        String token = verifier.generateRaw(io.vertx.core.json.Json.encode(payload), "blob_token", expiresAt);
         return Urls.PREFIX + "/disk/" + Urls.escapeSegment(token);
     }
 

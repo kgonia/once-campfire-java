@@ -10,7 +10,6 @@ import campfire.rooms.Membership;
 import campfire.rooms.Room;
 import campfire.sessions.Session;
 import campfire.rails.HttpFormats;
-import campfire.rails.Json;
 import campfire.rails.Secrets;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServer;
@@ -18,6 +17,7 @@ import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.WebSocket;
 import io.vertx.core.http.WebSocketClient;
 import io.vertx.core.http.WebSocketConnectOptions;
+import io.vertx.core.json.Json;
 import io.vertx.ext.web.Router;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -139,7 +139,7 @@ final class CableTestSupport implements AutoCloseable {
     static String identifier(Object... keysAndValues) {
         var map = new LinkedHashMap<String, Object>();
         for (int i = 0; i < keysAndValues.length; i += 2) map.put((String) keysAndValues[i], keysAndValues[i + 1]);
-        return Json.generate(map);
+        return Json.encode(map);
     }
 
     static String roomIdentifier(String channel, long roomId) {
@@ -224,7 +224,7 @@ final class CableTestSupport implements AutoCloseable {
         }
 
         void send(Map<String, Object> command) {
-            sendRaw(Json.generate(command));
+            sendRaw(Json.encode(command));
         }
 
         void sendRaw(String text) {

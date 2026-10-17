@@ -4,11 +4,11 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import campfire.rails.Json;
 import io.quarkus.test.common.http.TestHTTPResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.QuarkusTestProfile;
 import io.quarkus.test.junit.TestProfile;
+import io.vertx.core.json.Json;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.CookieManager;
@@ -143,7 +143,7 @@ class AppSmokeTest {
         var created = http.send(HttpRequest.newBuilder(base.resolve("/rails/active_storage/direct_uploads")).header("Content-Type", "application/json")
             .header("Sec-Fetch-Site", "same-origin").POST(HttpRequest.BodyPublishers.ofString(params)).build(), HttpResponse.BodyHandlers.ofString());
         assertEquals(200, created.statusCode(), created.body());
-        var blob = (Map<?, ?>) Json.parse(created.body());
+        var blob = (Map<?, ?>) Json.decodeValue(created.body(), Map.class);
         String upload = (String) ((Map<?, ?>) blob.get("direct_upload")).get("url");
         var put = http.send(HttpRequest.newBuilder(URI.create(upload)).header("Content-Type", "text/plain")
             .PUT(HttpRequest.BodyPublishers.ofByteArray(content)).build(), HttpResponse.BodyHandlers.discarding());

@@ -4,18 +4,18 @@ import campfire.db.Times;
 import campfire.messages.Boost;
 import campfire.messages.Message;
 import campfire.messages.MessagePresenter;
-import campfire.rails.Json;
 import campfire.rails.Messages;
 import campfire.users.User;
 import campfire.users.UserCache;
 import campfire.view.FragmentCache;
 import campfire.view.View;
 import campfire.web.Paths;
+import io.vertx.core.json.Json;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.StringJoiner;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -27,9 +27,9 @@ final class BotJson {
     private BotJson() {}
 
     static String messages(MessagePresenter presenter, View v, List<Message> messages, String baseUrl, UserCache users) {
-        var out = new ArrayList<Json.Raw>(messages.size());
-        for (Message message : messages) out.add(new Json.Raw(message(presenter, v, message, baseUrl, users)));
-        return Json.encode(out);
+        var out = new StringJoiner(",", "[", "]");
+        for (Message message : messages) out.add(message(presenter, v, message, baseUrl, users));
+        return out.toString();
     }
 
     static String message(MessagePresenter presenter, View v, Message message, String baseUrl, UserCache users) {

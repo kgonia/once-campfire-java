@@ -14,7 +14,7 @@ import campfire.integrations.TestSupport.MappingRoute;
 import campfire.integrations.TestSupport.Route;
 import campfire.integrations.net.Network;
 import campfire.rails.Base64s;
-import campfire.rails.Json;
+import io.vertx.core.json.Json;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
@@ -156,9 +156,9 @@ class WebPushTest {
     }
 
     @Test
-    void encodesTheMessageLikeJsonGenerate() {
-        assertEquals(EXPECTED.get("message"),
-            WebPush.encodedMessage("Designers <&> \"quotes\" é 😀", "Kevin: line\nbreak\ttab   \u001f / \\ ", "/rooms/1", 3, WebPush.ACCOUNT_LOGO_PATH));
+    void encodesTheMessageAsRailsDoes() {
+        assertEquals(Json.decodeValue((String) EXPECTED.get("message")),
+            Json.decodeValue(WebPush.encodedMessage("Designers <&> \"quotes\" é 😀", "Kevin: line\nbreak\ttab   \u001f / \\ ", "/rooms/1", 3, WebPush.ACCOUNT_LOGO_PATH)));
     }
 
     @Test
@@ -205,7 +205,7 @@ class WebPushTest {
     void signsWithTheConfiguredSubject() throws Exception {
         String authorization = Vapid.of("mailto:ops@example.com", VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY).authorization("https://x", 0);
         String payload = new String(b64(authorization.substring(8).split(",k=")[0].split("\\.")[1]), StandardCharsets.UTF_8);
-        assertEquals("mailto:ops@example.com", ((Map<?, ?>) Json.parse(payload)).get("sub"));
+        assertEquals("mailto:ops@example.com", ((Map<?, ?>) Json.decodeValue(payload, Map.class)).get("sub"));
     }
 
     @Test
@@ -360,7 +360,7 @@ class WebPushTest {
             String body = UUID.randomUUID().toString();
             push.deliverNow(receiver.subscription(1, ENDPOINT), "Campfire Test", body, "http://example.com/users/me/push_subscriptions", 4,
                 WebPush.ACCOUNT_LOGO_PATH);
-            var message = (Map<?, ?>) Json.parse(receiver.open(service.server().received.getFirst().body()));
+            var message = (Map<?, ?>) Json.decodeValue(receiver.open(service.server().received.getFirst().body()), Map.class);
             assertEquals("Campfire Test", message.get("title"));
             var options = (Map<?, ?>) message.get("options");
             assertEquals(body, options.get("body"));

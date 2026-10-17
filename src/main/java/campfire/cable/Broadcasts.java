@@ -6,8 +6,8 @@ import campfire.rooms.Membership;
 import campfire.messages.Message;
 import campfire.rooms.Room;
 import campfire.rails.GlobalId;
-import campfire.rails.Json;
 import campfire.richtext.Html;
+import io.vertx.core.json.Json;
 import java.util.Map;
 
 /// The broadcasts the app makes (`Message::Broadcasts`, the rooms controllers' `broadcast_*_to`),

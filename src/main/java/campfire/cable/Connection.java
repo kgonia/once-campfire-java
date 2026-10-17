@@ -1,8 +1,9 @@
 package campfire.cable;
 
-import campfire.rails.Json;
 import io.quarkus.logging.Log;
 import io.vertx.core.http.ServerWebSocket;
+import io.vertx.core.json.DecodeException;
+import io.vertx.core.json.Json;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -196,7 +197,7 @@ final class Connection {
     /// `Subscriptions#execute_command`. Anything malformed raises in Rails, which is logged and
     /// otherwise ignored; the connection stays open.
     private void dispatch(String text) {
-        if (!(Json.parseOrNull(text) instanceof Map<?, ?> data)) {
+        if (!(object(text) instanceof Map<?, ?> data)) {
             Log.error("Could not execute command from (" + text + ")");
             return;
         }
@@ -208,6 +209,15 @@ final class Connection {
         }
     }
 
+    /// The JSON object in `text`, or null when it's malformed or something else.
+    private static Map<?, ?> object(String text) {
+        try {
+            return Json.decodeValue(text, Map.class);
+        } catch (DecodeException e) {
+            return null;
+        }
+    }
+
     /// `Subscriptions#add`. A repeated identifier (byte for byte) is ignored without a reply.
     @SuppressWarnings("unchecked")
     private void add(Map<?, ?> data) {
@@ -215,7 +225,7 @@ final class Connection {
             Log.error("Could not execute command: missing identifier");
             return;
         }
-        if (!(Json.parseOrNull(identifier) instanceof Map<?, ?> params)) {
+        if (!(object(identifier) instanceof Map<?, ?> params)) {
             Log.error("Could not execute command: invalid identifier " + identifier);
             return;
         }
@@ -282,7 +292,7 @@ final class Connection {
             Log.error("Unable to find subscription with identifier: " + data.get("identifier"));
             return;
         }
-        if (!(data.get("data") instanceof String encoded) || !(Json.parseOrNull(encoded) instanceof Map<?, ?> payload)) {
+        if (!(data.get("data") instanceof String encoded) || !(object(encoded) instanceof Map<?, ?> payload)) {
             Log.error("Could not execute command: invalid data");
             return;
         }

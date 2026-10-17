@@ -1,6 +1,6 @@
 package campfire.web;
 
-import campfire.rails.Json;
+import io.vertx.core.json.Json;
 import jakarta.ws.rs.core.Response;
 import java.nio.charset.StandardCharsets;
 

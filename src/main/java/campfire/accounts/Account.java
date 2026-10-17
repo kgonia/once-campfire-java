@@ -11,8 +11,10 @@ import campfire.db.Conn;
 import campfire.db.Database.Tx;
 import campfire.db.Sql;
 import campfire.db.Times;
-import campfire.rails.Json;
 import campfire.rails.SecureRandoms;
+import io.vertx.core.json.DecodeException;
+import io.vertx.core.json.Json;
+import io.vertx.core.json.JsonObject;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -74,12 +76,21 @@ public record Account(long id, String name, String joinCode, String customStyles
 
     /// The stored settings with the defaults filled in.
     public Map<String, Object> settingsMap() {
-        Object parsed = settings == null ? null : Json.parseOrNull(settings);
-        if (parsed instanceof String nested) parsed = Json.parseOrNull(nested);
-        @SuppressWarnings("unchecked")
-        var map = parsed instanceof Map<?, ?> m ? new LinkedHashMap<>((Map<String, Object>) m) : new LinkedHashMap<String, Object>();
+        Object parsed = decode(settings);
+        if (parsed instanceof String nested) parsed = decode(nested);
+        var map = parsed instanceof JsonObject o ? new LinkedHashMap<>(o.getMap()) : new LinkedHashMap<String, Object>();
         map.putIfAbsent(RESTRICT_ROOM_CREATION, false);
         return map;
+    }
+
+    /// Null for no settings and for malformed ones, so the defaults apply.
+    private static Object decode(String json) {
+        if (json == null) return null;
+        try {
+            return Json.decodeValue(json);
+        } catch (DecodeException e) {
+            return null;
+        }
     }
 
     /// The settings JSON after assigning form values (cast as booleans: blank is null, "0", "f",
@@ -95,7 +106,7 @@ public record Account(long id, String name, String joinCode, String customStyles
             String value = entry.getValue();
             updated.put(RESTRICT_ROOM_CREATION, value.isEmpty() ? null : !List.of("0", "f", "F", "false", "FALSE", "off", "OFF").contains(value));
         }
-        return settings == null || !updated.equals(new TreeMap<>(original)) ? Json.generate(updated) : null;
+        return settings == null || !updated.equals(new TreeMap<>(original)) ? Json.encode(updated) : null;
     }
 
     /// `SecureRandom.alphanumeric(12).scan(/.{4}/).join("-")`

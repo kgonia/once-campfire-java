@@ -2,9 +2,9 @@ package campfire.integrations.opengraph;
 
 import campfire.integrations.net.Network;
 import campfire.integrations.net.Url;
-import campfire.rails.Json;
 import campfire.richtext.Html;
 import io.quarkus.logging.Log;
+import io.vertx.core.json.Json;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;

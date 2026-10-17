@@ -1,6 +1,6 @@
 package campfire.cable;
 
-import campfire.rails.Json;
+import io.vertx.core.json.Json;
 import java.util.List;
 
 /// The Action Cable wire format (`ActionCable::INTERNAL` in actioncable/lib/action_cable.rb).
