@@ -11,8 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /// `{"identifier":…,"message":…}` frame once per distinct channel identifier and hands it to every
 /// listener's connection, which writes it in order with the rest of its frames.
 final class Hub {
-    /// One stream of one subscription, or a connection's internal channel (`encodedIdentifier` null,
-    /// payloads handed over raw).
+    /// One stream of one subscription.
     static final class Listener {
         final String stream;
         final String encodedIdentifier;
@@ -23,10 +22,6 @@ final class Hub {
             this.stream = stream;
             this.encodedIdentifier = encodedIdentifier;
             this.connection = connection;
-        }
-
-        boolean internal() {
-            return encodedIdentifier == null;
         }
     }
 
@@ -58,20 +53,15 @@ final class Hub {
         int receivers = 0;
         for (Listener listener : listeners) {
             if (!listener.active) continue;
-            String frame;
-            if (listener.internal()) {
-                frame = payload;
-            } else {
-                if (frames == null) frames = new HashMap<>(4);
-                frame = frames.computeIfAbsent(listener.encodedIdentifier, id -> Protocol.message(id, payload));
-            }
+            if (frames == null) frames = new HashMap<>(4);
+            String frame = frames.computeIfAbsent(listener.encodedIdentifier, id -> Protocol.message(id, payload));
             listener.connection.deliver(listener, frame);
             receivers++;
         }
         return receivers;
     }
 
-    /// Broadcastings with at least one listener (connections' internal channels included).
+    /// Broadcastings with at least one listener.
     int streamCount() {
         return streams.size();
     }

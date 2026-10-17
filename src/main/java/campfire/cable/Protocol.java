@@ -30,11 +30,9 @@ final class Protocol {
         return "{\"type\":\"ping\",\"message\":" + unixSeconds + "}";
     }
 
-    /// `Connection::Base#close`: `reason` is nil when Rails closes without one, and `reconnect` is
-    /// whatever JSON value a remote disconnect carried (`message.fetch("reconnect", true)`).
-    static String disconnect(String reason, Object reconnect) {
-        return "{\"type\":\"disconnect\",\"reason\":" + (reason == null ? "null" : Json.encode(reason)) + ",\"reconnect\":"
-            + Json.encode(reconnect) + "}";
+    /// `Connection::Base#close`: `reason` is nil when Rails closes without one.
+    static String disconnect(String reason, boolean reconnect) {
+        return "{\"type\":\"disconnect\",\"reason\":" + (reason == null ? "null" : Json.encode(reason)) + ",\"reconnect\":" + reconnect + "}";
     }
 
     static String confirmation(String identifier) {

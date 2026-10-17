@@ -37,7 +37,6 @@ class CableProtocolTest {
         assertEquals("{\"type\":\"ping\",\"message\":1700000000}", Protocol.ping(1700000000));
         assertEquals("{\"type\":\"disconnect\",\"reason\":\"unauthorized\",\"reconnect\":false}", Protocol.disconnect(Protocol.UNAUTHORIZED, false));
         assertEquals("{\"type\":\"disconnect\",\"reason\":null,\"reconnect\":true}", Protocol.disconnect(null, true));
-        assertEquals("{\"type\":\"disconnect\",\"reason\":\"remote\",\"reconnect\":\"x\"}", Protocol.disconnect(Protocol.REMOTE, "x"));
         String identifier = "{\"channel\":\"RoomChannel\",\"room_id\":1}";
         assertEquals("{\"identifier\":\"{\\\"channel\\\":\\\"RoomChannel\\\",\\\"room_id\\\":1}\",\"type\":\"confirm_subscription\"}",
             Protocol.confirmation(identifier));
@@ -48,35 +47,24 @@ class CableProtocolTest {
     }
 
     @Test
-    void channelNamesAndBroadcastings() {
-        assertEquals("room", Naming.channelName("RoomChannel"));
-        assertEquals("typing_notifications", Naming.channelName("TypingNotificationsChannel"));
-        assertEquals("turbo:streams", Naming.channelName("Turbo::StreamsChannel"));
-        assertEquals("html", Naming.channelName("HTMLChannel"));
-        assertEquals("html_parser", Naming.channelName("HTMLParserChannel"));
+    void streamNames() {
         String room = campfire.rails.GlobalId.of("Rooms::Open", 1).toParam();
         assertEquals("Z2lkOi8vY2FtcGZpcmUvUm9vbXM6Ok9wZW4vMQ", room);
-        assertEquals("presence:" + room, Naming.broadcastingFor("PresenceChannel", room));
         assertEquals(room + ":messages", Broadcasts.streamName(room, "messages"));
     }
 
     @Test
-    void castsIdsLikeActiveRecord() {
-        assertEquals(5L, Channels.castId(5L));
-        assertEquals(5L, Channels.castId(5.9));
-        assertEquals(5L, Channels.castId("5"));
-        assertEquals(12L, Channels.castId(" 12abc"));
-        assertEquals(1000L, Channels.castId("1_000"));
-        assertEquals(-1L, Channels.castId("-1"));
-        assertNull(Channels.castId("abc"));
-        assertNull(Channels.castId(""));
-        assertEquals(1L, Channels.castId(true));
-        assertNull(Channels.castId(null));
-        assertNull(Channels.castId("99999999999999999999"));
-        assertEquals(5L, Channels.castId("\u000b5"));
-        assertEquals(12L, Channels.castId("0d12"));
-        assertNull(Channels.castId(" 5"));
-        assertEquals(Long.MIN_VALUE, Channels.castId("-9223372036854775808"));
+    void roomIdsAreNumbersOrDecimalStrings() {
+        assertEquals(5L, Channels.id(5L));
+        assertEquals(5L, Channels.id("5"));
+        assertEquals(-1L, Channels.id("-1"));
+        assertNull(Channels.id(5.9));
+        assertNull(Channels.id(true));
+        assertNull(Channels.id(" 12abc"));
+        assertNull(Channels.id(""));
+        assertNull(Channels.id(null));
+        assertNull(Channels.id("99999999999999999999"));
+        assertNull(Channels.id(new java.math.BigInteger("99999999999999999999")));
     }
 
     @Test
@@ -89,12 +77,11 @@ class CableProtocolTest {
         assertTrue(Channels.RoomMessagesChannel.guardedStream(":messages"));
     }
 
+    /// The signed value is URL-escaped (`a%2Bb%3D`), as Rack writes it, among other cookies.
     @Test
-    void parsesCookiesLikeRack() {
-        assertEquals("a+b/c=", Cable.cookie("x=1; session_token=a%2Bb%2Fc%3D;y=2", "session_token"));
-        assertEquals("first", Cable.cookie("session_token=first; session_token=second", "session_token"));
-        assertNull(Cable.cookie("other=1", "session_token"));
-        assertNull(Cable.cookie(null, "session_token"));
+    void readsTheEscapedSessionCookieAmongOthers() throws Exception {
+        app = start();
+        assertEquals(WELCOME, app.connectWithCookie("x=1; " + app.cookieFor(app.david) + "; y=2").next());
     }
 
     // -- The endpoint -----------------------------------------------------------------------------------
@@ -117,19 +104,25 @@ class CableProtocolTest {
 
     @Test
     void sameOriginUnderAssumeSslMeansHttps() throws Exception {
-        app = start(new Cable.Options(false, List.of(), true, true));
+        app = start(true);
         assertRejectedWith404(() -> app.connectWith(app.cookieFor(app.david), app.origin, List.of("actioncable-v1-json")));
         var client = app.connectWith(app.cookieFor(app.david), app.origin.replace("http://", "https://"), List.of("actioncable-v1-json"));
         assertEquals(WELCOME, client.next());
     }
 
+    /// Vert.x refuses a handshake it can't complete (no key, no `Connection: Upgrade`) with its own
+    /// 400, where Rails answers 404.
     @Test
-    void allowedRequestOriginsAndDisabledForgeryProtection() throws Exception {
-        app = start(new Cable.Options(false, List.of("https://chat.example"), true, false));
-        assertEquals(WELCOME, app.connectWith(app.cookieFor(app.david), "https://chat.example", List.of("actioncable-v1-json")).next());
-        app.close();
-        app = start(new Cable.Options(true, List.of(), true, false));
-        assertEquals(WELCOME, app.connectWith(app.cookieFor(app.david), "http://evil.example", List.of("actioncable-v1-json")).next());
+    void incompleteUpgradesGetVertx400() throws Exception {
+        app = start();
+        try (var socket = new java.net.Socket("127.0.0.1", app.port)) {
+            String host = "127.0.0.1:" + app.port;
+            socket.getOutputStream().write(("GET /cable HTTP/1.1\r\nHost: " + host + "\r\nUpgrade: websocket\r\nOrigin: http://" + host
+                + "\r\n\r\n").getBytes(java.nio.charset.StandardCharsets.US_ASCII));
+            String status = new java.io.BufferedReader(new java.io.InputStreamReader(socket.getInputStream(),
+                java.nio.charset.StandardCharsets.US_ASCII)).readLine();
+            assertEquals("HTTP/1.1 400 Bad Request", status);
+        }
     }
 
     private interface Connect {
@@ -225,7 +218,7 @@ class CableProtocolTest {
         String room = roomIdentifier("RoomChannel", app.designers.id());
         client.confirm(room);
         String gid = app.roomGid(app.designers);
-        assertEquals(1, app.cable.broadcastTo("RoomChannel", "{\"roomId\":1}", gid));
+        assertEquals(1, app.cable.deliver("room:" + gid, "{\"roomId\":1}"));
         assertEquals(delivery(room, "{\"roomId\":1}"), client.next());
         app.cable.broadcast("room:" + gid, Json.encode("<b>&</b>"));
         assertEquals(delivery(room, "\"\\u003cb\\u003e\\u0026\\u003c/b\\u003e\""), client.next());
@@ -269,7 +262,7 @@ class CableProtocolTest {
         client.assertSilent();
         assertEquals(0, app.cable.deliver("room:" + app.roomGid(app.designers), "{}"));
         client.assertSilent();
-        assertEquals(1, app.cable.streamCount(), "only the internal channel remains");
+        assertEquals(0, app.cable.streamCount());
     }
 
     @Test
@@ -352,9 +345,7 @@ class CableProtocolTest {
         // RoomStreamsAreAuthorized: a validly signed room message stream is still turned away.
         client.reject(identifier("channel", "Turbo::StreamsChannel", "signed_stream_name", app.signedStreamName("Z2lk", "messages")));
         assertEquals(0, app.cable.deliver("Z2lk:messages", "\"x\""));
-        // A non-string name raises in MessageVerifier: neither confirmed nor rejected.
-        client.subscribe(identifier("channel", "Turbo::StreamsChannel", "signed_stream_name", 1));
-        client.assertSilent();
+        client.reject(identifier("channel", "Turbo::StreamsChannel", "signed_stream_name", 1));
     }
 
     @Test
@@ -389,8 +380,8 @@ class CableProtocolTest {
         @Override
         public void subscribed(Subscription sub) {
             if (Long.valueOf(1).equals(sub.param("room_id"))) {
-                room = "room-1";
-                sub.streamFor(room);
+                room = "echo:room-1";
+                sub.streamFrom(room);
             } else {
                 sub.reject();
             }
@@ -409,7 +400,7 @@ class CableProtocolTest {
                     var payload = new java.util.LinkedHashMap<String, Object>();
                     payload.put("action", "start");
                     payload.put("user", Map.of("id", sub.currentUser().id()));
-                    sub.broadcastTo(payload, room);
+                    sub.cable().deliver(room, Json.encode(payload));
                 }
                 case "echo" -> sub.transmit(data);
                 case "receive" -> sub.transmit(Map.of("received", data));

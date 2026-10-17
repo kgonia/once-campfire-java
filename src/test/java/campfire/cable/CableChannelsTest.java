@@ -236,8 +236,8 @@ class CableChannelsTest {
         assertEquals(delivery(plain, stop), reader.next());
     }
 
-    /// A subscription whose `subscribed` failed has no room: typing there is an error, not
-    /// something that takes the connection down.
+    /// A subscription whose `subscribed` failed has no room: typing there does nothing, and the
+    /// connection stays up.
     @Test
     void typingOnAFailedSubscriptionLeavesTheConnectionUp() throws Exception {
         var client = app.connect(app.jz);
@@ -306,10 +306,9 @@ class CableChannelsTest {
         // A plain `Room` GID locates any room type.
         String room = campfire.rails.GlobalId.of("Room", app.designers.id()).toParam();
         kevin.confirm(identifier("channel", "RoomMessagesChannel", "signed_stream_name", app.signedStreamName(room, "messages")));
-        // An unknown model raises NameError: no reply.
+        // A model that doesn't exist.
         String unknown = campfire.rails.GlobalId.of("Nope", 1).toParam();
-        kevin.subscribe(identifier("channel", "RoomMessagesChannel", "signed_stream_name", app.signedStreamName(unknown, "messages")));
-        kevin.assertSilent();
+        kevin.reject(identifier("channel", "RoomMessagesChannel", "signed_stream_name", app.signedStreamName(unknown, "messages")));
     }
 
     @Test
@@ -342,9 +341,9 @@ class CableChannelsTest {
             + "\"></turbo-stream>")), kevin.next());
     }
 
-    /// Public `subscribed` is an action in Ruby: performing it streams again.
+    /// Ruby makes `subscribed` an action too; here it isn't one, so it can't double a stream.
     @Test
-    void performingSubscribedStreamsTwiceLikeRuby() throws Exception {
+    void subscribedIsNotAnAction() throws Exception {
         String unreads = identifier("channel", "UnreadRoomsChannel");
         var client = app.connect(app.kevin);
         client.confirm(unreads);
@@ -355,9 +354,8 @@ class CableChannelsTest {
             app.broadcasts.unreadRoom(conn, app.benderAndKevin);
             return null;
         });
-        String expected = delivery(unreads, "{\"roomId\":" + app.benderAndKevin.id() + "}");
-        assertEquals(expected, client.next());
-        assertEquals(expected, client.next());
+        assertEquals(delivery(unreads, "{\"roomId\":" + app.benderAndKevin.id() + "}"), client.next());
+        client.assertSilent();
     }
 
     // -- Revocation (revocation_test.rs) ------------------------------------------------------------------

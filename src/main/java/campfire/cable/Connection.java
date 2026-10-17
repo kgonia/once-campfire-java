@@ -44,8 +44,8 @@ final class Connection {
 
     private record Delivery(Hub.Listener listener, String frame) implements Event {}
 
-    /// We decided to close: `reason` may be null (a lagging stream), `reconnect` any JSON value.
-    private record Close(String reason, Object reconnect) implements Event {}
+    /// We decided to close: `reason` is null for a lagging stream.
+    private record Close(String reason, boolean reconnect) implements Event {}
 
     private enum Closed implements Event { INSTANCE }
 
@@ -53,7 +53,8 @@ final class Connection {
 
     private final Cable cable;
     private final ServerWebSocket ws;
-    private final String cookies;
+    /// The `session_token` cookie as signed, or null.
+    private final String sessionToken;
     private final LinkedBlockingQueue<Event> events = new LinkedBlockingQueue<>();
     private final AtomicInteger incoming = new AtomicInteger();
     private final AtomicInteger backlog = new AtomicInteger();
@@ -62,14 +63,13 @@ final class Connection {
     private volatile boolean open;
     private volatile boolean closing;
     private Subscription.User user;
-    private Hub.Listener internal;
     /// Keyed by the raw identifier string, in subscription order (a Ruby hash).
     private final LinkedHashMap<String, Entry> subscriptions = new LinkedHashMap<>();
 
-    Connection(Cable cable, ServerWebSocket ws, String cookies) {
+    Connection(Cable cable, ServerWebSocket ws, String sessionToken) {
         this.cable = cable;
         this.ws = ws;
-        this.cookies = cookies;
+        this.sessionToken = sessionToken;
     }
 
     /// Called on the event loop as soon as the handshake is done, before any message can arrive.
@@ -88,17 +88,17 @@ final class Connection {
 
     private void run() {
         try {
-            // handle_open: connect, subscribe to the internal channel, welcome, then process whatever
+            // handle_open: connect, listen for remote disconnects, welcome, then process whatever
             // arrived meanwhile.
-            user = cable.authenticate(cookies);
+            user = cable.authenticate(sessionToken);
             if (user == null) {
                 rejectUnauthorized();
                 return;
             }
-            internal = cable.hub().subscribe(Cable.internalChannel(user.id()), null, this);
-            // A ban or sign-out that disconnected this user between the check above and that
-            // subscription went unheard, so check again now that it would be heard (Rails has this gap).
-            if (cable.authenticate(cookies) == null) {
+            cable.identified(this, user.id());
+            // A ban or sign-out that disconnected this user between the check above and being
+            // identified went unheard, so check again now that it would be heard (Rails has this gap).
+            if (cable.authenticate(sessionToken) == null) {
                 rejectUnauthorized();
                 return;
             }
@@ -113,8 +113,7 @@ final class Connection {
             ws.close((short) 1011);
         } finally {
             open = false;
-            cable.closed(this);
-            if (internal != null) cable.hub().unsubscribe(internal);
+            cable.closed(this, user);
             handleClose();
         }
     }
@@ -134,18 +133,17 @@ final class Connection {
                     if (!closing) dispatch(text);
                 }
                 case Delivery(Hub.Listener listener, String frame) -> {
-                    if (listener.internal()) processInternalMessage(frame);
-                    else if (!closing && listener.active) ws.writeTextMessage(frame).onComplete(ar -> backlog.decrementAndGet());
+                    if (!closing && listener.active) ws.writeTextMessage(frame).onComplete(ar -> backlog.decrementAndGet());
                     else backlog.decrementAndGet();
                 }
-                case Close(String reason, Object reconnect) -> close(reason, reconnect);
+                case Close(String reason, boolean reconnect) -> close(reason, reconnect);
             }
         }
     }
 
     /// `Connection::Base#close`: tell the client why, then close the socket (1000, no reason). The
     /// loop carries on until the closing handshake completes, ignoring everything but that.
-    private void close(String reason, Object reconnect) {
+    private void close(String reason, boolean reconnect) {
         if (closing) return;
         closing = true;
         open = false;
@@ -159,22 +157,14 @@ final class Connection {
         close(Protocol.UNAUTHORIZED, false);
     }
 
-    /// `InternalChannel#process_internal_message`.
-    private void processInternalMessage(String payload) {
-        if (Json.parseOrNull(payload) instanceof Map<?, ?> message && "disconnect".equals(message.get("type"))) {
-            LOG.info("Removing connection (" + Cable.internalChannel(user.id()) + ")");
-            close(Protocol.REMOTE, message.containsKey("reconnect") ? message.get("reconnect") : Boolean.TRUE);
-        }
-    }
-
     // -- From any thread --------------------------------------------------------------------------
 
     /// A frame from one of this connection's streams. A connection that has fallen too far behind
     /// is closed with `reconnect: true` (as Rails closes without a reason) instead.
     void deliver(Hub.Listener listener, String frame) {
         if (closing) return;
-        if (!listener.internal() && backlog.get() >= MAX_BACKLOG) {
-            if (lagged.compareAndSet(false, true)) events.add(new Close(null, Boolean.TRUE));
+        if (backlog.get() >= MAX_BACKLOG) {
+            if (lagged.compareAndSet(false, true)) events.add(new Close(null, true));
             return;
         }
         backlog.incrementAndGet();
@@ -193,7 +183,15 @@ final class Connection {
 
     /// `ActionCable.server.restart`.
     void restart() {
-        events.add(new Close(Protocol.SERVER_RESTART, Boolean.TRUE));
+        events.add(new Close(Protocol.SERVER_RESTART, true));
+    }
+
+    /// A remote disconnect (`InternalChannel#process_internal_message`), queued behind what the
+    /// connection is already handling.
+    void disconnect(boolean reconnect) {
+        if (closing) return;
+        LOG.info("Removing connection (user " + user.id() + ")");
+        events.add(new Close(Protocol.REMOTE, reconnect));
     }
 
     // -- Subscriptions ------------------------------------------------------------------------------
@@ -248,7 +246,7 @@ final class Connection {
         try {
             entry.channel().subscribed(sub);
         } catch (Exception e) {
-            LOG.log(Level.SEVERE, "Could not execute command from " + sub.identifier() + ": " + e.getMessage(), debug(e));
+            LOG.log(Level.SEVERE, "Could not execute command from " + sub.identifier() + ": " + e.getMessage(), e);
             return;
         }
         if (sub.rejected()) {
@@ -274,7 +272,7 @@ final class Connection {
         try {
             entry.channel().unsubscribed(sub);
         } catch (Exception e) {
-            LOG.log(Level.SEVERE, "Could not execute command from " + sub.identifier() + ": " + e.getMessage(), debug(e));
+            LOG.log(Level.SEVERE, "Could not execute command from " + sub.identifier() + ": " + e.getMessage(), e);
         }
         sub.stopAllStreams();
     }
@@ -305,7 +303,7 @@ final class Connection {
                 LOG.severe("Unable to process " + entry.sub().className() + "#" + action);
             }
         } catch (Exception e) {
-            LOG.log(Level.SEVERE, "Could not execute command from " + entry.sub().identifier() + ": " + e.getMessage(), debug(e));
+            LOG.log(Level.SEVERE, "Could not execute command from " + entry.sub().identifier() + ": " + e.getMessage(), e);
         }
     }
 
@@ -316,10 +314,5 @@ final class Connection {
 
     private Entry find(Map<?, ?> data) {
         return data.get("identifier") instanceof String identifier ? subscriptions.get(identifier) : null;
-    }
-
-    /// Ruby-ish failures are expected; anything else gets its stack trace.
-    private static Throwable debug(Exception e) {
-        return e instanceof Channel.Failure ? null : e;
     }
 }

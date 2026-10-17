@@ -59,18 +59,18 @@ final class CableTestSupport implements AutoCloseable {
     Room designers, watercooler, hq, benderAndKevin;
 
     static CableTestSupport start() throws Exception {
-        return start(new Cable.Options(false, List.of(), true, false));
+        return start(false);
     }
 
-    static CableTestSupport start(Cable.Options options) throws Exception {
-        return new CableTestSupport(options);
+    static CableTestSupport start(boolean assumeSsl) throws Exception {
+        return new CableTestSupport(assumeSsl);
     }
 
-    private CableTestSupport(Cable.Options options) throws Exception {
+    private CableTestSupport(boolean assumeSsl) throws Exception {
         dir = Files.createTempDirectory("cable-test");
         db = TestDatabase.open(dir.resolve("test.sqlite3"));
         loadFixtures();
-        cable = new Cable(db, secrets, token -> db.read(conn -> Session.findByToken(conn, token)), options);
+        cable = new Cable(db, secrets, token -> db.read(conn -> Session.findByToken(conn, token)), assumeSsl);
         broadcasts = new Broadcasts(cable);
         Router router = Router.router(vertx);
         router.route("/cable").handler(cable::upgrade);

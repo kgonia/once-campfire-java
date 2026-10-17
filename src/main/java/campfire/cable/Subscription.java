@@ -54,22 +54,9 @@ final class Subscription {
         return user;
     }
 
-    String broadcastingFor(String... broadcastables) {
-        return Naming.broadcastingFor(className, broadcastables);
-    }
-
-    /// `broadcast_to` for this channel's class.
-    void broadcastTo(Object message, String... broadcastables) {
-        cable.deliver(broadcastingFor(broadcastables), Json.encode(message));
-    }
-
     void streamFrom(String broadcasting) {
         if (unsubscribed) return;
         streams.add(cable.hub().subscribe(broadcasting, encodedIdentifier, connection));
-    }
-
-    void streamFor(String... broadcastables) {
-        streamFrom(broadcastingFor(broadcastables));
     }
 
     void stopAllStreams() {

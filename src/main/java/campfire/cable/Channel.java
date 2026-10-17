@@ -25,11 +25,4 @@ interface Channel {
 
     /// `ApplicationCable::Channel` and `HeartbeatChannel`: subscribe, confirm, nothing else.
     final class Empty implements Channel {}
-
-    /// What Ruby raises (`NoMethodError` on nil, `NameError`...), for the log.
-    final class Failure extends RuntimeException {
-        Failure(String message) {
-            super(message, null, false, false);
-        }
-    }
 }
