@@ -92,9 +92,14 @@ public final class MessagePresenter {
     }
 
     /// The body as plain text: mentions as names, attachments as their captions.
+    /// A message without text is its attachment's file name, as in `Message#plain_text_body`: that
+    /// is what bots, push notifications and the search index see for an upload.
     public String plainTextBody(Message message) {
         var body = RichTextRecord.find(conn, Message.RECORD_TYPE, message.id(), "body");
-        return RichText.plainText(body == null ? null : body.body(), richText);
+        String text = RichText.plainText(body == null ? null : body.body(), richText);
+        if (!text.isBlank()) return text;
+        Blob blob = Attachment.findBlobFor(conn, Message.RECORD_TYPE, message.id(), "attachment");
+        return blob == null ? "" : blob.filename();
     }
 
     /// The body as stored, rendered in its layout; "" for none.
