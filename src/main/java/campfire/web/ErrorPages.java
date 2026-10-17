@@ -3,6 +3,7 @@ package campfire.web;
 import campfire.assets.Assets;
 import io.quarkus.logging.Log;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.NotAcceptableException;
 import jakarta.ws.rs.NotAllowedException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.WebApplicationException;
@@ -27,6 +28,12 @@ public class ErrorPages {
     @ServerExceptionMapper
     public Response notAllowed(NotAllowedException e) {
         return page(404);
+    }
+
+    /// No type in an `@Produces` is acceptable.
+    @ServerExceptionMapper
+    public Response notAcceptable(NotAcceptableException e) {
+        return Formats.notAcceptable(request);
     }
 
     @ServerExceptionMapper

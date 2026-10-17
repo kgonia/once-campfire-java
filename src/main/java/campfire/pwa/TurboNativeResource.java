@@ -1,11 +1,8 @@
 package campfire.pwa;
 
 import campfire.web.Access;
-import campfire.web.CurrentRequest;
-import campfire.web.Formats;
 import campfire.web.Responses;
 import io.smallrye.common.annotation.RunOnVirtualThread;
-import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
@@ -19,9 +16,6 @@ import org.jspecify.annotations.NullMarked;
 @RunOnVirtualThread
 @NullMarked
 public class TurboNativeResource {
-    @Inject
-    CurrentRequest request;
-
     @GET
     public Response show(@PathParam("action") String action) {
         String text = switch (action) {
@@ -29,8 +23,6 @@ public class TurboNativeResource {
             case "resume" -> "Staying put…";
             default -> "Refreshing…";
         };
-        var response = Responses.html(200, text);
-        if (Formats.variesOnAccept(request)) response.header("Vary", "Accept");
-        return response.build();
+        return Responses.html(200, text).build();
     }
 }

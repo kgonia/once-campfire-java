@@ -96,6 +96,14 @@ class AppSmokeTest {
             .header("If-None-Match", image.headers().firstValue("etag").orElseThrow()).build(), HttpResponse.BodyHandlers.discarding());
         assertEquals(304, cachedImage.statusCode());
 
+        assertEquals(200, get("/account/edit").statusCode());
+        var json = http.send(HttpRequest.newBuilder(base.resolve("/account/edit")).header("Accept", "application/json").build(),
+            HttpResponse.BodyHandlers.ofString());
+        assertEquals(406, json.statusCode());
+        assertEquals("{\"status\":406,\"error\":\"Not Acceptable\"}", json.body());
+        assertEquals(406, get("/account/edit.json").statusCode());
+        assertEquals(406, get("/account/edit?format=json").statusCode());
+
         blobsServeRangesAndConditionalGets();
     }
 

@@ -41,7 +41,7 @@ public class PwaResource {
 
     private Response serviceWorker() {
         Formats.respondTo(request, "js");
-        return varied(Response.ok(SERVICE_WORKER).header("Content-Type", "text/javascript; charset=utf-8"));
+        return Response.ok(SERVICE_WORKER).header("Content-Type", "text/javascript; charset=utf-8").build();
     }
 
     /// The icons are the account's logo, versioned by the account so installed apps update.
@@ -53,12 +53,7 @@ public class PwaResource {
         var updatedAt = account == null ? null : account.updatedAt();
         byte[] body = Pages.bytes(v, (out, view) -> JtemanifestjsonGenerated.render(out, null, view, name,
             Paths.freshAccountLogo(updatedAt, "small"), Paths.freshAccountLogo(updatedAt, null)));
-        return varied(Response.ok(body).header("Content-Type", "application/json; charset=utf-8"));
-    }
-
-    private Response varied(Response.ResponseBuilder response) {
-        if (Formats.variesOnAccept(request)) response.header("Vary", "Accept");
-        return response.build();
+        return Response.ok(body).header("Content-Type", "application/json; charset=utf-8").build();
     }
 
     private static byte[] load(String resource) {

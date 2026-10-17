@@ -10,6 +10,7 @@ import io.vertx.ext.web.RoutingContext;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ResourceInfo;
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import java.lang.annotation.Annotation;
 import java.net.URI;
@@ -33,22 +34,35 @@ public class AccessFilter {
     Pages pages;
 
     /// The `.json` / `.js` suffix of the last path segment becomes the request's format, as Rails
-    /// routes treat it. Active Storage paths end in real filenames, which keep their extension
-    /// while it still sets the format.
+    /// routes treat it, and so does a `format` query parameter without one. Either replaces
+    /// `Accept`, so `@Produces` negotiates on it too. Active Storage paths end in real filenames,
+    /// which keep their extension while it still sets the format.
     @ServerRequestFilter(preMatching = true)
     public void format(ContainerRequestContext context, RoutingContext routing) {
-        // The raw path straight from Vert.x: most paths have no suffix, and then no URI is built.
+        // The raw path and query straight from Vert.x: most requests have neither a suffix nor a
+        // format parameter, and then no URI is built or query parsed.
         String path = routing.request().path();
         if (path == null) return;
         int slash = path.lastIndexOf('/');
         int dot = path.lastIndexOf('.');
-        if (dot <= slash + 1 || dot == path.length() - 1) return;
+        if (dot <= slash + 1 || dot == path.length() - 1) {
+            String query = routing.request().query();
+            String format = query != null && query.contains("format=") ? routing.queryParams().get("format") : null;
+            if (format != null) accept(context, format);
+            return;
+        }
         String format = path.substring(dot + 1);
         if (format.contains("?")) return;
         RequestState.of(routing).format = format;
         if (path.startsWith("/rails/active_storage/")) return;
+        accept(context, format);
         URI uri = context.getUriInfo().getRequestUri();
         context.setRequestUri(uri.resolve(path.substring(0, dot) + (uri.getRawQuery() == null ? "" : "?" + uri.getRawQuery())));
+    }
+
+    private static void accept(ContainerRequestContext context, String format) {
+        String type = Formats.typeOfExtension(format);
+        if (type != null) context.getHeaders().putSingle(HttpHeaders.ACCEPT, type);
     }
 
     @ServerRequestFilter

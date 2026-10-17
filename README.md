@@ -81,6 +81,7 @@ byte for byte, or a measured performance loss. Each deviation is listed below wi
 | The full-text index (`message_search_index`) in plain SQL: its writes are strings, and searches name it with `table(name(...))` and a `MATCH` template | generated classes | It's an FTS5 virtual table, which the code generator doesn't read. |
 | jOOQ classes generated from `schema.sql` loaded into SQLite at build time (`src/build/jooq`) | running migrations, e.g. Flyway, then generating | Rails owns the migrations. `schema.sql` is exactly what `db:prepare` creates. |
 | One gzip step in `web.ResponseFinisher`, with pooled `Deflater`s (`web.Gzip`) | Quarkus/Vert.x HTTP compression | Speed: a page is gzipped once and served compressed from the caches, where Vert.x would recompress every response on the event loop (69 µs for a 9 KB page, against about 105 µs of CPU for a whole cached room page). |
+| `web.Formats.respondTo` for endpoints that offer several types, a Turbo Stream, or JavaScript or JSON at a plain URL | `@Produces` | Rails ignores a browser's `Accept` once it lists `*/*`, and answers those 406. `@Produces` would match the `*/*` and serve the stream. HTML-only pages use `@Produces`, and the `.json` suffix and `format` parameter replace `Accept` before matching. |
 | Its own JSON writer (`rails.Json`) | Jackson | Historical: it matched Rails byte for byte (`<` escapes, Ruby number formats) for parity with the Rust port, which is no longer a goal. Being replaced. |
 
 What the datasources need for SQLite (in `application.properties`):
@@ -197,6 +198,10 @@ None of these show up in the parity suite or the harness:
 - Error pages carry the security and version headers. Rails renders them outside the controller, without
   them. As in Rails they leave the session and cookies untouched.
 - Static files carry the security headers too. Rails serves them before the app, without them.
+- `Vary: Accept` is sent only by endpoints that offer more than one type. Rails sends it whenever the format came
+  from `Accept`.
+- An HTML-only page answers an unacceptable `Accept` with 406 before sign-in and its own checks run. Rails
+  redirects to sign-in, or answers 404 or 403, first.
 
 Deliberate:
 

@@ -3,12 +3,9 @@ package campfire.sessions;
 import campfire.integrations.qr.QrCode;
 import campfire.rails.Base64s;
 import campfire.web.Access;
-import campfire.web.Formats;
-import campfire.web.CurrentRequest;
 import campfire.web.HttpCache;
 import campfire.web.HttpError;
 import io.smallrye.common.annotation.RunOnVirtualThread;
-import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
@@ -25,9 +22,6 @@ import org.jspecify.annotations.NullMarked;
 public class QrCodeResource {
     static final long ONE_YEAR_SECONDS = 31_556_952;
 
-    @Inject
-    CurrentRequest request;
-
     /// Malformed Base64 is a 500; a URL too long for any QR code a 422.
     @GET
     public Response show(@PathParam("id") String id) {
@@ -36,7 +30,6 @@ public class QrCodeResource {
         String svg = QrCode.svg(url);
         if (svg == null) throw new HttpError(422);
         var response = Response.ok(svg.getBytes(StandardCharsets.UTF_8)).header("Content-Type", "image/svg+xml; charset=utf-8");
-        if (Formats.variesOnAccept(request)) response.header("Vary", "Accept");
         return HttpCache.expiresIn(response, ONE_YEAR_SECONDS, true, null).build();
     }
 }

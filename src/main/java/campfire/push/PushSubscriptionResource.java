@@ -2,7 +2,6 @@ package campfire.push;
 
 import campfire.view.Pages;
 import campfire.web.CurrentRequest;
-import campfire.web.Formats;
 import campfire.web.Params;
 import campfire.web.Paths;
 import campfire.web.Responses;
@@ -14,6 +13,8 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -36,8 +37,8 @@ public class PushSubscriptionResource {
     PushSubscriptionService subscriptions;
 
     @GET
+    @Produces(MediaType.TEXT_HTML)
     public Response index() {
-        Formats.respondTo(request, "html");
         List<PushSubscriptionView> list = subscriptions.list(request.user().id());
         return pages.page((out, v) -> JteindexGenerated.render(out, null, v, list));
     }

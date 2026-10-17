@@ -29,11 +29,8 @@ public class UnfurlLinkResource {
         // A hash or array passes the presence check but isn't a URL.
         if (!(url instanceof String link)) return Formats.head(request, 204);
         return switch (Opengraph.unfurl(net, link)) {
-            case Opengraph.Unfurl.Json json -> {
-                var response = Response.ok(json.body().getBytes(StandardCharsets.UTF_8)).header("Content-Type", "application/json; charset=utf-8");
-                if (Formats.variesOnAccept(request)) response.header("Vary", "Accept");
-                yield response.build();
-            }
+            case Opengraph.Unfurl.Json json ->
+                Response.ok(json.body().getBytes(StandardCharsets.UTF_8)).header("Content-Type", "application/json; charset=utf-8").build();
             case Opengraph.Unfurl.NoContent none -> Formats.head(request, 204);
         };
     }

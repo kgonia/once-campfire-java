@@ -5,7 +5,6 @@ import campfire.sessions.SessionService;
 import campfire.storage.AttachmentChange;
 import campfire.view.Pages;
 import campfire.web.CurrentRequest;
-import campfire.web.Formats;
 import campfire.web.Paths;
 import campfire.web.Responses;
 import gg.jte.generated.precompiled.users.profiles.JteshowGenerated;
@@ -15,6 +14,8 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.PATCH;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.Map;
 import java.util.Objects;
@@ -36,8 +37,8 @@ public class ProfileResource {
     Secrets secrets;
 
     @GET
+    @Produces(MediaType.TEXT_HTML)
     public Response show() {
-        Formats.respondTo(request, "html");
         User user = request.user();
         String transferId = SessionService.transferId(secrets, user.id());
         boolean avatarAttached = users.avatarAttached(user.id());

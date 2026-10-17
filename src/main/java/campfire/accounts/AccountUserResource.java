@@ -42,9 +42,7 @@ public class AccountUserResource {
         List<User> shown = people.stream().skip(page.offset()).limit(PeoplePage.PER_PAGE).toList();
         String nextPage = page.isLast() ? null : Long.toString(page.number() + 1);
         byte[] body = Pages.bytes(pages.view(), (out, v) -> Jteindexturbo_streamGenerated.render(out, null, v, shown, nextPage));
-        Response response = Responses.turboStream(body);
-        if (Formats.variesOnAccept(request)) response.getHeaders().putSingle("Vary", "Accept");
-        return response;
+        return Responses.turboStream(body);
     }
 
     @PUT

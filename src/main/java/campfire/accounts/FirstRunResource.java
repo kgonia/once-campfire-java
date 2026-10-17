@@ -6,7 +6,6 @@ import campfire.users.User;
 import campfire.view.Pages;
 import campfire.web.Access;
 import campfire.web.CurrentRequest;
-import campfire.web.Formats;
 import campfire.web.Paths;
 import campfire.web.Responses;
 import gg.jte.generated.precompiled.first_runs.JteshowGenerated;
@@ -15,6 +14,8 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.Map;
 import java.util.Objects;
@@ -36,9 +37,9 @@ public class FirstRunResource {
     Authentication authentication;
 
     @GET
+    @Produces(MediaType.TEXT_HTML)
     public Response show() {
         if (firstRuns.done()) return Responses.redirect(request.url(Paths.ROOT));
-        Formats.respondTo(request, "html");
         return pages.page((out, v) -> JteshowGenerated.render(out, null, v));
     }
 

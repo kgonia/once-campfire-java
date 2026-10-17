@@ -9,7 +9,6 @@ import campfire.view.Pages;
 import campfire.view.View;
 import campfire.web.Access;
 import campfire.web.CurrentRequest;
-import campfire.web.Formats;
 import campfire.web.Paths;
 import campfire.web.Responses;
 import gg.jte.generated.precompiled.users.JtenewGenerated;
@@ -19,6 +18,8 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.Map;
 import java.util.Objects;
@@ -43,10 +44,10 @@ public class JoinResource {
     Authentication authentication;
 
     @GET
+    @Produces(MediaType.TEXT_HTML)
     public Response newUser(@PathParam("join_code") String joinCode) {
         Account account = verifiedAccount(joinCode);
         if (account == null) return Responses.head(404);
-        Formats.respondTo(request, "html");
         HelpContact helpContact = sessions.helpContact();
         return pages.page((out, v) -> JtenewGenerated.render(out, null, v, account.joinCode(), helpContact));
     }

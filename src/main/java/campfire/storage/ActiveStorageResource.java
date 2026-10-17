@@ -170,8 +170,7 @@ public class ActiveStorageResource {
         if (byteSize < 0 || byteSize > storage.maxDirectUploadBytes()) return exceptionPage(413);
         Map<?, ?> metadata = params.get("metadata") instanceof Map<?, ?> m ? m : Map.of();
         var upload = storage.createDirectUpload(request.baseUrl(), filename, text(params.get("content_type")), metadata, byteSize, checksum);
-        Response json = Responses.json(200, upload.json());
-        return Formats.variesOnAccept(request) ? withHeader(json, "Vary", "Accept") : json;
+        return Responses.json(200, upload.json());
     }
 
     // -- Responses ---------------------------------------------------------------------------------

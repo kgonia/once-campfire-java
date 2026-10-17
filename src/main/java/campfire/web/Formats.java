@@ -78,9 +78,20 @@ public final class Formats {
     /// The MIME type of the first accepted format, `text/html` for `*/*` or none.
     static String renderedType(CurrentRequest request) {
         List<String> formats = of(request);
-        String format = formats.isEmpty() || formats.getFirst().equals("all") ? "html" : formats.getFirst();
+        String type = canonicalType(formats.isEmpty() || formats.getFirst().equals("all") ? "html" : formats.getFirst());
+        return type != null ? type : "text/html";
+    }
+
+    /// The type a `.json`-style path suffix or `format` parameter asks for, or null for one Rails
+    /// doesn't register.
+    static @Nullable String typeOfExtension(String extension) {
+        String format = byExtension(extension);
+        return format == null ? null : canonicalType(format);
+    }
+
+    private static @Nullable String canonicalType(String format) {
         for (String type : CANONICAL_TYPES) if (format.equals(MIME.get(type))) return type;
-        return "text/html";
+        return null;
     }
 
     /// Each format's own type, the one `Mime[format]` names (`jpeg` is `image/jpeg`, not
@@ -92,7 +103,8 @@ public final class Formats {
         "application/x-www-form-urlencoded", "application/json", "application/pdf", "application/zip", "application/gzip",
         "text/vnd.turbo-stream.html");
 
-    /// Whether a render varies on `Accept`: its format came from that header.
+    /// Whether a render varies on `Accept`: its format came from that header. Only endpoints that
+    /// offer more than one type say so.
     public static boolean variesOnAccept(CurrentRequest request) {
         return explicitFormat(request) == null && validAcceptHeader(request);
     }

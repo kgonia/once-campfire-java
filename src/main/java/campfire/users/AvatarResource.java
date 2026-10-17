@@ -62,7 +62,6 @@ public class AvatarResource {
         } else {
             byte[] svg = Pages.bytes(null, (out, v) -> JteshowGenerated.render(out, null, user.id(), user.initials()));
             response = Response.ok(svg).header("Content-Type", "image/svg+xml; charset=utf-8");
-            if (Formats.variesOnAccept(request)) response.header("Vary", "Accept");
         }
         response.tag(etag);
         return HttpCache.expiresIn(response, MAX_AGE_SECONDS, true, STALE_WHILE_REVALIDATE_SECONDS).build();

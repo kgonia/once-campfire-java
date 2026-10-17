@@ -4,7 +4,6 @@ import campfire.storage.AttachmentChange;
 import campfire.users.User;
 import campfire.view.Pages;
 import campfire.web.CurrentRequest;
-import campfire.web.Formats;
 import campfire.web.Halt;
 import campfire.web.Paths;
 import campfire.web.Responses;
@@ -20,6 +19,8 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.Map;
 import org.jspecify.annotations.NullMarked;
@@ -39,18 +40,18 @@ public class BotAdminResource {
     BotAdminService bots;
 
     @GET
+    @Produces(MediaType.TEXT_HTML)
     public Response index() {
         requireAdministrator();
-        Formats.respondTo(request, "html");
         var listed = bots.bots();
         return pages.page((out, v) -> JteindexGenerated.render(out, null, v, listed));
     }
 
     @GET
+    @Produces(MediaType.TEXT_HTML)
     @Path("new")
     public Response newBot() {
         requireAdministrator();
-        Formats.respondTo(request, "html");
         return pages.page((out, v) -> JtenewGenerated.render(out, null, v));
     }
 
@@ -63,11 +64,11 @@ public class BotAdminResource {
     }
 
     @GET
+    @Produces(MediaType.TEXT_HTML)
     @Path("{id}/edit")
     public Response edit(@PathParam("id") String id) {
         requireAdministrator();
         User bot = bots.bot(id);
-        Formats.respondTo(request, "html");
         var form = bots.form(bot, request.baseUrl());
         return pages.page((out, v) -> JteeditGenerated.render(out, null, v, bot.id(), form));
     }

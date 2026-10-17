@@ -4,7 +4,6 @@ import campfire.storage.AttachmentChange;
 import campfire.users.User;
 import campfire.view.Pages;
 import campfire.web.CurrentRequest;
-import campfire.web.Formats;
 import campfire.web.Halt;
 import campfire.web.Paths;
 import campfire.web.Responses;
@@ -15,6 +14,8 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.PATCH;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -36,10 +37,10 @@ public class AccountResource {
     AccountService accounts;
 
     @GET
+    @Produces(MediaType.TEXT_HTML)
     @Path("edit")
     public Response edit() {
         Account account = accounts.account();
-        Formats.respondTo(request, "html");
         boolean canAdminister = request.user().canAdminister();
         List<User> people = accounts.people(canAdminister);
         var page = PeoplePage.of(request.params().string("page"), people.size());

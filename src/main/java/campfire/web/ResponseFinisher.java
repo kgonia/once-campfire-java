@@ -54,11 +54,6 @@ public class ResponseFinisher {
         app.config().gitRevision().filter(r -> !r.isEmpty()).ifPresent(r -> headers.putSingle("X-Rev", r));
         if (request.ssl()) headers.putSingle("Strict-Transport-Security", "max-age=63072000; includeSubDomains");
         if (pages.stylesheetsLinked()) linkStylesheets(headers);
-        // Turbo Streams are always rendered, and a render whose format came from `Accept` says so.
-        String type = header(response, "Content-Type");
-        if (type != null && type.startsWith("text/vnd.turbo-stream.html") && header(response, "Vary") == null && Formats.variesOnAccept(request)) {
-            headers.putSingle("Vary", "Accept");
-        }
         if (response.getEntity() == null && header(response, "Cache-Control") == null) headers.putSingle("Cache-Control", "no-cache");
         readSmallFile(response);
         boolean gzipAccepted = Gzip.accepted(request.header("accept-encoding"));

@@ -4,7 +4,6 @@ import campfire.users.User;
 import campfire.view.Pages;
 import campfire.web.Access;
 import campfire.web.CurrentRequest;
-import campfire.web.Formats;
 import campfire.web.Responses;
 import gg.jte.generated.precompiled.sessions.transfers.JteshowGenerated;
 import io.smallrye.common.annotation.RunOnVirtualThread;
@@ -14,6 +13,8 @@ import jakarta.ws.rs.PATCH;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.jspecify.annotations.NullMarked;
 
@@ -34,8 +35,8 @@ public class TransferResource {
     Authentication authentication;
 
     @GET
+    @Produces(MediaType.TEXT_HTML)
     public Response show() {
-        Formats.respondTo(request, "html");
         String action = request.path();
         return pages.page((out, v) -> JteshowGenerated.render(out, null, v, action));
     }

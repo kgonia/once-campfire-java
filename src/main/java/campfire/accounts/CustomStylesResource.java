@@ -2,7 +2,6 @@ package campfire.accounts;
 
 import campfire.view.Pages;
 import campfire.web.CurrentRequest;
-import campfire.web.Formats;
 import campfire.web.Halt;
 import campfire.web.Paths;
 import campfire.web.Responses;
@@ -13,6 +12,8 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.PATCH;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.Map;
 import org.jspecify.annotations.NullMarked;
@@ -30,11 +31,11 @@ public class CustomStylesResource {
     AccountService accounts;
 
     @GET
+    @Produces(MediaType.TEXT_HTML)
     @Path("edit")
     public Response edit() {
         requireAdministrator();
         Account account = accounts.account();
-        Formats.respondTo(request, "html");
         return pages.page((out, v) -> JteeditGenerated.render(out, null, v, account.customStyles()));
     }
 
