@@ -80,7 +80,8 @@ public final class Database implements AutoCloseable {
     private final java.util.concurrent.Semaphore checkpointWake = new java.util.concurrent.Semaphore(0);
     private final ReentrantLock checkpointRunning = new ReentrantLock();
     private int commitsSinceCheckpoint;
-    private static final ThreadLocal<Tx> CURRENT = new ThreadLocal<>();
+    /// The write in progress on this thread, which nested reads and writes join.
+    private static final ScopedValue<Tx> CURRENT = ScopedValue.newInstance();
 
     /// `path` is the file both pools open.
     public Database(Path path, AgroalDataSource writerPool, AgroalDataSource readerPool) {
@@ -120,57 +121,57 @@ public final class Database implements AutoCloseable {
 
     /// Runs `work` in a write transaction (or joins the current one), then its after-commit work.
     public <T> T write(Work<T> work) {
-        Tx current = CURRENT.get();
-        if (current != null) return work.run(current);
+        if (CURRENT.isBound()) return work.run(CURRENT.get());
         writeLock.lock();
-        List<Runnable> queued;
-        T value;
         Connection borrowed = null;
         Tx writer = null;
         try {
             borrowed = writerPool.getConnection();
-            writer = writer(borrowed);
-            CURRENT.set(writer);
-            writer.inTransaction = true;
-            writer.afterCommit = new ArrayList<>();
-            writer.execute("BEGIN IMMEDIATE TRANSACTION");
-            boolean committed = false;
-            try {
-                value = work.run(writer);
-                writer.execute("COMMIT TRANSACTION");
-                committed = true;
-            } finally {
-                if (!committed) {
-                    try {
-                        writer.execute("ROLLBACK TRANSACTION");
-                    } catch (DbException ignored) {
-                    }
-                }
-                writer.inTransaction = false;
-            }
-            queued = writer.afterCommit;
-            writer.afterCommit = new ArrayList<>();
-            noteCommit(writer);
-            // After-commit work may write again (Active Record runs it outside the transaction).
-            RuntimeException first = null;
-            for (Runnable hook : queued) {
-                try {
-                    hook.run();
-                } catch (RuntimeException e) {
-                    LOG.log(Level.SEVERE, "after_commit hook failed", e);
-                    if (first == null) first = e;
-                }
-            }
-            if (first != null) throw first;
-            return value;
+            Tx bound = writer = writer(borrowed);
+            return ScopedValue.where(CURRENT, bound).call(() -> transact(bound, work));
         } catch (SQLException e) {
             throw new DbException("can't get the write connection", e);
         } finally {
-            CURRENT.remove();
             if (writer != null) writer.inTransaction = false;
             if (borrowed != null) release(borrowed);
             writeLock.unlock();
         }
+    }
+
+    private <T> T transact(Tx writer, Work<T> work) {
+        T value;
+        writer.inTransaction = true;
+        writer.afterCommit = new ArrayList<>();
+        writer.execute("BEGIN IMMEDIATE TRANSACTION");
+        boolean committed = false;
+        try {
+            value = work.run(writer);
+            writer.execute("COMMIT TRANSACTION");
+            committed = true;
+        } finally {
+            if (!committed) {
+                try {
+                    writer.execute("ROLLBACK TRANSACTION");
+                } catch (DbException ignored) {
+                }
+            }
+            writer.inTransaction = false;
+        }
+        List<Runnable> queued = writer.afterCommit;
+        writer.afterCommit = new ArrayList<>();
+        noteCommit(writer);
+        // After-commit work may write again (Active Record runs it outside the transaction).
+        RuntimeException first = null;
+        for (Runnable hook : queued) {
+            try {
+                hook.run();
+            } catch (RuntimeException e) {
+                LOG.log(Level.SEVERE, "after_commit hook failed", e);
+                if (first == null) first = e;
+            }
+        }
+        if (first != null) throw first;
+        return value;
     }
 
     private static void release(Connection borrowed) {
@@ -183,8 +184,7 @@ public final class Database implements AutoCloseable {
 
     /// Runs `read` on a read connection, or on the writer when inside a write on this thread.
     public <T> T read(Read<T> read) {
-        Tx current = CURRENT.get();
-        if (current != null) return read.run(current);
+        if (CURRENT.isBound()) return read.run(CURRENT.get());
         Connection borrowed;
         Conn conn;
         try {

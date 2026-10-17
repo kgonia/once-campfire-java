@@ -1,5 +1,16 @@
 package campfire.users;
 
+import static campfire.db.schema.Tables.MEMBERSHIPS;
+import static campfire.db.schema.Tables.ROOMS;
+import static campfire.db.schema.Tables.SEARCHES;
+import static campfire.db.schema.Tables.USERS;
+import static org.jooq.impl.DSL.deleteFrom;
+import static org.jooq.impl.DSL.inline;
+import static org.jooq.impl.DSL.insertInto;
+import static org.jooq.impl.DSL.param;
+import static org.jooq.impl.DSL.select;
+import static org.jooq.impl.DSL.selectOne;
+
 import campfire.bots.Webhook;
 import campfire.push.PushSubscription;
 import campfire.rooms.Room;
@@ -8,15 +19,60 @@ import at.favre.lib.crypto.bcrypt.BCrypt;
 import at.favre.lib.crypto.bcrypt.LongPasswordStrategies;
 import campfire.db.Conn;
 import campfire.db.Database.Tx;
+import campfire.db.Sql;
 import campfire.db.Times;
 import campfire.rails.SecureRandoms;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.LinkedHashMap;
 import java.util.UUID;
+import java.util.stream.IntStream;
+import org.jooq.Field;
+import org.jooq.impl.DSL;
 
 /// User writes: sign-ups, profiles, bots, deactivation and bans.
 public final class Users {
     private Users() {}
+
+    private static final String INSERT = Sql.render(insertInto(USERS, USERS.BOT_TOKEN, USERS.CREATED_AT, USERS.EMAIL_ADDRESS, USERS.NAME,
+            USERS.PASSWORD_DIGEST, USERS.ROLE, USERS.STATUS, USERS.UPDATED_AT)
+        .values(param(USERS.BOT_TOKEN), param(USERS.CREATED_AT), param(USERS.EMAIL_ADDRESS), param(USERS.NAME), param(USERS.PASSWORD_DIGEST),
+            param(USERS.ROLE), inline(User.ACTIVE), param(USERS.UPDATED_AT)));
+    private static final String JOIN_ROOM = Sql.render(insertInto(MEMBERSHIPS, MEMBERSHIPS.ROOM_ID, MEMBERSHIPS.USER_ID, MEMBERSHIPS.CREATED_AT,
+            MEMBERSHIPS.UPDATED_AT)
+        .values(param(MEMBERSHIPS.ROOM_ID), param(MEMBERSHIPS.USER_ID), param(MEMBERSHIPS.CREATED_AT), param(MEMBERSHIPS.UPDATED_AT))
+        .onConflictDoNothing());
+    private static final String UPDATE_PROFILE = Sql.render(DSL.update(USERS).set(USERS.NAME, param(USERS.NAME))
+        .set(USERS.EMAIL_ADDRESS, param(USERS.EMAIL_ADDRESS)).set(USERS.PASSWORD_DIGEST, param(USERS.PASSWORD_DIGEST)).set(USERS.BIO, param(USERS.BIO))
+        .set(USERS.UPDATED_AT, param(USERS.UPDATED_AT)).where(USERS.ID.eq(param(USERS.ID))));
+    /// `update`'s statements, indexed by which of name (1), email address (2), password digest (4)
+    /// and bio (8) change; `updated_at` and the id follow.
+    private static final String[] UPDATE_CHANGED = IntStream.range(0, 16).mapToObj(changed -> {
+        var assignments = new LinkedHashMap<Field<?>, Object>();
+        if ((changed & 1) != 0) assignments.put(USERS.NAME, param(USERS.NAME));
+        if ((changed & 2) != 0) assignments.put(USERS.EMAIL_ADDRESS, param(USERS.EMAIL_ADDRESS));
+        if ((changed & 4) != 0) assignments.put(USERS.PASSWORD_DIGEST, param(USERS.PASSWORD_DIGEST));
+        if ((changed & 8) != 0) assignments.put(USERS.BIO, param(USERS.BIO));
+        assignments.put(USERS.UPDATED_AT, param(USERS.UPDATED_AT));
+        return Sql.render(DSL.update(USERS).set(assignments).where(USERS.ID.eq(param(USERS.ID))));
+    }).toArray(String[]::new);
+    private static final String UPDATE_NAME = Sql.render(DSL.update(USERS).set(USERS.NAME, param(USERS.NAME)).set(USERS.UPDATED_AT, param(USERS.UPDATED_AT))
+        .where(USERS.ID.eq(param(USERS.ID))));
+    private static final String UPDATE_ROLE = Sql.render(DSL.update(USERS).set(USERS.ROLE, param(USERS.ROLE)).set(USERS.UPDATED_AT, param(USERS.UPDATED_AT))
+        .where(USERS.ID.eq(param(USERS.ID))));
+    private static final String TOUCH = Sql.render(DSL.update(USERS).set(USERS.UPDATED_AT, param(USERS.UPDATED_AT)).where(USERS.ID.eq(param(USERS.ID))));
+    private static final String SET_STATUS = Sql.render(DSL.update(USERS).set(USERS.STATUS, param(USERS.STATUS))
+        .set(USERS.UPDATED_AT, param(USERS.UPDATED_AT)).where(USERS.ID.eq(param(USERS.ID))));
+    private static final String LEAVE_SHARED_ROOMS = Sql.render(deleteFrom(MEMBERSHIPS).where(MEMBERSHIPS.USER_ID.eq(param(MEMBERSHIPS.USER_ID)))
+        .and(MEMBERSHIPS.ROOM_ID.in(select(ROOMS.ID).from(ROOMS).where(ROOMS.TYPE.ne(inline(Room.DIRECT))))));
+    private static final String DELETE_SEARCHES = Sql.render(deleteFrom(SEARCHES).where(SEARCHES.USER_ID.eq(param(SEARCHES.USER_ID))));
+    private static final String DEACTIVATE = Sql.render(DSL.update(USERS).set(USERS.STATUS, inline(User.DEACTIVATED))
+        .set(USERS.EMAIL_ADDRESS, param(USERS.EMAIL_ADDRESS)).set(USERS.UPDATED_AT, param(USERS.UPDATED_AT)).where(USERS.ID.eq(param(USERS.ID))));
+    private static final String RESET_BOT_KEY = Sql.render(DSL.update(USERS).set(USERS.BOT_TOKEN, param(USERS.BOT_TOKEN))
+        .set(USERS.UPDATED_AT, param(USERS.UPDATED_AT)).where(USERS.ID.eq(param(USERS.ID))));
+    private static final String EMAIL_TAKEN = Sql.render(selectOne().from(USERS).where(USERS.EMAIL_ADDRESS.eq(param(USERS.EMAIL_ADDRESS))));
+    private static final String EMAIL_TAKEN_BY_OTHER = Sql.render(selectOne().from(USERS).where(USERS.EMAIL_ADDRESS.eq(param(USERS.EMAIL_ADDRESS)))
+        .and(USERS.ID.ne(param(USERS.ID))));
 
     /// `BCrypt::Engine.cost` in production.
     public static volatile int bcryptCost = 12;
@@ -53,19 +109,15 @@ public final class Users {
     /// `User.create!`: grants membership to every open room after commit.
     public static User create(Tx tx, String name, String email, String passwordDigest, int role, String botToken) {
         Instant now = Times.now();
-        long id = tx.insert("INSERT INTO \"users\" (\"bot_token\", \"created_at\", \"email_address\", \"name\", \"password_digest\", \"role\", \"status\", \"updated_at\")"
-            + " VALUES (?, ?, ?, ?, ?, ?, 0, ?)", botToken, now, email, name, passwordDigest, role, now);
-        for (long roomId : Room.openIds(tx)) {
-            tx.update("INSERT INTO \"memberships\" (\"room_id\", \"user_id\", \"created_at\", \"updated_at\") VALUES (?, ?, ?, ?) ON CONFLICT DO NOTHING",
-                roomId, id, now, now);
-        }
+        long id = tx.insert(INSERT, botToken, now, email, name, passwordDigest, role, now);
+        for (long roomId : Room.openIds(tx)) tx.update(JOIN_ROOM, roomId, id, now, now);
         return User.find(tx, id);
     }
 
     /// `user.update(name:, email_address:, password:, bio:)`; null leaves a field alone.
     public static void updateProfile(Tx tx, long id, String name, String email, String password, String bio) {
         var user = User.find(tx, id);
-        tx.update("UPDATE \"users\" SET \"name\" = ?, \"email_address\" = ?, \"password_digest\" = ?, \"bio\" = ?, \"updated_at\" = ? WHERE \"id\" = ?",
+        tx.update(UPDATE_PROFILE,
             name != null ? name : user.name(),
             email != null ? email : user.emailAddress(),
             password != null && !password.isEmpty() ? digest(password) : user.passwordDigest(),
@@ -79,57 +131,55 @@ public final class Users {
     /// Writes only the fields that differ, and nothing at all (not even `updated_at`) when none
     /// do. A new password digest always counts as a change.
     public static void update(Tx tx, User user, Changes changes) {
-        var columns = new java.util.ArrayList<String>();
+        int changed = 0;
         var values = new java.util.ArrayList<Object>();
         if (changes.name() != null && !changes.name().equals(user.name())) {
-            columns.add("name");
+            changed |= 1;
             values.add(changes.name());
         }
         if (changes.emailAddress() != null && !changes.emailAddress().equals(user.emailAddress())) {
-            columns.add("email_address");
+            changed |= 2;
             values.add(changes.emailAddress());
         }
         if (changes.passwordDigest() != null) {
-            columns.add("password_digest");
+            changed |= 4;
             values.add(changes.passwordDigest());
         }
         if (changes.bio() != null && !changes.bio().equals(user.bio())) {
-            columns.add("bio");
+            changed |= 8;
             values.add(changes.bio());
         }
-        if (columns.isEmpty()) return;
-        columns.add("updated_at");
+        if (changed == 0) return;
         values.add(Times.now());
         values.add(user.id());
-        String assignments = String.join(", ", columns.stream().map(column -> "\"" + column + "\" = ?").toList());
-        tx.update("UPDATE \"users\" SET " + assignments + " WHERE \"users\".\"id\" = ?", values.toArray());
+        tx.update(UPDATE_CHANGED[changed], values.toArray());
     }
 
     public static void updateName(Tx tx, long id, String name) {
-        tx.update("UPDATE \"users\" SET \"name\" = ?, \"updated_at\" = ? WHERE \"id\" = ?", name, Times.now(), id);
+        tx.update(UPDATE_NAME, name, Times.now(), id);
     }
 
     public static void updateRole(Tx tx, long id, int role) {
-        tx.update("UPDATE \"users\" SET \"role\" = ?, \"updated_at\" = ? WHERE \"id\" = ?", role, Times.now(), id);
+        tx.update(UPDATE_ROLE, role, Times.now(), id);
     }
 
     public static void touch(Tx tx, long id) {
-        tx.update("UPDATE \"users\" SET \"updated_at\" = ? WHERE \"id\" = ?", Times.now(), id);
+        tx.update(TOUCH, Times.now(), id);
     }
 
     public static void setStatus(Tx tx, long id, int status) {
-        tx.update("UPDATE \"users\" SET \"status\" = ?, \"updated_at\" = ? WHERE \"id\" = ?", status, Times.now(), id);
+        tx.update(SET_STATUS, status, Times.now(), id);
     }
 
     /// `user.deactivate`: leaves shared rooms, loses push subscriptions, searches and sessions,
     /// and frees the email address.
     public static void deactivate(Tx tx, User user) {
-        tx.update("DELETE FROM \"memberships\" WHERE \"user_id\" = ? AND \"room_id\" IN (SELECT \"id\" FROM \"rooms\" WHERE \"type\" != 'Rooms::Direct')", user.id());
+        tx.update(LEAVE_SHARED_ROOMS, user.id());
         PushSubscription.deleteAllFor(tx, user.id());
-        tx.update("DELETE FROM \"searches\" WHERE \"user_id\" = ?", user.id());
+        tx.update(DELETE_SEARCHES, user.id());
         Session.deleteAllFor(tx, user.id());
         String email = user.emailAddress() == null ? null : user.emailAddress().replace("@", "-deactivated-" + UUID.randomUUID() + "@");
-        tx.update("UPDATE \"users\" SET \"status\" = 1, \"email_address\" = ?, \"updated_at\" = ? WHERE \"id\" = ?", email, Times.now(), user.id());
+        tx.update(DEACTIVATE, email, Times.now(), user.id());
     }
 
     /// Bans every address the user has signed in from and signs them out everywhere. An address
@@ -171,12 +221,11 @@ public final class Users {
     }
 
     public static void resetBotKey(Tx tx, long id) {
-        tx.update("UPDATE \"users\" SET \"bot_token\" = ?, \"updated_at\" = ? WHERE \"id\" = ?", generateBotToken(), Times.now(), id);
+        tx.update(RESET_BOT_KEY, generateBotToken(), Times.now(), id);
     }
 
     public static boolean emailTaken(Conn conn, String email, Long exceptId) {
         if (email == null) return false;
-        return exceptId == null ? conn.exists("SELECT 1 FROM \"users\" WHERE \"email_address\" = ?", email)
-            : conn.exists("SELECT 1 FROM \"users\" WHERE \"email_address\" = ? AND \"id\" != ?", email, exceptId);
+        return exceptId == null ? conn.exists(EMAIL_TAKEN, email) : conn.exists(EMAIL_TAKEN_BY_OTHER, email, exceptId);
     }
 }

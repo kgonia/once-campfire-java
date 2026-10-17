@@ -1,6 +1,12 @@
 package campfire.storage;
 
+import static campfire.db.schema.Tables.ACCOUNTS;
+import static campfire.db.schema.Tables.USERS;
+import static org.jooq.impl.DSL.param;
+import static org.jooq.impl.DSL.update;
+
 import campfire.db.Database.Tx;
+import campfire.db.Sql;
 import campfire.db.Times;
 import campfire.web.Params;
 import java.util.Map;
@@ -69,8 +75,15 @@ public sealed interface AttachmentChange {
             }
         }
 
+        /// By table name, for the records that have a single attachment.
+        private static final Map<String, String> TOUCH = Map.of(
+            "users", Sql.render(update(USERS).set(USERS.UPDATED_AT, param(USERS.UPDATED_AT)).where(USERS.ID.eq(param(USERS.ID)))),
+            "accounts", Sql.render(update(ACCOUNTS).set(ACCOUNTS.UPDATED_AT, param(ACCOUNTS.UPDATED_AT)).where(ACCOUNTS.ID.eq(param(ACCOUNTS.ID)))));
+
         private static void touch(Tx tx, String table, long id) {
-            tx.update("UPDATE \"" + table + "\" SET \"updated_at\" = ? WHERE \"" + table + "\".\"id\" = ?", Times.now(), id);
+            String sql = TOUCH.get(table);
+            if (sql == null) throw new IllegalArgumentException("no attachment touch for table " + table);
+            tx.update(sql, Times.now(), id);
         }
 
         @Override

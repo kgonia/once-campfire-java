@@ -120,7 +120,8 @@ final class FrontCache {
         if (status < 200 || status > 399 || status == 304) return null;
         if (vary != null && vary.contains("*")) return null;
         String control = cacheControl == null ? "" : cacheControl;
-        if (!PUBLIC.matcher(control).find() || NO_CACHE.matcher(control).find()) return null;
+        // `contains` first: almost every page is private, and that settles it without a regex.
+        if (!control.contains("public") || !PUBLIC.matcher(control).find() || NO_CACHE.matcher(control).find()) return null;
         Matcher maxAge = S_MAX_AGE.matcher(control);
         if (!maxAge.find()) {
             maxAge = MAX_AGE.matcher(control);

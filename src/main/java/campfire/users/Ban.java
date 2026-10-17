@@ -1,7 +1,15 @@
 package campfire.users;
 
+import static campfire.db.schema.Tables.BANS;
+import static org.jooq.impl.DSL.deleteFrom;
+import static org.jooq.impl.DSL.inline;
+import static org.jooq.impl.DSL.insertInto;
+import static org.jooq.impl.DSL.param;
+import static org.jooq.impl.DSL.selectOne;
+
 import campfire.db.Conn;
 import campfire.db.Database.Tx;
+import campfire.db.Sql;
 import campfire.db.Times;
 import java.net.InetAddress;
 import java.time.Instant;
@@ -10,8 +18,13 @@ import java.time.Instant;
 public final class Ban {
     private Ban() {}
 
+    private static final String BANNED = Sql.render(selectOne().from(BANS).where(BANS.IP_ADDRESS.eq(param(BANS.IP_ADDRESS))).limit(inline(1)));
+    private static final String INSERT = Sql.render(insertInto(BANS, BANS.CREATED_AT, BANS.IP_ADDRESS, BANS.UPDATED_AT, BANS.USER_ID)
+        .values(param(BANS.CREATED_AT), param(BANS.IP_ADDRESS), param(BANS.UPDATED_AT), param(BANS.USER_ID)));
+    private static final String DELETE_ALL_FOR = Sql.render(deleteFrom(BANS).where(BANS.USER_ID.eq(param(BANS.USER_ID))));
+
     public static boolean banned(Conn conn, String ipAddress) {
-        return ipAddress != null && conn.exists("SELECT 1 FROM \"bans\" WHERE \"ip_address\" = ? LIMIT 1", ipAddress);
+        return ipAddress != null && conn.exists(BANNED, ipAddress);
     }
 
     /// `ip_address_is_public`: loopback, private and link-local addresses are never banned.
@@ -40,10 +53,10 @@ public final class Ban {
 
     public static void create(Tx tx, long userId, String ipAddress) {
         Instant now = Times.now();
-        tx.insert("INSERT INTO \"bans\" (\"created_at\", \"ip_address\", \"updated_at\", \"user_id\") VALUES (?, ?, ?, ?)", now, ipAddress, now, userId);
+        tx.insert(INSERT, now, ipAddress, now, userId);
     }
 
     public static void deleteAllFor(Tx tx, long userId) {
-        tx.update("DELETE FROM \"bans\" WHERE \"user_id\" = ?", userId);
+        tx.update(DELETE_ALL_FOR, userId);
     }
 }

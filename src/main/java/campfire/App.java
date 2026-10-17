@@ -1,7 +1,12 @@
 package campfire;
 
+import static campfire.db.schema.Tables.MESSAGES;
+import static org.jooq.impl.DSL.param;
+import static org.jooq.impl.DSL.update;
+
 import campfire.assets.Assets;
 import campfire.db.Database;
+import campfire.db.Sql;
 import campfire.db.Times;
 import campfire.accounts.Account;
 import campfire.storage.Attachment;
@@ -17,6 +22,9 @@ import jakarta.enterprise.context.ApplicationScoped;
 /// The services views and presenters reach through one handle; resources inject what they use.
 @ApplicationScoped
 public class App {
+    private static final String TOUCH_MESSAGE = Sql.render(update(MESSAGES).set(MESSAGES.UPDATED_AT, param(MESSAGES.UPDATED_AT))
+        .where(MESSAGES.ID.eq(param(MESSAGES.ID))));
+
     private final Config config;
     private final Secrets secrets;
     private final Database db;
@@ -47,7 +55,7 @@ public class App {
             if (!recordType.equals(Message.RECORD_TYPE)) return;
             var message = Message.find(tx, recordId);
             if (message == null) return;
-            tx.update("UPDATE \"messages\" SET \"updated_at\" = ? WHERE \"id\" = ?", Times.now(), recordId);
+            tx.update(TOUCH_MESSAGE, Times.now(), recordId);
             Room.touch(tx, message.roomId());
         });
     }

@@ -60,8 +60,7 @@ public final class UserPages {
     /// users unsorted (which isn't membership order).
     private static String displayName(Conn conn, Room room, User user) {
         if (!room.isDirect()) return room.name() == null ? "" : room.name();
-        List<String> names = conn.list(User.SELECT + " INNER JOIN \"memberships\" ON \"users\".\"id\" = \"memberships\".\"user_id\""
-            + " WHERE \"memberships\".\"room_id\" = ?", User::from, room.id()).stream().filter(member -> member.id() != user.id()).map(User::name).toList();
+        List<String> names = User.inRoom(conn, room.id()).stream().filter(member -> member.id() != user.id()).map(User::name).toList();
         String sentence = View.toSentence(names);
         return sentence.isBlank() ? user.name() : sentence;
     }

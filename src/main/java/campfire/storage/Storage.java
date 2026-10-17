@@ -1,9 +1,15 @@
 package campfire.storage;
 
+import static campfire.db.schema.Tables.ACTIVE_STORAGE_BLOBS;
+import static org.jooq.impl.DSL.asterisk;
+import static org.jooq.impl.DSL.param;
+import static org.jooq.impl.DSL.select;
+
 import campfire.Config;
 import campfire.db.Conn;
 import campfire.db.Database;
 import campfire.db.Database.Tx;
+import campfire.db.Sql;
 import campfire.db.Times;
 import campfire.storage.Attachment;
 import campfire.storage.Blob;
@@ -468,8 +474,7 @@ public final class Storage implements AutoCloseable {
     }
 
     private static List<Attachment> attachmentsOf(Conn conn, long blobId) {
-        return conn.list("SELECT \"id\", \"name\", \"record_type\", \"record_id\", \"blob_id\" FROM \"active_storage_attachments\" WHERE \"blob_id\" = ? ORDER BY \"id\"",
-            rs -> new Attachment(rs.getLong(1), rs.getString(2), rs.getString(3), rs.getLong(4), rs.getLong(5)), blobId);
+        return Attachment.forBlob(conn, blobId);
     }
 
     // -- Variants and previews ---------------------------------------------------------------------
@@ -603,13 +608,13 @@ public final class Storage implements AutoCloseable {
         var dependents = new ArrayList<Long>();
         Blob purged = db.write(tx -> {
             Blob blob = Blob.find(tx, blobId);
-            if (blob == null || tx.exists("SELECT 1 FROM \"active_storage_attachments\" WHERE \"blob_id\" = ? LIMIT 1", blobId)) return null;
+            if (blob == null || Attachment.blobAttachedElsewhere(tx, blobId)) return null;
             for (VariantRecord record : VariantRecord.forBlob(tx, blobId)) {
                 dependents.addAll(detach(tx, VARIANT_RECORD, record.id(), "image"));
-                tx.update("DELETE FROM \"active_storage_variant_records\" WHERE \"id\" = ?", record.id());
+                VariantRecord.delete(tx, record.id());
             }
             dependents.addAll(detach(tx, BLOB_RECORD, blobId, "preview_image"));
-            tx.update("DELETE FROM \"active_storage_blobs\" WHERE \"id\" = ?", blobId);
+            Blob.delete(tx, blobId);
             return blob;
         });
         if (purged == null) return false;
@@ -624,9 +629,13 @@ public final class Storage implements AutoCloseable {
     }
 
 
+    /// `*` rather than the generated columns: `as_json` has every column the database holds.
+    private static final String BLOB_AS_JSON = Sql.render(select(asterisk()).from(ACTIVE_STORAGE_BLOBS)
+        .where(ACTIVE_STORAGE_BLOBS.ID.eq(param(ACTIVE_STORAGE_BLOBS.ID))));
+
     /// `blob.as_json`: every column in table order, times as ISO 8601 with milliseconds.
     static Map<String, Object> asJson(Conn conn, long id) {
-        return conn.one("SELECT * FROM \"active_storage_blobs\" WHERE \"id\" = ?", rs -> {
+        return conn.one(BLOB_AS_JSON, rs -> {
             var json = new LinkedHashMap<String, Object>();
             var meta = rs.getMetaData();
             for (int i = 1; i <= meta.getColumnCount(); i++) {

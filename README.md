@@ -16,8 +16,7 @@ Packages are organized by feature. Inside a feature:
 - **`*Service`**: `@ApplicationScoped` beans that own the transactions and the side effects, such as cable
   broadcasts, disconnecting sockets, webhooks and push.
 - **Records and static queries** for each table (`Room`, `Message`, `User`, …), plus view models and presenters
-  that build what the templates render. `Room` and `Membership` build their SQL with jOOQ (see below); the
-  other tables still use hand-written SQL strings.
+  that build what the templates render. Their SQL is built with jOOQ (see below).
 
 | package | what's in it |
 |---|---|
@@ -73,9 +72,10 @@ byte for byte, or a measured performance loss. Each deviation is listed below wi
 | A prepared-statement cache per connection | the driver's or pool's cache | sqlite-jdbc and Agroal have none. Without it room_show loses 21%. The pools never retire a connection, so the cache stays valid. |
 | `Database.write`: one writer, `BEGIN IMMEDIATE`, after-commit hooks | `@Transactional`/JTA, or jOOQ's `transaction()` | A plain `BEGIN` in SQLite is deferred, so concurrent writers fail with `SQLITE_BUSY` when they upgrade to a write lock. This is what Rails' adapter does. |
 | The `data_version` observer and the WAL checkpointer, on connections of their own | pooled connections | `PRAGMA data_version` only means something asked of the same connection every time. |
+| The full-text index (`message_search_index`) in plain SQL: its writes are strings, and searches name it with `table(name(...))` and a `MATCH` template | generated classes | It's an FTS5 virtual table, which the code generator doesn't read. |
 | jOOQ classes generated from `schema.sql` loaded into SQLite at build time (`src/build/jooq`) | running migrations, e.g. Flyway, then generating | Rails owns the migrations. `schema.sql` is exactly what `db:prepare` creates. |
-| The front layer's own cache and gzip (`web.Front`, `ContentEncoding`) | Quarkus/Vert.x HTTP compression | Byte parity: Rack's and Thruster's gzip headers, `Vary` merging, and cached gzipped pages. |
-| Its own JSON writer (`rails.Json`) | Jackson | Byte parity: Rails escapes `<`, `>` and `&` as `<` etc., and formats numbers as Ruby does. |
+| The front layer's own cache and gzip (`web.Front`, `ContentEncoding`) | Quarkus/Vert.x HTTP compression | Speed: a page is gzipped once and served compressed from the caches, where Vert.x would recompress every response on the event loop (69 µs for a 9 KB page, against about 105 µs of CPU for a whole cached room page). Also Rack's and Thruster's gzip headers and `Vary` merging, for byte parity. |
+| Its own JSON writer (`rails.Json`) | Jackson | Rails signs or hashes some JSON, and those bytes must match what Rails writes: Active Storage variation digests are stored in `active_storage_variant_records`, and signed blob ids appear in URLs. Rails also escapes `<`, `>` and `&` as `\u003c` etc. for HTML safety, which Jackson only does through its slow custom-escape path, and formats numbers as Ruby does. |
 | Header names lowercased, request ids, `X-Runtime` | framework defaults | Rack 3 and Rails behaviour that the Rust port reproduces. |
 
 What the datasources need for SQLite (in `application.properties`):

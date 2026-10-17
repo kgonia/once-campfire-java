@@ -1,7 +1,18 @@
 package campfire.storage;
 
+import static campfire.db.schema.Tables.ACTIVE_STORAGE_ATTACHMENTS;
+import static campfire.db.schema.Tables.ACTIVE_STORAGE_BLOBS;
+import static campfire.db.schema.Tables.ACTIVE_STORAGE_VARIANT_RECORDS;
+import static org.jooq.impl.DSL.deleteFrom;
+import static org.jooq.impl.DSL.inline;
+import static org.jooq.impl.DSL.insertInto;
+import static org.jooq.impl.DSL.param;
+import static org.jooq.impl.DSL.select;
+import static org.jooq.impl.DSL.update;
+
 import campfire.db.Conn;
 import campfire.db.Database.Tx;
+import campfire.db.Sql;
 import campfire.rails.Json;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -9,22 +20,22 @@ import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.jooq.Field;
 
 /// A row of `active_storage_blobs`. `metadata` is the JSON text Active Storage keeps
 /// (`identified`, `analyzed`, `width`, `height`, `duration`, `video`, ...).
 public record Blob(long id, String key, String filename, String contentType, String metadata, String serviceName, long byteSize,
                    String checksum, Instant createdAt) {
-    public static final String COLUMNS = "\"active_storage_blobs\".\"id\", \"active_storage_blobs\".\"key\", \"active_storage_blobs\".\"filename\", "
-        + "\"active_storage_blobs\".\"content_type\", \"active_storage_blobs\".\"metadata\", \"active_storage_blobs\".\"service_name\", "
-        + "\"active_storage_blobs\".\"byte_size\", \"active_storage_blobs\".\"checksum\", \"active_storage_blobs\".\"created_at\"";
-    public static final String SELECT = "SELECT " + COLUMNS + " FROM \"active_storage_blobs\"";
-    public static final int COLUMN_COUNT = 9;
+    /// The columns {@link #from} reads, in its order.
+    static final Field<?>[] COLUMNS = {ACTIVE_STORAGE_BLOBS.ID, ACTIVE_STORAGE_BLOBS.KEY, ACTIVE_STORAGE_BLOBS.FILENAME, ACTIVE_STORAGE_BLOBS.CONTENT_TYPE,
+        ACTIVE_STORAGE_BLOBS.METADATA, ACTIVE_STORAGE_BLOBS.SERVICE_NAME, ACTIVE_STORAGE_BLOBS.BYTE_SIZE, ACTIVE_STORAGE_BLOBS.CHECKSUM,
+        ACTIVE_STORAGE_BLOBS.CREATED_AT};
 
-    public static Blob from(ResultSet rs) throws SQLException {
+    static Blob from(ResultSet rs) throws SQLException {
         return from(rs, 0);
     }
 
-    public static Blob from(ResultSet rs, int offset) throws SQLException {
+    static Blob from(ResultSet rs, int offset) throws SQLException {
         return new Blob(rs.getLong(offset + 1), rs.getString(offset + 2), rs.getString(offset + 3), rs.getString(offset + 4),
             rs.getString(offset + 5), rs.getString(offset + 6), rs.getLong(offset + 7), rs.getString(offset + 8), Conn.getTime(rs, offset + 9));
     }
@@ -56,22 +67,45 @@ public record Blob(long id, String key, String filename, String contentType, Str
         return contentType != null && contentType.startsWith("audio/");
     }
 
+    private static final String FIND = Sql.render(select(COLUMNS).from(ACTIVE_STORAGE_BLOBS)
+        .where(ACTIVE_STORAGE_BLOBS.ID.eq(param(ACTIVE_STORAGE_BLOBS.ID))).limit(inline(1)));
+    private static final String FIND_BY_KEY = Sql.render(select(COLUMNS).from(ACTIVE_STORAGE_BLOBS)
+        .where(ACTIVE_STORAGE_BLOBS.KEY.eq(param(ACTIVE_STORAGE_BLOBS.KEY))).limit(inline(1)));
+    private static final String INSERT = Sql.render(insertInto(ACTIVE_STORAGE_BLOBS, ACTIVE_STORAGE_BLOBS.BYTE_SIZE, ACTIVE_STORAGE_BLOBS.CHECKSUM,
+            ACTIVE_STORAGE_BLOBS.CONTENT_TYPE, ACTIVE_STORAGE_BLOBS.CREATED_AT, ACTIVE_STORAGE_BLOBS.FILENAME, ACTIVE_STORAGE_BLOBS.KEY,
+            ACTIVE_STORAGE_BLOBS.METADATA, ACTIVE_STORAGE_BLOBS.SERVICE_NAME)
+        .values(param(ACTIVE_STORAGE_BLOBS.BYTE_SIZE), param(ACTIVE_STORAGE_BLOBS.CHECKSUM), param(ACTIVE_STORAGE_BLOBS.CONTENT_TYPE),
+            param(ACTIVE_STORAGE_BLOBS.CREATED_AT), param(ACTIVE_STORAGE_BLOBS.FILENAME), param(ACTIVE_STORAGE_BLOBS.KEY),
+            param(ACTIVE_STORAGE_BLOBS.METADATA), inline("local")));
+    private static final String UPDATE_METADATA = Sql.render(update(ACTIVE_STORAGE_BLOBS)
+        .set(ACTIVE_STORAGE_BLOBS.METADATA, param(ACTIVE_STORAGE_BLOBS.METADATA)).where(ACTIVE_STORAGE_BLOBS.ID.eq(param(ACTIVE_STORAGE_BLOBS.ID))));
+    private static final String DELETE = Sql.render(deleteFrom(ACTIVE_STORAGE_BLOBS).where(ACTIVE_STORAGE_BLOBS.ID.eq(param(ACTIVE_STORAGE_BLOBS.ID))));
+    private static final String DELETE_VARIANT_ATTACHMENTS = Sql.render(deleteFrom(ACTIVE_STORAGE_ATTACHMENTS)
+        .where(ACTIVE_STORAGE_ATTACHMENTS.RECORD_TYPE.eq(inline("ActiveStorage::VariantRecord")))
+        .and(ACTIVE_STORAGE_ATTACHMENTS.RECORD_ID.eq(param(ACTIVE_STORAGE_ATTACHMENTS.RECORD_ID))));
+    private static final String DELETE_VARIANT_RECORDS = Sql.render(deleteFrom(ACTIVE_STORAGE_VARIANT_RECORDS)
+        .where(ACTIVE_STORAGE_VARIANT_RECORDS.BLOB_ID.eq(param(ACTIVE_STORAGE_VARIANT_RECORDS.BLOB_ID))));
+
     public static Blob find(Conn conn, long id) {
-        return conn.one(SELECT + " WHERE \"active_storage_blobs\".\"id\" = ? LIMIT 1", Blob::from, id);
+        return conn.one(FIND, Blob::from, id);
     }
 
     public static Blob findByKey(Conn conn, String key) {
-        return conn.one(SELECT + " WHERE \"active_storage_blobs\".\"key\" = ? LIMIT 1", Blob::from, key);
+        return conn.one(FIND_BY_KEY, Blob::from, key);
     }
 
     public static long create(Tx tx, String key, String filename, String contentType, String metadataJson, long byteSize, String checksum,
                               Instant now) {
-        return tx.insert("INSERT INTO \"active_storage_blobs\" (\"byte_size\", \"checksum\", \"content_type\", \"created_at\", \"filename\", \"key\","
-            + " \"metadata\", \"service_name\") VALUES (?, ?, ?, ?, ?, ?, ?, ?)", byteSize, checksum, contentType, now, filename, key, metadataJson, "local");
+        return tx.insert(INSERT, byteSize, checksum, contentType, now, filename, key, metadataJson);
     }
 
     public static void updateMetadata(Tx tx, long id, String metadataJson) {
-        tx.update("UPDATE \"active_storage_blobs\" SET \"metadata\" = ? WHERE \"id\" = ?", metadataJson, id);
+        tx.update(UPDATE_METADATA, metadataJson, id);
+    }
+
+    /// The row alone; see {@link #deleteWithVariants} and `Storage.purge` for what goes with it.
+    public static void delete(Tx tx, long id) {
+        tx.update(DELETE, id);
     }
 
     /// Deletes the blob row and its variant records; returns their keys for the files to delete.
@@ -82,19 +116,19 @@ public record Blob(long id, String key, String filename, String contentType, Str
         keys.add(blob.key());
         for (var variant : VariantRecord.forBlob(tx, id)) {
             var variantBlob = Attachment.findBlobFor(tx, "ActiveStorage::VariantRecord", variant.id(), "image");
-            tx.update("DELETE FROM \"active_storage_attachments\" WHERE \"record_type\" = 'ActiveStorage::VariantRecord' AND \"record_id\" = ?", variant.id());
+            tx.update(DELETE_VARIANT_ATTACHMENTS, variant.id());
             if (variantBlob != null) {
                 keys.add(variantBlob.key());
-                tx.update("DELETE FROM \"active_storage_blobs\" WHERE \"id\" = ?", variantBlob.id());
+                delete(tx, variantBlob.id());
             }
         }
-        tx.update("DELETE FROM \"active_storage_variant_records\" WHERE \"blob_id\" = ?", id);
+        tx.update(DELETE_VARIANT_RECORDS, id);
         // A preview image (video posters) is attached to the blob itself.
         for (var preview : Attachment.forRecord(tx, "ActiveStorage::Blob", id)) {
-            tx.update("DELETE FROM \"active_storage_attachments\" WHERE \"id\" = ?", preview.id());
+            Attachment.delete(tx, preview.id());
             keys.addAll(deleteWithVariants(tx, preview.blobId()));
         }
-        tx.update("DELETE FROM \"active_storage_blobs\" WHERE \"id\" = ?", id);
+        delete(tx, id);
         return keys;
     }
 }

@@ -26,7 +26,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.regex.Pattern;
 import org.jspecify.annotations.Nullable;
 
 /// The request being served: its parameters (query, form and path merged, Rails style), cookies,
@@ -402,7 +401,13 @@ public class CurrentRequest {
     static Map<String, String> parseCookies(@Nullable String header) {
         var cookies = new LinkedHashMap<String, String>();
         if (header == null) return cookies;
-        for (String part : COOKIE_SEPARATOR.split(header)) {
+        int start = 0;
+        while (start < header.length()) {
+            int semicolon = header.indexOf(';', start);
+            int end = semicolon < 0 ? header.length() : semicolon;
+            String part = header.substring(start, end);
+            start = end + 1;
+            while (semicolon >= 0 && start < header.length() && header.charAt(start) == ' ') start++;
             if (part.isEmpty()) continue;
             int eq = part.indexOf('=');
             String name = eq < 0 ? part : part.substring(0, eq);
@@ -410,9 +415,6 @@ public class CurrentRequest {
         }
         return cookies;
     }
-
-    /// `String.split` compiles any pattern but a single plain character on every call.
-    private static final Pattern COOKIE_SEPARATOR = Pattern.compile("; *");
 
     public @Nullable String cookie(String name) {
         return facts().cookies().get(name);

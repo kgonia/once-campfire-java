@@ -143,6 +143,8 @@
                 <forcedType>
                   <name>BIGINT</name>
                   <includeExpression>.*\.(id|.*_id)</includeExpression>
+                  <!-- client_message_id is a UUID string. -->
+                  <includeTypes>(?i:integer|bigint)</includeTypes>
                 </forcedType>
                 <!-- datetime(6) is text in Active Record's own format, read and written by Times. -->
                 <forcedType>

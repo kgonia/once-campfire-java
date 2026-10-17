@@ -7,7 +7,6 @@ import campfire.rooms.Membership;
 import campfire.web.RecordNotFound;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -35,17 +34,7 @@ public class PushSubscriptionService {
     /// service with a public address, checked again for a subscription already saved.
     public boolean register(long userId, Map<String, @Nullable String> fields, @Nullable String userAgent) {
         PushSubscription existing = db.read(conn -> {
-            var sql = new StringBuilder("SELECT \"push_subscriptions\".\"id\" FROM \"push_subscriptions\" WHERE \"push_subscriptions\".\"user_id\" = ?");
-            var values = new ArrayList<Object>(List.of(userId));
-            fields.forEach((field, value) -> {
-                if (value == null) {
-                    sql.append(" AND \"push_subscriptions\".\"").append(field).append("\" IS NULL");
-                } else {
-                    sql.append(" AND \"push_subscriptions\".\"").append(field).append("\" = ?");
-                    values.add(value);
-                }
-            });
-            Long id = conn.one(sql + " LIMIT 1", rs -> rs.getLong(1), values.toArray());
+            Long id = PushSubscription.idMatching(conn, userId, fields);
             return id == null ? null : PushSubscription.find(conn, userId, id);
         });
         String endpoint = existing != null ? existing.endpoint() : fields.get("endpoint");

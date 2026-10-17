@@ -1,9 +1,12 @@
 package campfire.web;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import java.io.ByteArrayOutputStream;
 import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.zip.CRC32;
@@ -27,6 +30,21 @@ public final class Gzip {
     }
 
     public static byte[] compress(byte[] body, long mtime, @Nullable String comment) {
+        if (mtime != 0 || comment != null || body.length > SMALL_BODY) return deflate(body, mtime, comment);
+        byte[] gzip = SMALL.getIfPresent(ByteBuffer.wrap(body));
+        if (gzip == null) {
+            gzip = deflate(body, 0, null);
+            SMALL.put(ByteBuffer.wrap(body.clone()), gzip);
+        }
+        return gzip;
+    }
+
+    /// Small bodies repeat (health checks, redirects, empty bodies), and for them resetting the
+    /// deflater's tables costs more than compressing. Callers never modify what they get back.
+    private static final int SMALL_BODY = 1024;
+    private static final Cache<ByteBuffer, byte[]> SMALL = Caffeine.newBuilder().maximumSize(512).build();
+
+    private static byte[] deflate(byte[] body, long mtime, @Nullable String comment) {
         var out = new ByteArrayOutputStream(Math.max(64, body.length / 4));
         try (var gzip = stream(out, mtime, comment)) {
             gzip.write(body);
