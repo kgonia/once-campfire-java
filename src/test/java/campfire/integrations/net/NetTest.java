@@ -177,6 +177,9 @@ class NetTest {
             var untrusted = TestSupport.network(new FakeResolver(), routeTo(server.port()), TestSupport.untrustingTls());
             var error = assertThrows(PinnedHttp.HttpException.class, () -> get(untrusted, true, "/"));
             assertEquals(PinnedHttp.HttpException.Kind.TLS, error.kind);
+            // The JDK's trust store, as production uses, doesn't have the test CA.
+            var system = TestSupport.network(new FakeResolver(), routeTo(server.port()), null);
+            assertEquals(PinnedHttp.HttpException.Kind.TLS, assertThrows(PinnedHttp.HttpException.class, () -> get(system, true, "/")).kind);
             // A name the certificate isn't for.
             var mismatch = assertThrows(PinnedHttp.HttpException.class, () -> get(net, true, "other.example", "/", TIMEOUTS));
             assertEquals(PinnedHttp.HttpException.Kind.TLS, mismatch.kind);
