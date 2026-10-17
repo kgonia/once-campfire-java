@@ -296,15 +296,14 @@ class WebPushTest {
     @Test
     void validatesEndpointsLikePushSubscription() {
         var resolver = new FakeResolver().set("fcm.googleapis.com", PUBLIC_IP).set("updates.push.services.mozilla.com", "10.0.0.5");
-        assertEquals(List.of(), WebPush.endpointErrors(ENDPOINT, resolver));
-        assertEquals(List.of("can't be blank", "is not a valid URL"), WebPush.endpointErrors("", resolver));
-        assertEquals(List.of("is not a valid URL"), WebPush.endpointErrors("https://fcm.googleapis.com/a b", resolver));
-        assertEquals(List.of("must use HTTPS"), WebPush.endpointErrors("http://fcm.googleapis.com/x", resolver));
-        assertEquals(List.of("must use the default HTTPS port"), WebPush.endpointErrors("https://fcm.googleapis.com:8443/x", resolver));
-        assertEquals(List.of("is not a permitted push service"), WebPush.endpointErrors("https://evil.example/x", resolver));
-        assertEquals(List.of("resolves to a private or invalid IP address"),
-            WebPush.endpointErrors("https://updates.push.services.mozilla.com/x", resolver));
-        assertEquals(List.of(), WebPush.endpointErrors("https://FCM.googleapis.com/x", resolver.set("FCM.googleapis.com", PUBLIC_IP)));
+        assertTrue(WebPush.validEndpoint(ENDPOINT, resolver));
+        assertFalse(WebPush.validEndpoint("", resolver));
+        assertFalse(WebPush.validEndpoint("https://fcm.googleapis.com/a b", resolver));
+        assertFalse(WebPush.validEndpoint("http://fcm.googleapis.com/x", resolver));
+        assertFalse(WebPush.validEndpoint("https://fcm.googleapis.com:8443/x", resolver));
+        assertFalse(WebPush.validEndpoint("https://evil.example/x", resolver));
+        assertFalse(WebPush.validEndpoint("https://updates.push.services.mozilla.com/x", resolver));
+        assertTrue(WebPush.validEndpoint("https://FCM.googleapis.com/x", resolver.set("FCM.googleapis.com", PUBLIC_IP)));
     }
 
     /// The statuses the gem tells apart; only 404 and 410 say the subscription is gone.

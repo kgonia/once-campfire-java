@@ -203,24 +203,10 @@ public final class WebPush implements AutoCloseable {
 
     // --- Endpoint checks (Push::Subscription) ------------------------------------------------
 
-    /// `Push::Subscription#validate_endpoint_url` (with `validates :endpoint, presence: true`):
-    /// every validation error for `endpoint`, in the order Rails adds them.
-    public static List<String> endpointErrors(String endpoint, Network.Resolver resolver) {
-        var errors = new ArrayList<String>();
-        if (endpoint == null || campfire.richtext.Html.isBlank(endpoint)) errors.add("can't be blank");
-        Url uri = endpointUri(endpoint);
-        if (uri == null) {
-            errors.add("is not a valid URL");
-        } else if (!uri.isHttps()) {
-            errors.add("must use HTTPS");
-        } else if (uri.port() != 443) {
-            errors.add("must use the default HTTPS port");
-        } else if (!permittedEndpointHost(uri)) {
-            errors.add("is not a permitted push service");
-        } else if (resolvedEndpointIp(endpoint, resolver) == null) {
-            errors.add("resolves to a private or invalid IP address");
-        }
-        return errors;
+    /// `Push::Subscription#validate_endpoint_url`: an HTTPS URL on the default port of a permitted
+    /// push service that resolves to a public address.
+    public static boolean validEndpoint(String endpoint, Network.Resolver resolver) {
+        return resolvedEndpointIp(endpoint, resolver) != null;
     }
 
     /// `Push::Subscription#resolved_endpoint_ip`: validated at the point of use, not just when
