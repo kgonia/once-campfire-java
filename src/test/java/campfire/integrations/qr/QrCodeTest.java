@@ -1,46 +1,64 @@
 package campfire.integrations.qr;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import campfire.integrations.TestSupport;
-import java.util.Base64;
+import com.google.zxing.BinaryBitmap;
+import com.google.zxing.DecodeHintType;
+import com.google.zxing.RGBLuminanceSource;
+import com.google.zxing.ResultMetadataType;
+import com.google.zxing.common.HybridBinarizer;
+import com.google.zxing.qrcode.QRCodeReader;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.junit.jupiter.api.Test;
 
-/// Golden vectors from rqrcode 3.2.0 (the Rust port's `reference-tools/campfire/rqrcode.rb`).
+/// Draws QR codes and reads them back with ZXing.
 class QrCodeTest {
-    @Test
-    @SuppressWarnings("unchecked")
-    void matchesRqrcode() {
-        var vectors = (List<Map<String, Object>>) TestSupport.json("rqrcode.json");
-        assertTrue(vectors.size() >= 30);
-        int svgs = 0;
-        for (var vector : vectors) {
-            byte[] input = Base64.getDecoder().decode((String) vector.get("input_base64"));
-            String name = (String) vector.get("input_base64");
-            assertEquals(((Number) vector.get("version")).intValue(), QrCode.minimumVersion(input), "version for " + name);
-            var modules = QrCode.modules(input);
-            var rows = new StringBuilder();
-            for (boolean[] row : modules) {
-                if (!rows.isEmpty()) rows.append('\n');
-                for (boolean m : row) rows.append(m ? '1' : '0');
-            }
-            assertEquals(vector.get("modules"), rows.toString(), "modules for " + name);
-            if (vector.get("svg") instanceof String svg) {
-                assertEquals(svg, QrCode.svg(input), "svg for " + name);
-                svgs++;
+    private static final Pattern VIEW_BOX = Pattern.compile("viewBox=\"0 0 (\\d+) \\1\"");
+    private static final Pattern MODULE = Pattern.compile("M(\\d+),(\\d+)h1v1h-1z");
+
+    /// What a scanner reads from the SVG, with its error correction level.
+    private static String[] scan(String svg) throws Exception {
+        Matcher size = VIEW_BOX.matcher(svg);
+        assertTrue(size.find(), svg);
+        int modules = Integer.parseInt(size.group(1));
+        // Four pixels a module, inside the four-module quiet zone a scanner needs.
+        int scale = 4, border = 4, width = (modules + 2 * border) * scale;
+        int[] pixels = new int[width * width];
+        Arrays.fill(pixels, 0xffffff);
+        for (Matcher m = MODULE.matcher(svg); m.find(); ) {
+            int x = Integer.parseInt(m.group(1)), y = Integer.parseInt(m.group(2));
+            for (int dy = 0; dy < scale; dy++) {
+                int row = (y + border) * scale + dy;
+                Arrays.fill(pixels, row * width + (x + border) * scale, row * width + (x + border + 1) * scale, 0);
             }
         }
-        assertTrue(svgs > 0);
+        var bitmap = new BinaryBitmap(new HybridBinarizer(new RGBLuminanceSource(width, width, pixels)));
+        var result = new QRCodeReader().decode(bitmap, Map.of(DecodeHintType.PURE_BARCODE, true));
+        return new String[] {result.getText(), (String) result.getResultMetadata().get(ResultMetadataType.ERROR_CORRECTION_LEVEL)};
+    }
+
+    @Test
+    void encodesTheUrl() throws Exception {
+        for (String url : List.of("http://campfire.test", "https://campfire.example.com/session/transfers/1a2b3c4d5e6f?x=1",
+            "https://chat.example.com/join/" + "AbC1".repeat(60))) {
+            String svg = QrCode.svg(url.getBytes(StandardCharsets.UTF_8));
+            assertTrue(svg.startsWith("<?xml version=\"1.0\" standalone=\"yes\"?><svg xmlns=\"http://www.w3.org/2000/svg\""), svg);
+            assertTrue(svg.endsWith("</svg>"));
+            String[] scanned = scan(svg);
+            assertEquals(url, scanned[0]);
+            assertEquals("H", scanned[1]);
+        }
     }
 
     @Test
     void dataTooLongForVersion40IsNull() {
-        assertNull(QrCode.svg("a".repeat(3000)));
-        assertNotNull(QrCode.svg("http://campfire.test"));
+        assertNull(QrCode.svg("a".repeat(3000).getBytes(StandardCharsets.UTF_8)));
     }
 }

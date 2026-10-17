@@ -108,6 +108,13 @@
       <artifactId>quarkus-junit5</artifactId>
       <scope>test</scope>
     </dependency>
+    <!-- Reads back the QR codes the app draws. -->
+    <dependency>
+      <groupId>com.google.zxing</groupId>
+      <artifactId>core</artifactId>
+      <version>3.5.3</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
