@@ -9,7 +9,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /// Link unfurling: `UnfurlLinksController#create` (reference/app/controllers/unfurl_links_controller.rb)
@@ -37,13 +36,10 @@ public final class Opengraph {
     /// What `UnfurlLinksController#create` responds with.
     public sealed interface Unfurl {
         /// `render json: opengraph`: 200, `application/json; charset=utf-8`, with {@link #body}.
-        record Json(Metadata metadata, String body) implements Unfurl {}
+        record Json(String body) implements Unfurl {}
 
         /// `head :no_content` (204)
         record NoContent() implements Unfurl {}
-
-        /// Where the Rails action raises: a 500.
-        record Raised(String rubyClass) implements Unfurl {}
     }
 
     /// The action after `params.require(:url)` (a missing or blank `url` is the controller's
@@ -52,7 +48,8 @@ public final class Opengraph {
         return unfurl(net, url, UNFURL_DEADLINE);
     }
 
-    /// The worker is interrupted at the deadline, which ends the fetch it's waiting on.
+    /// The worker is interrupted at the deadline, which ends the fetch it's waiting on. A bug in
+    /// the unfurl is thrown, for a 500.
     static Unfurl unfurl(Network net, String url, Duration limit) {
         long deadline = System.nanoTime() + limit.toNanos();
         Future<Unfurl> task = WORKERS.submit(() -> {
@@ -61,9 +58,7 @@ public final class Opengraph {
                 Metadata opengraph = Metadata.fromUrl(net, url);
                 boolean valid = opengraph.validate();
                 if (expired(deadline)) return new Unfurl.NoContent();
-                return valid ? new Unfurl.Json(opengraph, opengraph.toJson()) : new Unfurl.NoContent();
-            } catch (Metadata.RaisedException e) {
-                return new Unfurl.Raised(e.rubyClass());
+                return valid ? new Unfurl.Json(opengraph.toJson()) : new Unfurl.NoContent();
             } finally {
                 SLOTS.release();
             }
@@ -71,7 +66,7 @@ public final class Opengraph {
         try {
             // A little grace past the deadline, which a DNS lookup can't be cut short at.
             Unfurl result = task.get(deadline - System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(250), TimeUnit.NANOSECONDS);
-            if (expired(deadline) && !(result instanceof Unfurl.Raised)) return giveUp(url, limit);
+            if (expired(deadline)) return giveUp(url, limit);
             return result;
         } catch (TimeoutException e) {
             task.cancel(true);
@@ -81,8 +76,7 @@ public final class Opengraph {
             Thread.currentThread().interrupt();
             return new Unfurl.NoContent();
         } catch (ExecutionException e) {
-            LOG.log(Level.SEVERE, "Error unfurling " + url, e.getCause());
-            return new Unfurl.Raised(e.getCause().getClass().getName());
+            throw new IllegalStateException("Error unfurling " + url, e.getCause());
         }
     }
 

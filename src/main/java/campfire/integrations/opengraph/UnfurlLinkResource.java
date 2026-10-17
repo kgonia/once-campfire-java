@@ -35,7 +35,6 @@ public class UnfurlLinkResource {
                 yield response.build();
             }
             case Opengraph.Unfurl.NoContent none -> Formats.head(request, 204);
-            case Opengraph.Unfurl.Raised raised -> throw new IllegalStateException(raised.rubyClass() + " while unfurling");
         };
     }
 

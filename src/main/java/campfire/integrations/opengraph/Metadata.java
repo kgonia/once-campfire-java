@@ -4,8 +4,6 @@ import campfire.integrations.net.Network;
 import campfire.integrations.net.Url;
 import campfire.rails.Json;
 import campfire.richtext.Html;
-import campfire.richtext.Sanitizer;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -18,26 +16,15 @@ import org.jsoup.nodes.TextNode;
 
 /// `Opengraph::Metadata` and its `Fetching` concern (reference/app/models/opengraph/metadata.rb,
 /// reference/app/models/opengraph/metadata/fetching.rb).
-public final class Metadata {
+final class Metadata {
     private static final Logger LOG = Logger.getLogger(Metadata.class.getName());
 
     private static final List<String> TWITTER_HOSTS = List.of("twitter.com", "www.twitter.com", "x.com", "www.x.com");
     private static final String FX_TWITTER_HOST = "fxtwitter.com";
     private static final List<String> ALLOWED_IMAGE_CONTENT_TYPES = List.of("image/jpeg", "image/png", "image/gif", "image/webp");
 
-    /// Where Rails raises (a 500 from the controller), with the Ruby exception class.
-    public static final class RaisedException extends Exception {
-        public RaisedException(String rubyClass) {
-            super(rubyClass, null, false, false);
-        }
-
-        public String rubyClass() {
-            return getMessage();
-        }
-    }
-
-    /// The model's attributes as instance variables, in the order they were first assigned
-    /// (which is the order `render json:` emits them). Values may be null.
+    /// `title`, `url`, `image` and `description`, in the order `render json:` emits them. Values
+    /// may be null.
     private final LinkedHashMap<String, String> attributes;
     private final Network net;
 
@@ -47,7 +34,7 @@ public final class Metadata {
     }
 
     /// `Metadata.from_url(url)`
-    static Metadata fromUrl(Network net, String url) throws RaisedException {
+    static Metadata fromUrl(Network net, String url) {
         byte[] body = fetchDocument(net, url);
         Map<String, String> found = Document.opengraphAttributes(body);
         String canonicalUrl = validCanonicalUrl(net, found.get("url"), url);
@@ -58,17 +45,12 @@ public final class Metadata {
         return new Metadata(attributes, net);
     }
 
-    /// The `title`, `url`, `image` or `description`.
-    public String get(String key) {
-        return attributes.get(key);
-    }
-
-    /// `valid?`: sanitizes the title and description first (`before_validation`), then checks
-    /// presence and, when there's an image, that it's a valid location.
+    /// `valid?`: reduces the title and description to text first (`before_validation`), then
+    /// checks presence and, when there's an image, that it's a valid location.
     boolean validate() {
         for (String key : List.of("title", "description")) {
             String value = attributes.get(key);
-            attributes.put(key, value == null ? null : sanitize(stripTags(value)));
+            attributes.put(key, value == null ? null : plainText(value));
         }
         boolean valid = present("title") && present("url") && present("description");
         String image = attributes.get("image");
@@ -80,24 +62,14 @@ public final class Metadata {
         return !Document.isBlank(attributes.get(key));
     }
 
-    /// `render json: opengraph` after `valid?`: `instance_values`, which by then include the
-    /// validation context and the (empty) errors, encoded by `ActiveSupport::JSON`.
-    public String toJson() {
-        var values = new LinkedHashMap<String, Object>(attributes);
-        values.put("context_for_validation", Collections.singletonMap("context", null));
-        values.put("errors", Map.of());
-        return Json.encode(values);
+    /// `render json: opengraph`, encoded by `ActiveSupport::JSON`.
+    String toJson() {
+        return Json.encode(attributes);
     }
 
-    /// `fetch_document(untrusted_url)`: tweets are read through fxtwitter.com. A tweet whose
-    /// fxtwitter page can't be read raises (`nil.force_encoding`).
-    private static byte[] fetchDocument(Network net, String url) throws RaisedException {
-        if (tweetUrl(url)) {
-            byte[] html = new Location(net, replaceTwitterDomain(url)).readHtml();
-            if (html == null) throw new RaisedException("NoMethodError");
-            return html;
-        }
-        return new Location(net, url).readHtml();
+    /// `fetch_document(untrusted_url)`: tweets are read through fxtwitter.com.
+    private static byte[] fetchDocument(Network net, String url) {
+        return new Location(net, tweetUrl(url) ? replaceTwitterDomain(url) : url).readHtml();
     }
 
     /// `tweet_url?`
@@ -108,12 +80,10 @@ public final class Metadata {
         return path != null && !Document.isBlank(path) && !path.equals("/");
     }
 
-    /// `replace_twitter_domain_for_opengraph_support`
+    /// `replace_twitter_domain_for_opengraph_support`, for a tweet URL.
     private static String replaceTwitterDomain(String url) {
-        var uri = Url.parseOrNull(url);
-        if (uri == null) return null;
-        if (uri.host() != null && TWITTER_HOSTS.contains(uri.host())) uri = uri.withHost(FX_TWITTER_HOST);
-        return uri == null ? null : uri.toString();
+        var fx = Url.parseOrNull(url).withHost(FX_TWITTER_HOST);
+        return fx == null ? null : fx.toString();
     }
 
     /// `valid_canonical_url(url, fallback)`
@@ -125,22 +95,20 @@ public final class Metadata {
     private static String validImageContentType(Network net, String image) {
         if (image == null || Document.isBlank(image)) return null;
         if (Url.parseOrNull(image) == null) {
-            LOG.warning("Failed to fetch image content tpye: " + image + " (bad URI(is not URI?): \"" + image + "\")");
+            LOG.warning("Failed to fetch image content type: " + image + " (not a URL)");
             return null;
         }
         String contentType = new Location(net, image).fetchContentType();
         return contentType != null && ALLOWED_IMAGE_CONTENT_TYPES.contains(contentType.toLowerCase(Locale.ROOT)) ? image : null;
     }
 
-    /// `strip_tags` (Rails::HTML5::FullSanitizer): the text of the HTML5 fragment, serialized.
-    static String stripTags(String html) {
-        if (html.isEmpty()) return "";
-        Element fragment = Html.parseFragment(html);
+    /// The text of the HTML5 fragment, as `strip_tags` (Rails::HTML5::FullSanitizer) finds it.
+    /// Rails sends it HTML-escaped (`sanitize` after `strip_tags`) and the composer escapes what
+    /// it gets again, so a title "Tom & Jerry" showed as "Tom &amp; Jerry"; this is unescaped.
+    static String plainText(String html) {
         var text = new StringBuilder();
-        collectText(fragment, text);
-        var out = new Element("div");
-        if (!text.isEmpty()) out.appendChild(new TextNode(text.toString()));
-        return Html.innerHtml(out);
+        if (!html.isEmpty()) collectText(Html.parseFragment(html), text);
+        return text.toString();
     }
 
     private static void collectText(Node node, StringBuilder out) {
@@ -152,10 +120,5 @@ public final class Metadata {
                 default -> {}
             }
         }
-    }
-
-    /// `sanitize` (Rails::HTML5::SafeListSanitizer with its default allowlist).
-    static String sanitize(String html) {
-        return Sanitizer.sanitize(html, Sanitizer.DEFAULTS);
     }
 }

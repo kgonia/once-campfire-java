@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.zip.GZIPOutputStream;
+import org.jsoup.parser.Parser;
 import org.junit.jupiter.api.Test;
 
 /// Replays testdata/opengraph_cases.json (fake DNS, a fake server for the fake public
@@ -32,10 +33,28 @@ import org.junit.jupiter.api.Test;
 /// Rails reference did for the same cases (testdata/opengraph_expected.json, recorded by the
 /// Rust port's oracle).
 class OpengraphTest {
-    /// Where this app deliberately parts from the recording.
-    private static final Map<String, Object> DEPARTURES = Map.of(
-        // Rails raises `URI::InvalidComponentError` (a 500); a URL that isn't http(s) unfurls nothing.
-        "mailto raises", Map.of("status", 204L));
+    /// Where this app deliberately parts from the recording: Rails raises on these (a 500), with
+    /// `URI::InvalidComponentError` and `NoMethodError` (`nil.force_encoding`) respectively.
+    private static final Map<String, Object> DEPARTURES = Map.of("mailto raises", Map.of("status", 204L), "fxtwitter failure raises",
+        Map.of("status", 204L));
+
+    /// The recorded response less what this app leaves out of the body: `instance_values`
+    /// leftovers (`context_for_validation`, `errors`) and the HTML escaping of the title and
+    /// description, which the composer escaped a second time.
+    @SuppressWarnings("unchecked")
+    private static Object withoutRailsLeftovers(Object response) {
+        var map = new LinkedHashMap<>((Map<String, Object>) response);
+        if (map.get("body") instanceof String body) {
+            var json = new LinkedHashMap<>((Map<String, Object>) Json.parse(body));
+            json.remove("context_for_validation");
+            json.remove("errors");
+            for (String key : List.of("title", "description")) {
+                if (json.get(key) instanceof String text) json.put(key, Parser.unescapeEntities(text, false));
+            }
+            map.put("body", Json.encode(json));
+        }
+        return map;
+    }
 
     @SuppressWarnings("unchecked")
     private static Route route(Map<String, Object> spec) {
@@ -92,10 +111,6 @@ class OpengraphTest {
                         response.put("body", json.body());
                     }
                     case Opengraph.Unfurl.NoContent noContent -> response.put("status", 204L);
-                    case Opengraph.Unfurl.Raised raised -> {
-                        response.put("status", 500L);
-                        response.put("error", raised.rubyClass());
-                    }
                 }
                 var requests = new ArrayList<Object>();
                 for (var r : server.received.subList(before, server.received.size())) {
@@ -106,7 +121,7 @@ class OpengraphTest {
                 actual.put("lookups", List.copyOf(resolver.lookups));
                 actual.put("requests", requests);
                 var want = new LinkedHashMap<String, Object>();
-                want.put("response", DEPARTURES.getOrDefault((String) testCase.get("name"), wanted.get("response")));
+                want.put("response", DEPARTURES.getOrDefault((String) testCase.get("name"), withoutRailsLeftovers(wanted.get("response"))));
                 want.put("lookups", wanted.get("lookups"));
                 want.put("requests", wanted.get("requests"));
                 if (!Json.generate(actual).equals(Json.generate(want))) {
@@ -117,7 +132,8 @@ class OpengraphTest {
         assertTrue(failures.isEmpty(), failures.size() + " of " + cases.size() + " cases differ:\n" + String.join("\n", failures));
     }
 
-    /// Probed against the reference (`strip_tags` then `sanitize`) by the Rust port.
+    /// Probed against the reference (`strip_tags` then `sanitize`) by the Rust port; the text is
+    /// what Rails escaped.
     @Test
     void stripsTagsLikeRails() {
         String[][] cases = {{"Tom & Jerry", "Tom &amp; Jerry"}, {"a < b", "a &lt; b"}, {"x&nbsp;y", "x&nbsp;y"}, {" nb", "&nbsp;nb"},
@@ -125,7 +141,7 @@ class OpengraphTest {
             {"<p>one</p><p>two</p>", "onetwo"}, {"\"q\" 'a'", "\"q\" 'a'"}, {"<style>x</style>y", "xy"}, {"&amp;amp;", "&amp;amp;"},
             {"<b>bold</b>", "bold"}, {"</script><img src=a onerror=prompt(1)>", ""}, {" sp  ", " sp  "},
             {"<textarea>t<b>x</b></textarea>", "t&lt;b&gt;x&lt;/b&gt;"}};
-        for (String[] c : cases) assertEquals(c[1], Metadata.sanitize(Metadata.stripTags(c[0])), c[0]);
+        for (String[] c : cases) assertEquals(Parser.unescapeEntities(c[1], false), Metadata.plainText(c[0]), c[0]);
     }
 
     /// test/models/opengraph/document_test.rb
@@ -186,8 +202,7 @@ class OpengraphTest {
             var route = new MappingRoute(Set.copyOf(TestSupport.ips("93.184.216.34", "93.184.216.35")), server.port());
             var net = TestSupport.network(resolver, route);
             var json = assertInstanceOf(Opengraph.Unfurl.Json.class, Opengraph.unfurl(net, "https://www.example.com"));
-            assertEquals("{\"title\":\"Hey!\",\"url\":\"https://example.com\",\"image\":\"https://example.com/image.png\",\"description\":\"desc..\","
-                + "\"context_for_validation\":{\"context\":null},\"errors\":{}}", json.body());
+            assertEquals("{\"title\":\"Hey!\",\"url\":\"https://example.com\",\"image\":\"https://example.com/image.png\",\"description\":\"desc..\"}", json.body());
             assertEquals(List.of("93.184.216.34:443", "93.184.216.35:443"),
                 route.dialed.stream().map(a -> a.getAddress().getHostAddress() + ":" + a.getPort()).toList());
 
