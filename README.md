@@ -181,26 +181,39 @@ what it needs.
 - Intel Core Ultra 9 275HX, Docker Desktop on Windows 11.
 - Every response was contract-validated and every acknowledged write audited.
 
-Median req/s:
+Median req/s, from one interleaved run (2026-10-17, after a change of the host's power mode, so not comparable
+with earlier tables):
 
-| route | Rust | Java (JVM) | Java (JDK 26 + AOT cache) | Java (native) |
-|---|---:|---:|---:|---:|
-| room_show | 27,994 | 36,466 | 32,164 | 23,071 |
-| messages_page | 26,801 | 37,071 | 37,213 | 26,318 |
-| sidebar | 31,526 | 52,701 | 46,476 | 29,264 |
-| search | 33,572 | 45,997 | 46,156 | 29,514 |
-| post_message | 3,126 | 2,657 | 2,679 | 2,146 |
-| avatar | 108,541 | 190,859 | 175,417 | 123,126 |
-| static_css | 140,961 | 194,644 | 195,437 | 137,337 |
-| up | 61,773 | 77,443 | 75,295 | 44,214 |
+| route | Rust | Java (JVM, JDK 25) | Java (JDK 26 + AOT cache) | Java (JDK 28 EA + AOT code) | Java (native) |
+|---|---:|---:|---:|---:|---:|
+| room_show | 34,700 | 62,300 | 61,100 | 61,200 | 40,400 |
+| messages_page | 32,500 | 62,700 | 62,100 | 63,000 | 40,900 |
+| sidebar | 39,700 | 85,200 | 82,800 | 83,500 | 52,700 |
+| search | 39,600 | 82,600 | 80,200 | 81,200 | 50,400 |
+| post_message | 3,600 | 3,300 | 3,400 | 3,200 | 2,600 |
+| avatar | 153,000 | 230,900 | 226,600 | 228,600 | 156,600 |
+| static_css | 162,900 | 245,400 | 246,700 | 246,000 | 170,800 |
+| up | 87,100 | 115,500 | 112,500 | 112,300 | 74,500 |
 
-Expect about ±20% between rounds, because Hyper-V schedules vCPUs onto both P- and E-cores. Compare results only
-from the same interleaved run.
+Rounds differed by 0–6% (post_message on the native build: 34%). Hyper-V schedules vCPUs onto both P- and E-cores,
+so compare results only from the same interleaved run.
 
-- **Native build:** starts in about 30 ms, against about 0.7 s for the JVM. It's slower under sustained load,
-  because it has no JIT and the Community Edition has neither PGO nor G1.
-- **AOT cache:** cuts JVM startup to about 0.5 s. It barely helps the first seconds under load, because the JIT
-  still has to compile on the same 4 CPUs.
+Startup and warmup, from a separate run: milliseconds until `/up` answers after the process starts, then the
+signed-in room page's req/s (gzip, 16 connections) in each of the first seconds.
+
+| image | `/up` after | 1st s | 2nd s | 3rd s | 4th s | 5th s | steady |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Rust | 80 ms | 38,700 | 39,600 | 39,700 | 35,000 | 35,400 | ~35,000 |
+| Java (JVM, JDK 25) | 1,600 ms | 3,400 | 16,000 | 36,800 | 64,800 | 68,300 | ~69,000 |
+| Java (JDK 26 + AOT cache) | 840 ms | 3,900 | 21,300 | 30,400 | 42,300 | 59,900 | ~66,000 |
+| Java (JDK 28 EA + AOT code) | 780 ms | 3,600 | 13,700 | 27,500 | 61,200 | 67,000 | ~67,000 |
+| Java (native) | 140 ms | 15,500 | 16,600 | 16,600 | 16,000 | 16,100 | ~15,500 |
+
+- **Native build:** starts fastest of the Java builds and is at full speed at once, but that speed is a fraction of
+  the JVM's: it has no JIT, and the Community Edition has neither PGO nor G1.
+- **AOT cache:** halves JVM startup. JDK 28's AOT code (JEP 544, `--build-arg JDK=28`) adds little to that here,
+  and none of the JVM builds is at full speed before about the fourth second, because the JIT still compiles on
+  the same 4 CPUs. Steady state is within a few percent of the plain JVM.
 - **room_show:** the harness measures it first, about 5 s after the container starts, so it carries most of the
   JVM's warmup.
 
