@@ -60,6 +60,8 @@ byte for byte, or a measured performance loss. Each deviation is listed below wi
 
 **What's standard:**
 - Quarkus REST resources on virtual threads, CDI beans, `@ConfigMapping`, and request/response filters.
+- Actions that validate their own responses (`fresh_when`) use JAX-RS `EntityTag`, `Request#evaluatePreconditions`
+  and `CacheControl`.
 - Rails' static security headers as `quarkus.http.header.*`. Only HSTS, which depends on the scheme, is set in
   code.
 - Two Quarkus-managed Agroal datasources, `writer` and `readers`, configured in `application.properties`.

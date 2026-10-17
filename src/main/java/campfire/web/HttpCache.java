@@ -1,5 +1,8 @@
 package campfire.web;
 
+import jakarta.ws.rs.core.CacheControl;
+import jakarta.ws.rs.core.EntityTag;
+import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -13,6 +16,7 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HexFormat;
+import java.util.List;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -30,45 +34,47 @@ public final class HttpCache {
         return table + "/" + id + "-" + MICROSECONDS.format(updatedAt);
     }
 
+    /// `max-age=0, private, must-revalidate`, what Rails sends with an ETag.
+    static final CacheControl REVALIDATE = revalidate();
+
+    private static CacheControl revalidate() {
+        var control = new CacheControl();
+        control.setNoTransform(false);
+        control.setMaxAge(0);
+        control.setPrivate(true);
+        control.setMustRevalidate(true);
+        return control;
+    }
+
     /// The weak ETag of `validator` combined with what else a page varies on: being a Turbo-Frame
     /// request, the template's digest, and the flash.
-    public static String weakEtag(CurrentRequest request, @Nullable String validator, @Nullable String templateDigest) {
+    public static EntityTag etag(CurrentRequest request, @Nullable String validator, @Nullable String templateDigest) {
         var parts = new ArrayList<String>();
         if (validator != null) parts.add(validator);
         String frame = request.header("turbo-frame");
         if (frame != null && !frame.isBlank()) parts.add("frame");
         if (templateDigest != null) parts.add(templateDigest);
         var flash = request.flash();
-        var flashes = new ArrayList<String>();
-        String notice = flash.get("notice");
-        String alert = flash.get("alert");
-        if (notice != null) flashes.add("notice=Some(String(" + campfire.rails.Json.encode(notice) + "))");
-        if (alert != null) flashes.add("alert=Some(String(" + campfire.rails.Json.encode(alert) + "))");
-        if (!flashes.isEmpty()) parts.add(String.join("&", flashes));
-        return "W/\"" + sha256Hex(String.join("/", parts)).substring(0, 32) + "\"";
-    }
-
-    /// The client already has `etag`: `If-None-Match` lists it, or is `*`.
-    public static boolean fresh(CurrentRequest request, String etag) {
-        String ifNoneMatch = request.header("if-none-match");
-        if (ifNoneMatch == null) return false;
-        for (String candidate : ifNoneMatch.split(",")) {
-            String tag = candidate.strip();
-            if (tag.equals(etag) || tag.equals("*")) return true;
+        for (String key : List.of("notice", "alert")) {
+            String message = flash.get(key);
+            if (message != null) parts.add(key + "=" + message);
         }
-        return false;
+        return new EntityTag(sha256Hex(String.join("/", parts)).substring(0, 32), true);
     }
 
-    public static Response notModified(String etag) {
-        return Response.status(304).header("ETag", etag).header("Cache-Control", "max-age=0, private, must-revalidate").build();
+    /// The 304 for a client that already has `etag`, or null.
+    public static @Nullable Response notModified(Request request, EntityTag etag) {
+        Response.ResponseBuilder notModified = request.evaluatePreconditions(etag);
+        return notModified == null ? null : notModified.cacheControl(REVALIDATE).build();
     }
 
     /// `response` validated by `etag`, with the `Cache-Control` that makes clients revalidate it.
-    public static Response.ResponseBuilder tagged(Response.ResponseBuilder response, String etag) {
-        return response.header("ETag", etag).header("Cache-Control", "max-age=0, private, must-revalidate");
+    public static Response.ResponseBuilder tagged(Response.ResponseBuilder response, EntityTag etag) {
+        return response.tag(etag).cacheControl(REVALIDATE);
     }
 
-    /// `Cache-Control` for `seconds`, and the `Date` it counts from.
+    /// `Cache-Control` for `seconds`, and the `Date` it counts from. Written out: {@link CacheControl}
+    /// quotes extension values, and browsers ignore a quoted `stale-while-revalidate`.
     public static Response.ResponseBuilder expiresIn(Response.ResponseBuilder response, long seconds, boolean isPublic,
                                                      @Nullable Long staleWhileRevalidate) {
         var value = new StringBuilder("max-age=").append(seconds).append(isPublic ? ", public" : ", private");

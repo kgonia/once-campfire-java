@@ -12,14 +12,15 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.core.EntityTag;
+import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
 import java.util.Objects;
 import org.jspecify.annotations.NullMarked;
 
 /// The account logo as a PNG, or the stock app icon without one; public, as it is the PWA's icon.
 /// Logo URLs carry the account's version, so browsers may reuse one for five minutes and
-/// revalidate it in the background for a week. Answered like a file download: without the page
-/// security headers or a body digest.
+/// revalidate it in the background for a week.
 @Path("/account/logo")
 @RunOnVirtualThread
 @NullMarked
@@ -37,11 +38,12 @@ public class LogoResource {
     /// `size=small` is at most 192 pixels square, anything else 512.
     @GET
     @Access.Public
-    public Response show() {
+    public Response show(Request http) {
         Account account = app.account().account();
-        String etag = account == null ? null
-            : HttpCache.weakEtag(request, HttpCache.cacheKeyWithVersion("accounts", account.id(), account.updatedAt()), null);
-        if (etag != null && HttpCache.fresh(request, etag)) return HttpCache.notModified(etag);
+        EntityTag etag = account == null ? null
+            : HttpCache.etag(request, HttpCache.cacheKeyWithVersion("accounts", account.id(), account.updatedAt()), null);
+        Response notModified = etag == null ? null : HttpCache.notModified(http, etag);
+        if (notModified != null) return notModified;
         boolean small = "small".equals(request.params().string("size"));
         java.nio.file.Path logo = accounts.logo(small);
         Response.ResponseBuilder response;
@@ -52,7 +54,7 @@ public class LogoResource {
             var file = Objects.requireNonNull(app.assets().file(app.assets().path("logos/" + name)));
             response = HttpCache.inline(file.body(), name, "image/png");
         }
-        if (etag != null) response.header("ETag", etag);
+        if (etag != null) response.tag(etag);
         return HttpCache.expiresIn(response, MAX_AGE_SECONDS, true, STALE_WHILE_REVALIDATE_SECONDS).build();
     }
 

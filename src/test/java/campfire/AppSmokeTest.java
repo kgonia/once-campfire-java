@@ -23,6 +23,8 @@ import java.security.MessageDigest;
 import java.util.Base64;
 import java.util.Map;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 import org.junit.jupiter.api.Test;
@@ -85,6 +87,14 @@ class AppSmokeTest {
         var revalidated = http.send(HttpRequest.newBuilder(base.resolve(room)).header("If-None-Match", etag).build(),
             HttpResponse.BodyHandlers.discarding());
         assertEquals(304, revalidated.statusCode());
+
+        Matcher avatar = Pattern.compile("/users/[^\"/]+/avatar\\?v=[^\"&]+").matcher(page);
+        assertTrue(avatar.find(), "no avatar in the room page");
+        var image = get(avatar.group());
+        assertEquals(200, image.statusCode());
+        var cachedImage = http.send(HttpRequest.newBuilder(base.resolve(avatar.group()))
+            .header("If-None-Match", image.headers().firstValue("etag").orElseThrow()).build(), HttpResponse.BodyHandlers.discarding());
+        assertEquals(304, cachedImage.statusCode());
 
         blobsServeRangesAndConditionalGets();
     }

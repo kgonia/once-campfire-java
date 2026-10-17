@@ -29,6 +29,8 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.core.EntityTag;
+import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
 import java.util.List;
 import org.jspecify.annotations.NullMarked;
@@ -53,7 +55,7 @@ public class MessageResource {
     /// The page before or after a message (`?before=`/`?after=`), else the newest page; 204 when
     /// there's nothing more. No layout.
     @GET
-    public Response index(@PathParam("room_id") String roomId) {
+    public Response index(@PathParam("room_id") String roomId, Request http) {
         Room room = access.membership(roomId).room();
         var cached = cache.lookup(request, "messages#index");
         if (cached.isPresent()) return cached.get();
@@ -64,10 +66,9 @@ public class MessageResource {
         byte[] body = Pages.bytes(v, (out, view) -> JteindexGenerated.render(out, null, html));
         // The messages render their creators, boosts and rich text too, which can change without
         // touching the messages, so only the body itself validates it.
-        String etag = HttpCache.weakEtag(request, PageDigest.validator(body), "messages/index");
-        if (HttpCache.fresh(request, etag)) {
-            return HttpCache.tagged(Response.fromResponse(Responses.head(304)), etag).build();
-        }
+        EntityTag etag = HttpCache.etag(request, PageDigest.validator(body), "messages/index");
+        Response notModified = HttpCache.notModified(http, etag);
+        if (notModified != null) return notModified;
         return HttpCache.tagged(pages.response(200, body), etag).build();
     }
 

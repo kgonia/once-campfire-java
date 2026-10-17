@@ -8,6 +8,7 @@ import io.vertx.ext.web.RoutingContext;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerResponseContext;
+import jakarta.ws.rs.core.EntityTag;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.StreamingOutput;
 import java.io.IOException;
@@ -164,11 +165,11 @@ public class ResponseFinisher {
         int status = response.getStatus();
         if ((status == 200 || status == 201) && body.length > 0 && header(response, "ETag") == null && header(response, "Last-Modified") == null) {
             String parts = PageDigest.of(body);
-            response.getHeaders().putSingle("ETag", "W/\"" + (parts != null ? parts : sha256Hex(body).substring(0, 32)) + "\"");
+            response.getHeaders().putSingle("ETag", new EntityTag(parts != null ? parts : sha256Hex(body).substring(0, 32), true));
             tagged = true;
         }
         if (header(response, "Cache-Control") == null) {
-            response.getHeaders().putSingle("Cache-Control", tagged ? "max-age=0, private, must-revalidate" : "no-cache");
+            response.getHeaders().putSingle("Cache-Control", tagged ? HttpCache.REVALIDATE : "no-cache");
         }
     }
 

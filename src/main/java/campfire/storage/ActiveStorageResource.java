@@ -41,8 +41,6 @@ import org.jspecify.annotations.Nullable;
 /// Active Storage's own endpoints. Blob and representation URLs are signed and public: the
 /// redirect ones send the browser to a five-minute disk URL, the proxy ones stream the file
 /// themselves under a cache-forever URL. The disk PUT and direct uploads need a session cookie.
-/// These are Rails' controllers, not the app's, so the proxies (`ActionController::Live`) skip
-/// even the default security headers, and failures render Rails' bare exception pages.
 @Path("/rails/active_storage")
 @Access.Framework
 @RunOnVirtualThread

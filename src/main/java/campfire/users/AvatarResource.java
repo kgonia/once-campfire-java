@@ -15,6 +15,8 @@ import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.core.EntityTag;
+import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
 import java.util.List;
 import java.util.Objects;
@@ -23,7 +25,6 @@ import org.jspecify.annotations.NullMarked;
 /// A user's avatar, addressed by a signed token rather than the user id: the uploaded image as a
 /// square, the stock bot avatar, or the user's initials. Avatar URLs carry the user's version, so
 /// browsers may reuse one for half an hour and revalidate it in the background for a week.
-/// Answered like a file download: without the page security headers or a body digest.
 @Path("/users/{user_id}/avatar")
 @RunOnVirtualThread
 @NullMarked
@@ -43,12 +44,13 @@ public class AvatarResource {
 
     /// A forged token is a 404 without a page.
     @GET
-    public Response show(@PathParam("user_id") String token) {
+    public Response show(@PathParam("user_id") String token, Request http) {
         User user = users.fromAvatarToken(token);
         if (user == null) return Responses.head(404);
-        String etag = HttpCache.weakEtag(request, HttpCache.cacheKeyWithVersion("users", user.id(), user.updatedAt()),
+        EntityTag etag = HttpCache.etag(request, HttpCache.cacheKeyWithVersion("users", user.id(), user.updatedAt()),
             initialsMayRender() ? TEMPLATE_DIGEST : null);
-        if (HttpCache.fresh(request, etag)) return HttpCache.notModified(etag);
+        Response notModified = HttpCache.notModified(http, etag);
+        if (notModified != null) return notModified;
 
         Response.ResponseBuilder response;
         Blob variant = users.avatarVariant(user);
@@ -62,7 +64,7 @@ public class AvatarResource {
             response = Response.ok(svg).header("Content-Type", "image/svg+xml; charset=utf-8");
             if (Formats.variesOnAccept(request)) response.header("Vary", "Accept");
         }
-        response.header("ETag", etag);
+        response.tag(etag);
         return HttpCache.expiresIn(response, MAX_AGE_SECONDS, true, STALE_WHILE_REVALIDATE_SECONDS).build();
     }
 

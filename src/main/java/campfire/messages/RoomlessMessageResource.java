@@ -10,6 +10,7 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
 import java.util.Objects;
 import org.jspecify.annotations.NullMarked;
@@ -27,8 +28,8 @@ public class RoomlessMessageResource {
     MessageResource messages;
 
     @GET
-    public Response index() {
-        return messages.index(roomId());
+    public Response index(Request http) {
+        return messages.index(roomId(), http);
     }
 
     @POST
