@@ -1,9 +1,9 @@
 package campfire.storage;
 
-import campfire.rails.SecureRandoms;
 import campfire.assets.Assets;
 import campfire.rails.HttpFormats;
 import campfire.rails.Json;
+import campfire.rails.RubyStrings;
 import campfire.sessions.Authentication;
 import campfire.web.Access;
 import campfire.web.AccessFilter;
@@ -17,26 +17,24 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.EntityTag;
+import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.StreamingOutput;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.channels.Channels;
-import java.nio.channels.FileChannel;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
-import java.nio.file.StandardOpenOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
+import java.util.Date;
 import java.util.HexFormat;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import org.jboss.resteasy.reactive.PathPart;
+import org.jboss.resteasy.reactive.common.util.DateUtil;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -53,7 +51,7 @@ public class ActiveStorageResource {
     /// `expires_in 100.years`
     private static final long HUNDRED_YEARS = 3_155_695_200L;
     /// `http_cache_forever` pins Last-Modified to 2011-01-01.
-    private static final String FOREVER_LAST_MODIFIED = "Sat, 01 Jan 2011 00:00:00 GMT";
+    private static final Instant FOREVER_LAST_MODIFIED = Instant.parse("2011-01-01T00:00:00Z");
     private static final String DISK_CACHE_CONTROL = "max-age=3600, public";
 
     @Inject
@@ -80,13 +78,17 @@ public class ActiveStorageResource {
 
     @GET
     @Path("blobs/proxy/{signed_id}/{filename: .+}")
-    public Response blobProxy(@PathParam("signed_id") String signedId) {
+    public Response blobProxy(@PathParam("signed_id") String signedId, @Context Request http) {
         request.markDownload();
         Blob blob = storage.blob(signedId).orElse(null);
         if (blob == null) return Responses.head(404);
-        String range = request.header("range");
-        if (range != null && !range.isBlank()) return byteRange(blob, range);
-        return stream(blob, true);
+        long size = Math.max(0, blob.byteSize());
+        ByteRange range = ByteRange.parse(request.header("range"), size);
+        if (range == null) return stream(http, blob, true);
+        if (!range.satisfiable()) return unsatisfiable(size).build();
+        var file = storage.file(blob).orElseThrow(() -> new StorageException("file not found for blob " + blob.id()));
+        return partial(file, range, size).header("Content-Type", servingType(blob)).header("Content-Disposition", disposition(blob, null))
+            .header("Cache-Control", "no-cache").build();
     }
 
     @GET
@@ -105,28 +107,39 @@ public class ActiveStorageResource {
 
     @GET
     @Path("representations/proxy/{signed_blob_id}/{variation_key}/{filename: .+}")
-    public Response representationProxy(@PathParam("signed_blob_id") String signedBlobId, @PathParam("variation_key") String variationKey) {
+    public Response representationProxy(@PathParam("signed_blob_id") String signedBlobId, @PathParam("variation_key") String variationKey,
+                                        @Context Request http) {
         request.markDownload();
         Blob blob = storage.blob(signedBlobId).orElse(null);
         if (blob == null) return Responses.head(404);
-        return storage.representation(blob, variationKey).map(image -> stream(image, false)).orElseGet(() -> Responses.head(404));
+        return storage.representation(blob, variationKey).map(image -> stream(http, image, false)).orElseGet(() -> Responses.head(404));
     }
 
-    /// The disk service's file, with conditional GET on its mtime and byte ranges.
+    /// The disk service's file (`Rack::Files`), with conditional GET on its mtime and byte ranges.
     @GET
     @Path("disk/{encoded_key}/{filename: .+}")
-    public Response diskShow(@PathParam("encoded_key") String encodedKey) {
+    public Response diskShow(@PathParam("encoded_key") String encodedKey, @Context Request http) {
         Disk.Key key = storage.diskKey(encodedKey).orElse(null);
         if (key == null) return withHeader(Formats.head(request, 404), "Cache-Control", DISK_CACHE_CONTROL);
-        var reply = new FileServer.Reply();
+        java.nio.file.Path file = storage.pathFor(key.key());
+        long size;
+        Instant modified;
         try {
-            FileServer.serve(reply, request.method(), request.header("range"), request.header("if-modified-since"), storage.pathFor(key.key()),
-                key.contentType(), key.disposition());
+            size = Files.size(file);
+            modified = Files.getLastModifiedTime(file).toInstant();
         } catch (NoSuchFileException e) {
             return withHeader(Formats.head(request, 404), "Cache-Control", DISK_CACHE_CONTROL);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
-        var response = Response.status(reply.status).entity(reply.file != null ? reply.file : reply.body);
-        reply.headers.forEach(response::header);
+        Response.ResponseBuilder response = preconditions(http, modified, null);
+        if (response == null) {
+            ByteRange range = ByteRange.parse(request.header("range"), size);
+            response = range == null ? Response.ok(file) : range.satisfiable() ? partial(file, range, size) : unsatisfiable(size);
+            response.header("Last-Modified", CurrentRequest.httpDate(modified))
+                .header("Content-Type", key.contentType() == null ? ContentTypes.BINARY : key.contentType())
+                .header("Content-Disposition", key.disposition() == null ? "attachment" : key.disposition());
+        }
         return response.header("Cache-Control", DISK_CACHE_CONTROL).build();
     }
 
@@ -174,61 +187,45 @@ public class ActiveStorageResource {
     }
 
     /// The whole file under a URL cached for a hundred years; the ETag is the URL's own.
-    private Response stream(Blob blob, boolean acceptRanges) {
+    private Response stream(Request http, Blob blob, boolean acceptRanges) {
         String etag = "W/\"" + sha256Hex(fullPath() + (isTurboFrame() ? "/frame" : "")).substring(0, 32) + "\"";
-        var validators = Map.of("ETag", etag, "Last-Modified", FOREVER_LAST_MODIFIED, "Date", now());
-        if (fresh(etag)) {
-            return withHeaders(Response.status(304), validators)
-                .header("Cache-Control", "max-age=" + HUNDRED_YEARS + ", public, immutable").build();
+        Response.ResponseBuilder response = preconditions(http, FOREVER_LAST_MODIFIED, EntityTag.valueOf(etag));
+        if (response == null) {
+            var file = storage.file(blob).orElse(null);
+            if (file == null) return validators(Response.fromResponse(Responses.head(404)), etag).header("Cache-Control", "no-cache").build();
+            response = validators(Response.ok(file), etag).header("Content-Type", servingType(blob))
+                .header("Content-Disposition", disposition(blob, request.params().string("disposition")));
+            if (acceptRanges) response.header("Accept-Ranges", "bytes");
+        } else {
+            response.header("Last-Modified", CurrentRequest.httpDate(FOREVER_LAST_MODIFIED)).header("Date", now());
         }
-        var file = storage.file(blob).orElse(null);
-        if (file == null) return withHeaders(Response.fromResponse(Responses.head(404)), validators).header("Cache-Control", "no-cache").build();
-        var response = withHeaders(Response.ok(file), validators)
-            .header("Cache-Control", "max-age=" + HUNDRED_YEARS + ", public, immutable")
-            .header("Content-Type", servingType(blob))
-            .header("Content-Disposition", disposition(blob, request.params().string("disposition")));
-        if (acceptRanges) response.header("Accept-Ranges", "bytes");
-        return response.build();
+        return response.header("Cache-Control", "max-age=" + HUNDRED_YEARS + ", public, immutable").build();
     }
 
-    /// One range as the bytes themselves, several as `multipart/byteranges`; a header that
-    /// names no satisfiable range (or none at all) is a 416.
-    private Response byteRange(Blob blob, String header) {
-        List<long[]> ranges = FileServer.byteRanges(header, Math.max(0, blob.byteSize()));
-        if (ranges == null || ranges.isEmpty()) return Responses.head(416);
-        var file = storage.file(blob).orElseThrow(() -> new StorageException("file not found for blob " + blob.id()));
-        String type = servingType(blob);
-        var parts = new ArrayList<Object>();
-        String contentType;
-        String contentRange = null;
-        if (ranges.size() == 1) {
-            parts.add(ranges.getFirst());
-            contentType = type;
-            contentRange = "bytes " + ranges.getFirst()[0] + "-" + ranges.getFirst()[1] + "/" + blob.byteSize();
-        } else {
-            String boundary = HexFormat.of().formatHex(randomBytes());
-            for (long[] range : ranges) {
-                parts.add(("\r\n--" + boundary + "\r\nContent-Type: " + type + "\r\nContent-Range: bytes " + range[0] + "-" + range[1] + "/"
-                    + blob.byteSize() + "\r\n\r\n").getBytes(StandardCharsets.UTF_8));
-                parts.add(range);
-            }
-            parts.add(("\r\n--" + boundary + "--\r\n").getBytes(StandardCharsets.UTF_8));
-            contentType = "multipart/byteranges; boundary=" + boundary;
+    /// Validators as strings: small bodies go to the front cache, which copies headers by `toString`.
+    private static Response.ResponseBuilder validators(Response.ResponseBuilder response, String etag) {
+        return response.header("ETag", etag).header("Last-Modified", CurrentRequest.httpDate(FOREVER_LAST_MODIFIED)).header("Date", now());
+    }
+
+    /// `Request#evaluatePreconditions`: the 304 (or 412) to send instead, or null to send the file.
+    /// A validator that doesn't parse, such as a garbage `If-Modified-Since`, is no condition.
+    private static Response.@Nullable ResponseBuilder preconditions(Request http, Instant lastModified, @Nullable EntityTag etag) {
+        try {
+            return etag == null ? http.evaluatePreconditions(Date.from(lastModified)) : http.evaluatePreconditions(Date.from(lastModified), etag);
+        } catch (IllegalArgumentException | DateUtil.DateParseException e) {
+            return null;
         }
-        long length = parts.stream().mapToLong(p -> p instanceof long[] r ? r[1] - r[0] + 1 : ((byte[]) p).length).sum();
-        StreamingOutput body = out -> {
-            try (var channel = FileChannel.open(file, StandardOpenOption.READ)) {
-                for (Object part : parts) {
-                    if (part instanceof long[] r) copy(channel, r[0], r[1] - r[0] + 1, out);
-                    else out.write((byte[]) part);
-                }
-            }
-        };
-        var response = Response.status(206).entity(body).header("Content-Type", contentType)
-            .header("Content-Disposition", disposition(blob, null)).header("Content-Length", length).header("Accept-Ranges", "bytes")
-            .header("Cache-Control", "no-cache");
-        if (contentRange != null) response.header("Content-Range", contentRange);
-        return response.build();
+    }
+
+    /// The range's bytes, sent from the file without reading them in. A 206 is never gzipped (the
+    /// finisher skips it), so the length and `Content-Range` count the stored bytes.
+    private static Response.ResponseBuilder partial(java.nio.file.Path file, ByteRange range, long size) {
+        return Response.status(206).entity(new PathPart(file, range.first(), range.length())).header("Content-Range", range.contentRange(size))
+            .header("Content-Length", range.length()).header("Accept-Ranges", "bytes");
+    }
+
+    private static Response.ResponseBuilder unsatisfiable(long size) {
+        return Response.status(416).entity(new byte[0]).header("Content-Range", "bytes */" + size).header("Content-Length", 0);
     }
 
     /// What Rails' exception pages answer: `public/<status>.html`, or nothing when there's none.
@@ -264,25 +261,8 @@ public class ActiveStorageResource {
         }
         String expected = token.contentType() == null ? null : token.contentType().toLowerCase(Locale.ROOT);
         String contentLength = request.header("content-length");
-        long length = request.header("transfer-encoding") != null ? body.length : FileServer.toI(contentLength == null ? "" : contentLength);
+        long length = request.header("transfer-encoding") != null ? body.length : RubyStrings.toI(contentLength == null ? "" : contentLength);
         return java.util.Objects.equals(expected, mediaType) && token.contentLength() == length;
-    }
-
-    /// `request.fresh?`: an `If-None-Match` naming the ETag (or `*`), else an `If-Modified-Since`
-    /// no earlier than the pinned Last-Modified.
-    private boolean fresh(String etag) {
-        String ifNoneMatch = request.header("if-none-match");
-        if (ifNoneMatch != null) {
-            for (String candidate : ifNoneMatch.split(",")) if (candidate.strip().equals(etag) || candidate.strip().equals("*")) return true;
-            return false;
-        }
-        String since = request.header("if-modified-since");
-        if (since == null) return false;
-        try {
-            return !ZonedDateTime.parse(since, DateTimeFormatter.RFC_1123_DATE_TIME).toInstant().isBefore(Instant.parse("2011-01-01T00:00:00Z"));
-        } catch (DateTimeParseException e) {
-            return false;
-        }
     }
 
     private String fullPath() {
@@ -326,31 +306,12 @@ public class ActiveStorageResource {
         };
     }
 
-    private static void copy(FileChannel channel, long position, long count, OutputStream out) throws IOException {
-        var target = Channels.newChannel(out);
-        long done = 0;
-        while (done < count) {
-            long sent = channel.transferTo(position + done, count - done, target);
-            if (sent <= 0) break;
-            done += sent;
-        }
-    }
-
-    private static byte[] randomBytes() {
-        return SecureRandoms.bytes(16);
-    }
-
     private static String now() {
         return CurrentRequest.httpDate(Instant.now());
     }
 
     private static Response withHeader(Response response, String name, String value) {
         return Response.fromResponse(response).header(name, value).build();
-    }
-
-    private static Response.ResponseBuilder withHeaders(Response.ResponseBuilder response, Map<String, String> headers) {
-        headers.forEach(response::header);
-        return response;
     }
 
     private static String sha256Hex(String s) {

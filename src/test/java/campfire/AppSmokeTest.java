@@ -1,8 +1,10 @@
 package campfire;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import campfire.rails.Json;
 import io.quarkus.test.common.http.TestHTTPResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.QuarkusTestProfile;
@@ -16,6 +18,8 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.security.MessageDigest;
+import java.util.Base64;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -64,6 +68,52 @@ class AppSmokeTest {
             "message[client_message_id]", UUID.randomUUID().toString()));
         assertEquals(200, posted.statusCode(), posted.body());
         assertTrue(get(room).body().contains("Hello from the smoke test"));
+
+        blobsServeRangesAndConditionalGets();
+    }
+
+    /// A direct upload, then its proxy and disk URLs with ranges and validators.
+    private void blobsServeRangesAndConditionalGets() throws Exception {
+        byte[] content = "Hello, ranges and validators".getBytes(StandardCharsets.UTF_8);
+        String checksum = Base64.getEncoder().encodeToString(MessageDigest.getInstance("MD5").digest(content));
+        String params = "{\"blob\":{\"filename\":\"notes.txt\",\"content_type\":\"text/plain\",\"byte_size\":" + content.length + ",\"checksum\":\""
+            + checksum + "\"}}";
+        var created = http.send(HttpRequest.newBuilder(base.resolve("/rails/active_storage/direct_uploads")).header("Content-Type", "application/json")
+            .header("Sec-Fetch-Site", "same-origin").POST(HttpRequest.BodyPublishers.ofString(params)).build(), HttpResponse.BodyHandlers.ofString());
+        assertEquals(200, created.statusCode(), created.body());
+        var blob = (Map<?, ?>) Json.parse(created.body());
+        String upload = (String) ((Map<?, ?>) blob.get("direct_upload")).get("url");
+        var put = http.send(HttpRequest.newBuilder(URI.create(upload)).header("Content-Type", "text/plain")
+            .PUT(HttpRequest.BodyPublishers.ofByteArray(content)).build(), HttpResponse.BodyHandlers.discarding());
+        assertEquals(204, put.statusCode());
+
+        String proxy = "/rails/active_storage/blobs/proxy/" + blob.get("signed_id") + "/notes.txt";
+        var partial = getWith(proxy, "Range", "bytes=7-12", "Accept-Encoding", "gzip");
+        assertEquals(206, partial.statusCode());
+        assertEquals("ranges", new String(partial.body(), StandardCharsets.UTF_8));
+        assertEquals("6", partial.headers().firstValue("content-length").orElseThrow());
+        assertEquals("bytes 7-12/" + content.length, partial.headers().firstValue("content-range").orElseThrow());
+        assertTrue(partial.headers().firstValue("content-encoding").isEmpty(), "a 206 is never gzipped");
+        var several = getWith(proxy, "Range", "bytes=0-1,3-4");
+        assertEquals(200, several.statusCode());
+        assertArrayEquals(content, several.body());
+        assertEquals(416, getWith(proxy, "Range", "bytes=999-").statusCode());
+        assertEquals(304, getWith(proxy, "If-None-Match", several.headers().firstValue("etag").orElseThrow()).statusCode());
+
+        String disk = location(get("/rails/active_storage/blobs/redirect/" + blob.get("signed_id") + "/notes.txt"));
+        var tail = getWith(disk, "Range", "bytes=-5", "Accept-Encoding", "gzip");
+        assertEquals(206, tail.statusCode());
+        assertEquals("5", tail.headers().firstValue("content-length").orElseThrow());
+        assertEquals("ators", new String(tail.body(), StandardCharsets.UTF_8));
+        // Before any 200: the front cache keeps those and, like Thruster, only honours If-None-Match.
+        assertEquals(304, getWith(disk, "If-Modified-Since", tail.headers().firstValue("last-modified").orElseThrow()).statusCode());
+        var whole = getWith(disk, "If-Modified-Since", "not a date");
+        assertEquals(200, whole.statusCode());
+        assertArrayEquals(content, whole.body());
+    }
+
+    private HttpResponse<byte[]> getWith(String path, String... headers) throws Exception {
+        return http.send(HttpRequest.newBuilder(base.resolve(path)).headers(headers).build(), HttpResponse.BodyHandlers.ofByteArray());
     }
 
     private HttpResponse<String> get(String path) throws Exception {

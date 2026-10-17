@@ -20,7 +20,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -253,14 +252,8 @@ class StoragePipelineTest {
 
     // -- Endpoints -------------------------------------------------------------------------------
 
-    static FileServer.Reply serve(Path path, Disk.Key key, String range, String ifModifiedSince) throws NoSuchFileException {
-        var reply = new FileServer.Reply();
-        FileServer.serve(reply, "GET", range, ifModifiedSince, path, key.contentType(), key.disposition());
-        return reply;
-    }
-
     @Test
-    void blobRedirectThenDiskShowServesTheFile() throws IOException {
+    void blobRedirectNamesTheDiskFile() {
         Blob blob = upload("moon.jpg", "moon.jpg", null);
         String signedId = storage.blobPath(blob, "attachment").split("/")[5];
         assertEquals(blob.id(), service.blob(signedId).orElseThrow().id());
@@ -269,29 +262,10 @@ class StoragePipelineTest {
         String encodedKey = location.split("/")[6];
         Disk.Key key = service.diskKey(encodedKey).orElseThrow();
         assertEquals("attachment", key.disposition().split(";")[0]);
-        Path path = service.pathFor(key.key());
-
-        var show = serve(path, key, null, null);
-        assertEquals(200, show.status);
-        assertEquals(storage.pathFor(blob), show.file);
-        assertEquals("image/jpeg", show.headers.get("Content-Type"));
-        assertEquals("attachment; filename=\"moon.jpg\"; filename*=UTF-8''moon.jpg", show.headers.get("Content-Disposition"));
-        String lastModified = show.headers.get("Last-Modified");
-
-        var range = serve(path, key, "bytes=0-9", null);
-        assertEquals(206, range.status);
-        assertEquals("bytes 0-9/12794", range.headers.get("Content-Range"));
-        assertArrayEquals(java.util.Arrays.copyOf(Files.readAllBytes(storage.pathFor(blob)), 10), range.body);
-
-        var unsatisfiable = serve(path, key, "bytes=20000-", null);
-        assertEquals(416, unsatisfiable.status);
-        assertEquals("bytes */12794", unsatisfiable.headers.get("Content-Range"));
-
-        assertEquals(304, serve(path, key, null, lastModified).status);
+        assertEquals("image/jpeg", key.contentType());
+        assertEquals("attachment; filename=\"moon.jpg\"; filename*=UTF-8''moon.jpg", key.disposition());
+        assertEquals(storage.pathFor(blob), service.pathFor(key.key()));
         assertTrue(service.diskKey(encodedKey.replace("--", "--0")).isEmpty(), "forged");
-
-        Files.delete(storage.pathFor(blob));
-        assertThrows(NoSuchFileException.class, () -> serve(path, key, null, null));
         assertTrue(service.blob("nope").isEmpty());
     }
 

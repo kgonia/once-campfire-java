@@ -27,11 +27,12 @@ final class ContentEncoding {
     private static final Pattern QUALITY = Pattern.compile("^\\d*(?:\\.\\d+)?");
     private static final List<String> AVAILABLE = List.of("gzip", "identity");
 
-    /// Not for statuses without a body (1xx, 204, 304), `no-transform`, a body already encoded,
+    /// Not for statuses without a body (1xx, 204, 304), a 206 (its `Content-Range` counts the
+    /// unencoded bytes), `no-transform`, a body already encoded,
     /// or an empty body whose length the app set itself (files and error pages). Other empty
     /// bodies, redirects among them, are gzipped too.
     static boolean shouldDeflate(int status, @Nullable String cacheControl, @Nullable String contentEncoding, boolean emptyWithAppSetLength) {
-        if (status < 200 || status == 204 || status == 304) return false;
+        if (status < 200 || status == 204 || status == 206 || status == 304) return false;
         // `contains` first: the lookbehind patterns are only needed to rule out near-misses.
         if (cacheControl != null && cacheControl.contains("no-transform") && NO_TRANSFORM.matcher(cacheControl).find()) return false;
         if (contentEncoding != null && !(contentEncoding.contains("identity") && IDENTITY.matcher(contentEncoding).find())) return false;

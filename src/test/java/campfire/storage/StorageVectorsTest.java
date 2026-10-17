@@ -322,28 +322,23 @@ class StorageVectorsTest {
         assertEquals("image/png", ContentTypeDetector.byExtension(".PNG"));
     }
 
-    /// `Rack::Utils.get_byte_ranges(header, size)` in the reference (rack 3.2.6); null is "everything".
+    /// Single ranges as Rack reads them; null (the whole file) also for several ranges or a
+    /// header that isn't one.
     @Test
-    void byteRangesMatchRack() {
+    void byteRanges() {
         Object[][] cases = {
-            {"bytes=0-4", 10L, "0-4"}, {"bytes=5-", 10L, "5-9"}, {"bytes=-3", 10L, "7-9"}, {"bytes=-30", 10L, "0-9"},
-            {"bytes=0-99999999999999999999", 10L, "0-9"}, {"bytes=99999999999999999999-", 10L, ""}, {"bytes=-99999999999999999999", 10L, "0-9"},
-            {"bytes=0-1,", 10L, "0-1"}, {"bytes= -5", 10L, "0-5"}, {"bytes=0-1, 3-4", 10L, "0-1 3-4"}, {"bytes=0-1,\t 3-4", 10L, "0-1 3-4"},
-            {"bytes=3-5,1-2", 10L, "3-5 1-2"}, {"bytes=+1-2", 10L, "1-2"}, {"bytes=1-+2", 10L, "1-2"}, {"bytes=1_0-2_0", 100L, "10-20"},
-            {"bytes=0d5-0d9", 100L, "5-9"}, {"bytes= 1-2", 10L, "0-2"}, {"bytes=a-b", 10L, "0-0"}, {"bytes=0-0x5", 10L, "0-0"},
-            {"bytes=0-1 ", 10L, "0-1"}, {"bytes=0 -1", 10L, "0-1"}, {"bytes=1-2-3", 10L, "1-2"}, {"bytes=9-9", 10L, "9-9"}, {"bytes=10-", 10L, ""},
-            {"bytes=10-12", 10L, ""}, {"bytes=-0", 10L, ""}, {"bytes=--5", 10L, ""}, {"bytes=0-4,5-9,0-0", 10L, ""}, {"bytes=;bytes=2-3", 10L, "2-3"},
-            {"bytes=0-1;bytes=2-3", 10L, "0-1"}, {"xbytes=0-1", 10L, "0-1"}, {"bytes=;0-1", 10L, null}, {"bytes=", 10L, null},
-            {"bytes=-", 10L, null}, {"bytes=5", 10L, null}, {"bytes=1-0", 10L, null}, {"bytes=0-1,,2-3", 10L, null}, {"items=0-1", 10L, null},
-            {"bytes=0-4", 0L, null},
+            {"bytes=0-4", 10L, "0-4"}, {"bytes=5-", 10L, "5-9"}, {"bytes=-3", 10L, "7-9"}, {"bytes=-30", 10L, "0-9"}, {"bytes=0-99", 10L, "0-9"},
+            {"bytes=9-9", 10L, "9-9"}, {"Bytes= 0 - 1 ", 10L, "0-1"}, {"bytes=10-", 10L, "416"}, {"bytes=10-12", 10L, "416"},
+            {"bytes=-0", 10L, "416"}, {"bytes=0-1, 3-4", 10L, null}, {"bytes=1-0", 10L, null}, {"bytes=-", 10L, null}, {"bytes=5", 10L, null},
+            {"bytes=a-b", 10L, null}, {"items=0-1", 10L, null}, {"bytes=", 10L, null}, {"bytes=0-4", 0L, null},
+            {"bytes=0-99999999999999999999", 10L, null},
         };
         for (Object[] c : cases) {
-            var ranges = FileServer.byteRanges((String) c[0], (Long) c[1]);
-            String actual = ranges == null ? null : String.join(" ", ranges.stream().map(r -> r[0] + "-" + r[1]).toList());
+            ByteRange range = ByteRange.parse((String) c[0], (Long) c[1]);
+            String actual = range == null ? null : range.satisfiable() ? range.first() + "-" + range.last() : "416";
             assertEquals(c[2], actual, (String) c[0]);
         }
-        assertEquals(List.of(), FileServer.byteRanges("bytes=0-1," + "0-0,".repeat(98), 10));
-        assertNull(FileServer.byteRanges("bytes=0-1," + "0-0,".repeat(99), 10));
+        assertEquals("bytes 7-9/10", ByteRange.parse("bytes=-3", 10).contentRange(10));
     }
 
     @Test
