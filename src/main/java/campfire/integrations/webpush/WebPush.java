@@ -5,7 +5,7 @@ import campfire.integrations.net.Network;
 import campfire.integrations.net.PinnedHttp;
 import campfire.integrations.net.PinnedHttp.Header;
 import campfire.integrations.net.PinnedHttp.HttpException;
-import campfire.integrations.net.RubyUri;
+import campfire.integrations.net.Url;
 import campfire.rails.Json;
 import java.net.InetAddress;
 import java.nio.charset.StandardCharsets;
@@ -211,12 +211,12 @@ public final class WebPush implements AutoCloseable {
     public static List<String> endpointErrors(String endpoint, Network.Resolver resolver) {
         var errors = new ArrayList<String>();
         if (endpoint == null || campfire.richtext.Html.isBlank(endpoint)) errors.add("can't be blank");
-        RubyUri uri = endpointUri(endpoint);
+        Url uri = endpointUri(endpoint);
         if (uri == null) {
             errors.add("is not a valid URL");
-        } else if (!"https".equals(uri.scheme())) {
+        } else if (!uri.isHttps()) {
             errors.add("must use HTTPS");
-        } else if (uri.port() == null || uri.port() != 443) {
+        } else if (uri.port() != 443) {
             errors.add("must use the default HTTPS port");
         } else if (!permittedEndpointHost(uri)) {
             errors.add("is not a permitted push service");
@@ -229,8 +229,8 @@ public final class WebPush implements AutoCloseable {
     /// `Push::Subscription#resolved_endpoint_ip`: validated at the point of use, not just when
     /// saved. Null when the endpoint isn't a permitted push service or has no public address.
     static InetAddress resolvedEndpointIp(String endpoint, Network.Resolver resolver) {
-        RubyUri uri = endpointUri(endpoint);
-        if (uri == null || !"https".equals(uri.scheme()) || uri.port() == null || uri.port() != 443 || !permittedEndpointHost(uri)) return null;
+        Url uri = endpointUri(endpoint);
+        if (uri == null || !uri.isHttps() || uri.port() != 443 || !permittedEndpointHost(uri)) return null;
         try {
             return Guard.resolve(resolver, uri.host());
         } catch (Guard.GuardException e) {
@@ -239,12 +239,12 @@ public final class WebPush implements AutoCloseable {
     }
 
     /// `endpoint_uri`: `URI.parse(endpoint) if endpoint.present?`, nil on `URI::InvalidURIError`.
-    private static RubyUri endpointUri(String endpoint) {
+    private static Url endpointUri(String endpoint) {
         if (endpoint == null || campfire.richtext.Html.isBlank(endpoint)) return null;
-        return RubyUri.parseOrNull(endpoint);
+        return Url.parseOrNull(endpoint);
     }
 
-    private static boolean permittedEndpointHost(RubyUri uri) {
+    private static boolean permittedEndpointHost(Url uri) {
         if (uri.host() == null || uri.host().isEmpty()) return false;
         String host = uri.host().toLowerCase(Locale.ROOT);
         for (String permitted : PERMITTED_ENDPOINT_HOSTS) {
@@ -342,7 +342,7 @@ public final class WebPush implements AutoCloseable {
     /// `WebPush.payload_send(message:, endpoint:, endpoint_ip:, p256dh:, auth:, vapid:,
     /// urgency: "high")` through the pinned-address branch of `WebPush::PersistentRequest`.
     int payloadSend(Subscription subscription, InetAddress endpointIp, String message, long nowSeconds) throws DeliveryException {
-        RubyUri uri = RubyUri.parseOrNull(subscription.endpoint());
+        Url uri = Url.parseOrNull(subscription.endpoint());
         if (uri == null || uri.host() == null) {
             throw new DeliveryException(DeliveryException.Kind.ARGUMENT, "bad URI: " + subscription.endpoint(), 0, null);
         }
@@ -361,9 +361,9 @@ public final class WebPush implements AutoCloseable {
         headers.add(new Header("Ttl", Long.toString(TTL_SECONDS)));
         headers.add(new Header("Urgency", "high"));
         headers.add(new Header("Content-Encoding", "aes128gcm"));
-        headers.add(new Header("Authorization", vapid.authorization(uri.scheme().toLowerCase(Locale.ROOT) + "://" + host, nowSeconds)));
+        headers.add(new Header("Authorization", vapid.authorization(uri.scheme() + "://" + host, nowSeconds)));
 
-        int port = uri.port() == null ? 443 : (int) Math.min(uri.port(), 65535);
+        int port = uri.port() == -1 ? 443 : Math.min(uri.port(), 65535);
         var target = new PinnedHttp.Target(true, host, port, endpointIp);
         var request = new PinnedHttp.Request("POST", uri.requestUri(), headers, payload);
         try (var response = PinnedHttp.exchange(net, target, request, TIMEOUTS)) {

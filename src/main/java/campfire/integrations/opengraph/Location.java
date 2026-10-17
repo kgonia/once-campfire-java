@@ -2,7 +2,7 @@ package campfire.integrations.opengraph;
 
 import campfire.integrations.net.Guard;
 import campfire.integrations.net.Network;
-import campfire.integrations.net.RubyUri;
+import campfire.integrations.net.Url;
 import java.net.InetAddress;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -19,7 +19,7 @@ final class Location {
 
     private final Network net;
     private final String url;
-    private final RubyUri parsedUrl;
+    private final Url parsedUrl;
     private boolean resolved;
     private InetAddress resolvedIp;
 
@@ -27,7 +27,7 @@ final class Location {
     Location(Network net, String url) {
         this.net = net;
         this.url = url;
-        this.parsedUrl = RubyUri.parseOrNull(url);
+        this.parsedUrl = Url.parseOrNull(url);
     }
 
     /// `valid?`: both validations run, so the host is resolved even for a non-http URL.

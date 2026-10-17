@@ -32,6 +32,11 @@ import org.junit.jupiter.api.Test;
 /// Rails reference did for the same cases (testdata/opengraph_expected.json, recorded by the
 /// Rust port's oracle).
 class OpengraphTest {
+    /// Where this app deliberately parts from the recording.
+    private static final Map<String, Object> DEPARTURES = Map.of(
+        // Rails raises `URI::InvalidComponentError` (a 500); a URL that isn't http(s) unfurls nothing.
+        "mailto raises", Map.of("status", 204L));
+
     @SuppressWarnings("unchecked")
     private static Route route(Map<String, Object> spec) {
         var route = new Route((String) spec.get("method"), (String) spec.get("host"), (String) spec.get("path"), ((Number) spec.get("status")).intValue());
@@ -101,7 +106,7 @@ class OpengraphTest {
                 actual.put("lookups", List.copyOf(resolver.lookups));
                 actual.put("requests", requests);
                 var want = new LinkedHashMap<String, Object>();
-                want.put("response", wanted.get("response"));
+                want.put("response", DEPARTURES.getOrDefault((String) testCase.get("name"), wanted.get("response")));
                 want.put("lookups", wanted.get("lookups"));
                 want.put("requests", wanted.get("requests"));
                 if (!Json.generate(actual).equals(Json.generate(want))) {

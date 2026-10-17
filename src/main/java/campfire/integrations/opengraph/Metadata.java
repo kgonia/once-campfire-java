@@ -1,7 +1,7 @@
 package campfire.integrations.opengraph;
 
 import campfire.integrations.net.Network;
-import campfire.integrations.net.RubyUri;
+import campfire.integrations.net.Url;
 import campfire.rails.Json;
 import campfire.richtext.Html;
 import campfire.richtext.Sanitizer;
@@ -90,8 +90,7 @@ public final class Metadata {
     }
 
     /// `fetch_document(untrusted_url)`: tweets are read through fxtwitter.com. A tweet whose
-    /// fxtwitter page can't be read raises (`nil.force_encoding`), as does a URL that `URI.parse`
-    /// rejects with `URI::InvalidComponentError`.
+    /// fxtwitter page can't be read raises (`nil.force_encoding`).
     private static byte[] fetchDocument(Network net, String url) throws RaisedException {
         if (tweetUrl(url)) {
             byte[] html = new Location(net, replaceTwitterDomain(url)).readHtml();
@@ -102,22 +101,19 @@ public final class Metadata {
     }
 
     /// `tweet_url?`
-    private static boolean tweetUrl(String url) throws RaisedException {
-        try {
-            var uri = RubyUri.parse(url);
-            return uri.host() != null && TWITTER_HOSTS.contains(uri.host()) && !Document.isBlank(uri.path()) && !"/".equals(uri.path());
-        } catch (RubyUri.InvalidUriException e) {
-            if (e.invalidComponent()) throw new RaisedException(e.className());
-            return false;
-        }
+    private static boolean tweetUrl(String url) {
+        var uri = Url.parseOrNull(url);
+        if (uri == null || uri.host() == null || !TWITTER_HOSTS.contains(uri.host())) return false;
+        String path = uri.uri().getRawPath();
+        return path != null && !Document.isBlank(path) && !path.equals("/");
     }
 
     /// `replace_twitter_domain_for_opengraph_support`
     private static String replaceTwitterDomain(String url) {
-        var uri = RubyUri.parseOrNull(url);
+        var uri = Url.parseOrNull(url);
         if (uri == null) return null;
         if (uri.host() != null && TWITTER_HOSTS.contains(uri.host())) uri = uri.withHost(FX_TWITTER_HOST);
-        return uri.toString();
+        return uri == null ? null : uri.toString();
     }
 
     /// `valid_canonical_url(url, fallback)`
@@ -128,7 +124,7 @@ public final class Metadata {
     /// `valid_image_content_type(image)`: kept only when a HEAD says it's a JPEG, PNG, GIF or WebP.
     private static String validImageContentType(Network net, String image) {
         if (image == null || Document.isBlank(image)) return null;
-        if (RubyUri.parseOrNull(image) == null) {
+        if (Url.parseOrNull(image) == null) {
             LOG.warning("Failed to fetch image content tpye: " + image + " (bad URI(is not URI?): \"" + image + "\")");
             return null;
         }

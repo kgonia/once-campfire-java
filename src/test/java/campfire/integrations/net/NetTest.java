@@ -12,6 +12,7 @@ import campfire.integrations.TestSupport.FakeResolver;
 import campfire.integrations.TestSupport.FakeServer;
 import campfire.integrations.TestSupport.MappingRoute;
 import campfire.integrations.TestSupport.Route;
+import java.net.URISyntaxException;
 import java.time.Duration;
 import java.util.List;
 import java.util.Set;
@@ -40,12 +41,12 @@ class NetTest {
 
     @Test
     void inetAtonForms() {
-        assertArrayEquals(new byte[] {127, 0, 0, 1}, Guard.inetAton("127.1"));
-        assertArrayEquals(new byte[] {127, 0, 0, 1}, Guard.inetAton("0x7f.1"));
-        assertArrayEquals(new byte[] {127, 0, 0, 1}, Guard.inetAton("2130706433"));
-        assertArrayEquals(new byte[] {127, 0, 0, 1}, Guard.inetAton("0177.0.0.01"));
-        assertArrayEquals(new byte[] {10, 0, 1, 2}, Guard.inetAton("10.0.258"));
-        for (String bad : List.of("09.1.1.1", "256.1.1.1", "1.2.3.4.", "www.example.com")) assertNull(Guard.inetAton(bad), bad);
+        var loopback = Guard.parseAddress("127.0.0.1");
+        for (String form : List.of("127.1", "0x7f.1", "2130706433", "0177.0.0.01")) assertEquals(loopback, Guard.literal(form), form);
+        assertEquals(Guard.parseAddress("10.0.1.2"), Guard.literal("10.0.258"));
+        for (String bad : List.of("09.1.1.1", "256.1.1.1", "1.2.3.4.", "www.example.com", "[1.2.3.4]", "fe80::1%1")) assertNull(Guard.literal(bad), bad);
+        // IPv4-mapped literals stay IPv6, so they're classified as such.
+        assertEquals(16, Guard.parseAddress("::ffff:8.8.8.8").getAddress().length);
     }
 
     @Test
@@ -67,24 +68,48 @@ class NetTest {
     }
 
     @Test
-    void parsesUrisLikeRuby() throws Exception {
-        var uri = RubyUri.parse("https://x.com/dhh/status/1?s=20");
-        assertEquals("x.com", uri.host());
-        assertEquals("s=20", uri.query());
-        assertEquals(443L, uri.port());
-        assertThrows(RubyUri.InvalidUriException.class, () -> RubyUri.parse("http://exa mple.com/ "));
-        assertNull(RubyUri.parse("https:/rooms/1").host());
-        assertEquals("rooms/1", RubyUri.parse("https:rooms/1").opaque());
-        assertEquals("", RubyUri.parse("https://").host());
-        assertEquals("[::1]", RubyUri.parse("http://[::1]/x").host());
-        assertTrue(assertThrows(RubyUri.InvalidUriException.class, () -> RubyUri.parse("mailto:foo")).invalidComponent());
-        RubyUri.parse("mailto:a@b.com");
-        assertEquals("https://x.com/a", RubyUri.parse("https://x.com:443/a").toString());
-        assertEquals("https", RubyUri.parse("HTTPS://x.com/a").scheme());
-        assertEquals("http://X.com/a", RubyUri.parse("HTTP://X.com:80/a").toString());
-        assertEquals("file:///etc", RubyUri.parse("FILE:///etc").toString());
-        assertEquals("mailto:a@b.com", RubyUri.parse("MailTo:a@b.com").toString());
-        assertEquals("/query?a=1&b=2", RubyUri.parse("http://h/query?a=1&b=2#frag").requestUri());
+    void parsesUrlsLikeRuby() throws Exception {
+        var url = Url.parse("https://x.com/dhh/status/1?s=20");
+        assertEquals("x.com", url.host());
+        assertEquals("/dhh/status/1?s=20", url.requestUri());
+        assertEquals(443, url.port());
+        for (String bad : List.of("http://exa mple.com/ ", "http://www.example.com/é", "https://", "http://x.com/a|b", "http://x.com/#a#b")) {
+            assertThrows(URISyntaxException.class, () -> Url.parse(bad), bad);
+        }
+        assertNull(Url.parse("https:/rooms/1").host());
+        assertNull(Url.parse("https:rooms/1").host());
+        assertNull(Url.parse("mailto:foo").host());
+        assertEquals("[::1]", Url.parse("http://[::1]/x").host());
+        assertEquals("::1", Url.parse("http://[::1]/x").hostname());
+        assertEquals("https", Url.parse("HTTPS://x.com/a").scheme());
+        assertEquals(80, Url.parse("http://x.com:/a").port());
+        assertEquals(-1, Url.parse("ftp://x.com/a").port());
+        assertEquals("/", Url.parse("http://h").requestUri());
+        assertEquals("/query?a=1&b=2", Url.parse("http://h/query?a=1&b=2#frag").requestUri());
+        assertEquals("https://fxtwitter.com/dhh/status/1?s=20#top", Url.parse("https://x.com/dhh/status/1?s=20#top").withHost("fxtwitter.com").toString());
+    }
+
+    /// Webhook URLs an administrator may have stored, which Ruby's `URI.parse` reads: hosts
+    /// `java.net.URI` won't take as host names, and query characters Ruby escapes.
+    @Test
+    void parsesStoredWebhookUrls() throws Exception {
+        record Case(String url, String host, int port, String requestUri) {}
+        for (var c : List.of(new Case("http://bot_host:3000/webhook", "bot_host", 3000, "/webhook"), new Case("http://my_bot/hook", "my_bot", 80, "/hook"),
+            new Case("https://user:secret@bot_host.internal:8443/a/b?x=1", "bot_host.internal", 8443, "/a/b?x=1"),
+            new Case("http://localhost:3000/hook?token=a|b&q=a b", "localhost", 3000, "/hook?token=a%7Cb&q=a%20b"),
+            new Case("http://example.com/hook?list=[1,2]&json={\"a\":1}", "example.com", 80, "/hook?list=[1,2]&json=%7B%22a%22:1%7D"),
+            new Case("http://example.com/hook?x=100%25&y=50%", "example.com", 80, "/hook?x=100%25&y=50%25"),
+            new Case("http://10.0.0.5:8080/bots/1/messages", "10.0.0.5", 8080, "/bots/1/messages"),
+            new Case("http://[fd00::5]:8080/hook", "[fd00::5]", 8080, "/hook"),
+            new Case("https://hooks.example.com/services/T000/B000/XXXX", "hooks.example.com", 443, "/services/T000/B000/XXXX"),
+            new Case("http://bot.example.com/hook#section", "bot.example.com", 80, "/hook"),
+            new Case("HTTP://Bot.Example.com", "Bot.Example.com", 80, "/"))) {
+            var url = Url.parse(c.url());
+            assertTrue(url.isHttp(), c.url());
+            assertEquals(c.host(), url.host(), c.url());
+            assertEquals(c.port(), url.port(), c.url());
+            assertEquals(c.requestUri(), url.requestUri(), c.url());
+        }
     }
 
     private static final PinnedHttp.Timeouts TIMEOUTS = new PinnedHttp.Timeouts(Duration.ofSeconds(5), Duration.ofSeconds(5), Duration.ofSeconds(10));

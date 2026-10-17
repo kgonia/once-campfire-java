@@ -1,12 +1,15 @@
 package campfire.integrations.net;
 
 import java.io.IOException;
+import java.net.IDN;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Pattern;
 
 /// `RestrictedHTTP::PrivateNetworkGuard` (reference/lib/restricted_http/private_network_guard.rb)
 /// and the parts of the surfguard gem it calls (`Surfguard.resolve_public_ips` and
@@ -51,12 +54,10 @@ public final class Guard {
     public static List<InetAddress> resolvePublicIps(Network.Resolver resolver, String host) throws Unresolvable {
         if (host == null || !normalHost(host)) return List.of();
         List<InetAddress> raw;
-        if (!validHostSyntax(host) || malformedNumericHostCandidate(host)) return List.of();
-        byte[] literal = getaddrinfoNumeric(host);
-        if (literal == null) literal = ipLiteral(host);
+        InetAddress literal = literal(host);
         if (literal != null) {
-            raw = List.of(toInet(literal));
-        } else if (numericHostCandidate(host)) {
+            raw = List.of(literal);
+        } else if (NUMERIC.matcher(host).matches() || !ldhName(host)) {
             return List.of();
         } else {
             try {
@@ -83,195 +84,61 @@ public final class Guard {
     private static final int MAX_HOST_BYTES = 255;
     private static final int MAX_ADDRESSES = 256;
 
+    /// Dot-separated decimal or hex numbers that aren't an address `inet_aton` reads (`1.2.3.4.`,
+    /// `09.1.1.1`, `256.1.1.1`): never a name to look up.
+    private static final Pattern NUMERIC = Pattern.compile("\\.*(?:(?:\\d+|0[xX]\\p{XDigit}+)\\.+)*(?:\\d+|0[xX]\\p{XDigit}+)\\.*");
+
     /// `normalize_host` for a String host: ASCII, no NUL, not empty, at most 255 bytes, no zone.
     private static boolean normalHost(String host) {
         if (host.isEmpty() || host.length() > MAX_HOST_BYTES) return false;
-        for (int i = 0; i < host.length(); i++) {
-            char c = host.charAt(i);
-            if (c > 0x7f || c == 0 || c == '%') return false;
-        }
-        return true;
+        return host.chars().noneMatch(c -> c > 0x7f || c == 0 || c == '%');
     }
 
-    private static boolean validHostSyntax(String host) {
-        if (host.indexOf(':') >= 0 || legacyIpv4Shape(host) || ipLiteral(host) != null) return true;
-        String h = host.endsWith(".") ? host.substring(0, host.length() - 1) : host;
-        for (String label : h.split("\\.", -1)) {
-            if (label.isEmpty() || label.length() > 63) return false;
-            if (!isAlnum(label.charAt(0)) || !isAlnum(label.charAt(label.length() - 1))) return false;
-            for (int i = 0; i < label.length(); i++) {
-                char c = label.charAt(i);
-                if (!isAlnum(c) && c != '-') return false;
-            }
-        }
-        return true;
-    }
-
-    private static boolean numericHostCandidate(String host) {
-        return host.indexOf(':') >= 0 || legacyIpv4Shape(host);
-    }
-
-    private static boolean malformedNumericHostCandidate(String host) {
-        if (host.indexOf(':') >= 0) return false;
-        int start = 0;
-        while (start < host.length() && (host.charAt(start) == '%' || host.charAt(start) == '/')) start++;
-        int end = start;
-        while (end < host.length() && host.charAt(end) != '%' && host.charAt(end) != '/') end++;
-        String core = host.substring(start, end);
-        boolean malformed = !core.equals(host) || core.isEmpty() || core.startsWith(".") || core.endsWith(".") || core.contains("..");
-        return malformed && legacyIpv4Shape(core) && ipLiteral(host) == null;
-    }
-
-    /// 1 to 4 dot-separated (empty parts ignored) decimal or 0x-hex numbers.
-    private static boolean legacyIpv4Shape(String text) {
-        int parts = 0;
-        for (String part : text.split("\\.", -1)) {
-            if (part.isEmpty()) continue;
-            parts++;
-            if (part.startsWith("0x") || part.startsWith("0X")) {
-                String hex = part.substring(2);
-                if (hex.isEmpty() || !hex.chars().allMatch(Guard::isHex)) return false;
-            } else if (!part.chars().allMatch(c -> c >= '0' && c <= '9')) {
-                return false;
-            }
-        }
-        return parts >= 1 && parts <= 4;
-    }
-
-    /// `IPAddr.new(text)` for a single address: dotted-quad IPv4 (no leading zeros), or IPv6 with
-    /// optional brackets.
-    static byte[] ipLiteral(String text) {
-        if (text.startsWith("[") && text.endsWith("]") && text.length() >= 2) return parseIpv6(text.substring(1, text.length() - 1));
-        if (text.indexOf(':') >= 0) return parseIpv6(text);
-        return parseStrictIpv4(text);
-    }
-
-    /// glibc's `getaddrinfo(..., AI_NUMERICHOST)`: `inet_aton` forms for IPv4, `inet_pton` for IPv6.
-    private static byte[] getaddrinfoNumeric(String host) {
-        return host.indexOf(':') >= 0 ? parseIpv6(host) : inetAton(host);
-    }
-
-    /// glibc `__inet_aton_exact`: 1-4 parts in decimal, octal (leading 0) or hex (0x); the last
-    /// part fills the remaining bytes.
-    static byte[] inetAton(String text) {
-        String[] parts = text.split("\\.", -1);
-        if (parts.length == 0 || parts.length > 4) return null;
-        long[] values = new long[parts.length];
-        for (int i = 0; i < parts.length; i++) {
-            String part = parts[i];
-            if (part.isEmpty()) return null;
-            String digits;
-            int radix;
-            if (part.startsWith("0x") || part.startsWith("0X")) {
-                digits = part.substring(2);
-                radix = 16;
-            } else if (part.length() > 1 && part.startsWith("0")) {
-                digits = part.substring(1);
-                radix = 8;
-            } else {
-                digits = part;
-                radix = 10;
-            }
-            for (int j = 0; j < digits.length(); j++) if (Character.digit(digits.charAt(j), radix) < 0) return null;
-            long value = 0;
-            for (int j = 0; j < digits.length(); j++) {
-                value = value * radix + Character.digit(digits.charAt(j), radix);
-                if (value > 0xffffffffL) return null;
-            }
-            values[i] = value;
-        }
-        int leading = values.length - 1;
-        for (int i = 0; i < leading; i++) if (values[i] > 0xff) return null;
-        int remainingBits = 32 - 8 * leading;
-        long last = values[leading];
-        if (remainingBits < 32 && last >= (1L << remainingBits)) return null;
-        long address = last;
-        for (int i = 0; i < leading; i++) address |= values[i] << (24 - 8 * i);
-        return new byte[] {(byte) (address >> 24), (byte) (address >> 16), (byte) (address >> 8), (byte) address};
-    }
-
-    /// Four decimal octets without leading zeros (Rust's and Ruby's `IPAddr` strict form).
-    static byte[] parseStrictIpv4(String text) {
-        String[] octets = text.split("\\.", -1);
-        if (octets.length != 4) return null;
-        byte[] out = new byte[4];
-        for (int i = 0; i < 4; i++) {
-            String o = octets[i];
-            if (o.isEmpty() || o.length() > 3 || (o.length() > 1 && o.charAt(0) == '0')) return null;
-            int value = 0;
-            for (int j = 0; j < o.length(); j++) {
-                char c = o.charAt(j);
-                if (c < '0' || c > '9') return null;
-                value = value * 10 + (c - '0');
-            }
-            if (value > 255) return null;
-            out[i] = (byte) value;
-        }
-        return out;
-    }
-
-    /// An IPv6 address in text form (RFC 4291 section 2.2, no zone, optional trailing dotted
-    /// quad), as 16 bytes; null when malformed.
-    static byte[] parseIpv6(String text) {
-        if (text.isEmpty() || text.indexOf('%') >= 0) return null;
-        int doubleColon = text.indexOf("::");
-        if (doubleColon >= 0 && text.indexOf("::", doubleColon + 1) >= 0) return null;
-        List<Integer> head = new ArrayList<>();
-        List<Integer> tail = new ArrayList<>();
-        if (doubleColon >= 0) {
-            if (!groups(text.substring(0, doubleColon), head, false)) return null;
-            if (!groups(text.substring(doubleColon + 2), tail, true)) return null;
-            if (head.size() + tail.size() > 7) return null;
-        } else {
-            if (!groups(text, head, true) || head.size() != 8) return null;
-        }
-        byte[] out = new byte[16];
-        for (int i = 0; i < head.size(); i++) {
-            out[2 * i] = (byte) (head.get(i) >> 8);
-            out[2 * i + 1] = (byte) (int) head.get(i);
-        }
-        int offset = 8 - tail.size();
-        for (int i = 0; i < tail.size(); i++) {
-            out[2 * (offset + i)] = (byte) (tail.get(i) >> 8);
-            out[2 * (offset + i) + 1] = (byte) (int) tail.get(i);
-        }
-        return out;
-    }
-
-    /// Colon-separated 16-bit groups; the last may be a dotted quad when `allowIpv4` is set.
-    private static boolean groups(String text, List<Integer> out, boolean allowIpv4) {
-        if (text.isEmpty()) return true;
-        String[] parts = text.split(":", -1);
-        for (int i = 0; i < parts.length; i++) {
-            String part = parts[i];
-            if (allowIpv4 && i == parts.length - 1 && part.indexOf('.') >= 0) {
-                byte[] v4 = parseStrictIpv4(part);
-                if (v4 == null) return false;
-                out.add(((v4[0] & 0xff) << 8) | (v4[1] & 0xff));
-                out.add(((v4[2] & 0xff) << 8) | (v4[3] & 0xff));
-                continue;
-            }
-            if (part.isEmpty() || part.length() > 4 || !part.chars().allMatch(Guard::isHex)) return false;
-            out.add(Integer.parseInt(part, 16));
-        }
-        return out.size() <= 8;
-    }
-
-    /// An address for 4 or 16 bytes. IPv4-mapped IPv6 addresses stay IPv6 (unlike
-    /// `InetAddress.getByAddress`), so they are classified as such.
-    public static InetAddress toInet(byte[] address) {
+    /// Letters, digits and inner hyphens in labels of 1 to 63 characters, with an optional final dot.
+    private static boolean ldhName(String host) {
         try {
-            return address.length == 16 ? Inet6Address.getByAddress(null, address, -1) : Inet4Address.getByAddress(address);
+            IDN.toASCII(host, IDN.USE_STD3_ASCII_RULES);
+            return true;
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+    }
+
+    /// An address literal the way `getaddrinfo(..., AI_NUMERICHOST)` reads one: IPv6 with or
+    /// without brackets, or IPv4 in any `inet_aton` form. Null for anything else.
+    static InetAddress literal(String host) {
+        try {
+            if (host.startsWith("[") && host.endsWith("]")) return ipv6(host.substring(1, host.length() - 1));
+            if (host.indexOf(':') >= 0) return ipv6(host);
+            return Inet4Address.ofPosixLiteral(host);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
+
+    /// An IPv6 literal (no zone), as an `Inet6Address` even when it's IPv4-mapped: `ofLiteral`
+    /// would turn `::ffff:10.0.0.1` into `10.0.0.1`, and mapped addresses are classified as IPv6.
+    private static InetAddress ipv6(String text) {
+        if (text.indexOf(':') < 0 || text.indexOf('%') >= 0) throw new IllegalArgumentException("not an IPv6 address: " + text);
+        byte[] address = InetAddress.ofLiteral(text).getAddress();
+        if (address.length == 4) {
+            byte[] mapped = new byte[16];
+            mapped[10] = mapped[11] = (byte) 0xff;
+            System.arraycopy(address, 0, mapped, 12, 4);
+            address = mapped;
+        }
+        try {
+            return Inet6Address.getByAddress(null, address, -1);
         } catch (UnknownHostException e) {
             throw new IllegalArgumentException(e);
         }
     }
 
-    /// Parses an address literal (dotted quad, or IPv6 with or without brackets) without DNS.
+    /// Parses an address literal (IPv4, or IPv6 with or without brackets) without DNS.
     public static InetAddress parseAddress(String text) {
-        byte[] bytes = ipLiteral(text);
-        if (bytes == null) throw new IllegalArgumentException("not an IP address: " + text);
-        return toInet(bytes);
+        InetAddress address = literal(text);
+        if (address == null) throw new IllegalArgumentException("not an IP address: " + text);
+        return address;
     }
 
     // --- Classification (Surfguard.blocked_address?, default policy) -----------------------------
@@ -279,11 +146,11 @@ public final class Guard {
     private record Range(byte[] network, int prefix) {}
 
     private static Range v4(String address, int prefix) {
-        return new Range(parseStrictIpv4(address), prefix);
+        return new Range(Inet4Address.ofLiteral(address).getAddress(), prefix);
     }
 
     private static Range v6(String address, int prefix) {
-        return new Range(parseIpv6(address), prefix);
+        return new Range(ipv6(address).getAddress(), prefix);
     }
 
     /// `Surfguard::DISALLOWED_IPV4`
@@ -315,7 +182,7 @@ public final class Guard {
     private static final Range IPV4_COMPATIBLE = v6("::", 96);
     private static final Range UNIQUE_LOCAL = v6("fc00::", 7);
     private static final Range LINK_LOCAL_V6 = v6("fe80::", 10);
-    private static final byte[] LOOPBACK_V6 = parseIpv6("::1");
+    private static final byte[] LOOPBACK_V6 = ipv6("::1").getAddress();
 
     private static boolean in(byte[] ip, Range range) {
         int prefix = range.prefix();
@@ -342,19 +209,10 @@ public final class Guard {
             return inAny(new byte[] {ip[12], ip[13], ip[14], ip[15]}, DISALLOWED_IPV4);
         }
         if (inAny(ip, GLOBALLY_REACHABLE_IETF_ASSIGNMENTS)) return false;
-        if (in(ip, UNIQUE_LOCAL) || java.util.Arrays.equals(ip, LOOPBACK_V6) || in(ip, LINK_LOCAL_V6) || in(ip, IETF_PROTOCOL_ASSIGNMENTS)) {
+        if (in(ip, UNIQUE_LOCAL) || Arrays.equals(ip, LOOPBACK_V6) || in(ip, LINK_LOCAL_V6) || in(ip, IETF_PROTOCOL_ASSIGNMENTS)) {
             return true;
         }
         if (inAny(ip, DISALLOWED_IPV6)) return true;
         return !inAny(ip, IANA_ALLOCATED_IPV6_UNICAST);
     }
-
-    private static boolean isAlnum(int c) {
-        return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9');
-    }
-
-    private static boolean isHex(int c) {
-        return Character.digit(c, 16) >= 0 && c < 0x80;
-    }
-
 }

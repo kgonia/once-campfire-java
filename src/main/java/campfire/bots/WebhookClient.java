@@ -3,9 +3,10 @@ package campfire.bots;
 import campfire.integrations.net.Network;
 import campfire.integrations.net.PinnedHttp;
 import campfire.integrations.net.PinnedHttp.HttpException;
-import campfire.integrations.net.RubyUri;
+import campfire.integrations.net.Url;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
@@ -62,17 +63,17 @@ final class WebhookClient {
     }
 
     private static Reply post(Network net, String url, String payload) throws DeliveryException, HttpException {
-        RubyUri uri;
+        Url uri;
         try {
-            uri = RubyUri.parse(url);
-        } catch (RubyUri.InvalidUriException e) {
-            throw new DeliveryException("bad URI (is not URI?): " + url, e);
+            uri = Url.parse(url);
+        } catch (URISyntaxException e) {
+            throw new DeliveryException("bad URI: " + url, e);
         }
         if (!uri.isHttp()) throw new DeliveryException("not an HTTP URI", null);
         String host = uri.host();
         if (host == null || host.isEmpty()) throw new DeliveryException("no host component for URI", null);
-        Long port = uri.port();
-        if (port == null || port < 0 || port > 65535) throw new DeliveryException("invalid port", null);
+        int port = uri.port();
+        if (port < 0 || port > 65535) throw new DeliveryException("invalid port", null);
         InetAddress address;
         try {
             List<InetAddress> addresses = net.resolver().lookup(uri.hostname());
@@ -81,7 +82,7 @@ final class WebhookClient {
         } catch (IOException e) {
             throw new DeliveryException("Failed to open TCP connection to " + host + ":" + port + " (getaddrinfo: " + e.getMessage() + ")", e);
         }
-        var target = new PinnedHttp.Target(uri.isHttps(), host, port.intValue(), address);
+        var target = new PinnedHttp.Target(uri.isHttps(), host, port, address);
         var request = new PinnedHttp.Request("POST", uri.requestUri(), List.of(new PinnedHttp.Header("Content-Type", "application/json")),
             payload.getBytes(StandardCharsets.UTF_8));
         try (var response = PinnedHttp.exchange(net, target, request, TIMEOUTS)) {
