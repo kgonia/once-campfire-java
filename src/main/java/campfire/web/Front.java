@@ -37,7 +37,9 @@ public class Front {
     /// Static files carry the time the app started as their Last-Modified: they're compiled
     /// into it, so they can't have changed since.
     private static final String LAST_MODIFIED = CurrentRequest.httpDate(Instant.now());
-    /// Where a public response to this request would be cached: a {@link FrontCache.Miss}.
+    private static final Duration STATIC_LIFETIME = Duration.ofDays(30);
+    private static final String STATIC_CACHE_CONTROL = "public, max-age=" + STATIC_LIFETIME.toSeconds();
+    /// The URI a public response to this GET would be cached under.
     static final String CACHE_STATE = "campfire.front.cache";
 
     @Inject
@@ -74,13 +76,12 @@ public class Front {
     private void proxy(RoutingContext rc) {
         HttpServerRequest request = rc.request();
         if (FrontCache.cacheable(request)) {
-            switch (cache.lookup(request)) {
-                case FrontCache.Hit(FrontCache.Stored stored) -> {
-                    serveHit(request, rc.response(), stored);
-                    return;
-                }
-                case FrontCache.Missed(FrontCache.Miss miss) -> rc.put(CACHE_STATE, miss);
+            FrontCache.Stored stored = cache.lookup(request.uri());
+            if (stored != null) {
+                serveHit(request, rc.response(), stored);
+                return;
             }
+            rc.put(CACHE_STATE, request.uri());
         }
         forward(request);
         rc.next();
@@ -114,29 +115,20 @@ public class Front {
         boolean notModified = FrontCache.notModified(stored, request);
         response.setStatusCode(notModified ? 304 : stored.status());
         for (FrontCache.Header h : stored.headers()) response.headers().add(h.name(), h.value());
-        if (notModified) response.end();
-        else response.end(Buffer.buffer(stored.body()));
-    }
-
-    /// Offers a response the app produced to the cache: kept when it's public, and then without
-    /// its cookies (it may be served to anyone). Returns whether it was public.
-    boolean offer(RoutingContext rc, int status, List<FrontCache.Header> headers, byte[] body) {
-        Duration lifetime = FrontCache.lifetime(status, first(headers, "cache-control"), first(headers, "vary"));
-        if (lifetime == null) return false;
-        if (rc.get(CACHE_STATE) instanceof FrontCache.Miss miss) {
-            var kept = new ArrayList<FrontCache.Header>();
-            for (FrontCache.Header h : headers) {
-                String name = h.name();
-                if (!name.equalsIgnoreCase("set-cookie") && !name.equalsIgnoreCase("content-length")) kept.add(h);
-            }
-            cache.store(miss, status, kept, rc.request().method() == HttpMethod.HEAD ? new byte[0] : body, lifetime);
+        if (notModified) {
+            response.end();
+        } else if (stored.gzip() != null && Gzip.accepted(request.getHeader("accept-encoding"))) {
+            response.headers().add("Content-Encoding", "gzip");
+            response.end(Buffer.buffer(stored.gzip()));
+        } else {
+            response.end(Buffer.buffer(stored.body()));
         }
-        return true;
     }
 
-    private static @Nullable String first(List<FrontCache.Header> headers, String name) {
-        for (FrontCache.Header h : headers) if (h.name().equalsIgnoreCase(name)) return h.value();
-        return null;
+    /// Keeps a public response for the GETs that missed the cache. `headers` carry no cookies or
+    /// encoding, and `gzip` is the body gzipped when the response varies on `Accept-Encoding`.
+    void offer(RoutingContext rc, int status, List<FrontCache.Header> headers, byte[] body, byte @Nullable [] gzip, Duration lifetime) {
+        if (rc.get(CACHE_STATE) instanceof String uri) cache.store(uri, new FrontCache.Stored(status, List.copyOf(headers), body, gzip, lifetime));
     }
 
     /// `public/` and the digested assets, text gzipped for a client that takes it, from the
@@ -165,19 +157,21 @@ public class Front {
         var headers = new ArrayList<FrontCache.Header>();
         headers.add(new FrontCache.Header("Last-Modified", LAST_MODIFIED));
         headers.add(new FrontCache.Header("Content-Type", file.contentType()));
-        headers.add(new FrontCache.Header("Cache-Control", "public, max-age=2592000"));
-        byte[] body = file.body();
-        if (Gzip.compressible(file.contentType()) && body.length > 0) {
+        headers.add(new FrontCache.Header("Cache-Control", STATIC_CACHE_CONTROL));
+        byte[] gzip = null;
+        if (Gzip.compressible(file.contentType()) && file.body().length > 0) {
             headers.add(new FrontCache.Header("Vary", "Accept-Encoding"));
-            if (Gzip.accepted(request.getHeader("accept-encoding"))) {
-                headers.add(new FrontCache.Header("Content-Encoding", "gzip"));
-                Assets.StaticFile f = file;
-                body = f.gzip() != null ? f.gzip() : gzipped.computeIfAbsent(served, k -> Gzip.compress(f.body()));
-            }
+            Assets.StaticFile f = file;
+            gzip = f.gzip() != null ? f.gzip() : gzipped.computeIfAbsent(served, k -> Gzip.compress(f.body()));
         }
-        offer(rc, 200, headers, body);
+        offer(rc, 200, headers, file.body(), gzip, STATIC_LIFETIME);
         for (FrontCache.Header h : headers) response.headers().add(h.name(), h.value());
-        response.end(Buffer.buffer(body));
+        if (gzip != null && Gzip.accepted(request.getHeader("accept-encoding"))) {
+            response.headers().add("Content-Encoding", "gzip");
+            response.end(Buffer.buffer(gzip));
+        } else {
+            response.end(Buffer.buffer(file.body()));
+        }
         return true;
     }
 }

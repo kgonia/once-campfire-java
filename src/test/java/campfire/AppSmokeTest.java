@@ -59,6 +59,14 @@ class AppSmokeTest {
         for (String path : new String[] {"/up", "/robots.txt", "/robots.txt"}) {
             assertEquals("SAMEORIGIN", get(path).headers().firstValue("x-frame-options").orElse(null), path);
         }
+        // Kept by the public cache from the plain requests above, served gzipped or revalidated from it.
+        var robots = http.send(HttpRequest.newBuilder(base.resolve("/robots.txt")).header("Accept-Encoding", "gzip").build(),
+            HttpResponse.BodyHandlers.ofByteArray());
+        assertEquals("gzip", robots.headers().firstValue("content-encoding").orElse(null));
+        assertEquals(get("/robots.txt").body(), new String(new GZIPInputStream(new ByteArrayInputStream(robots.body())).readAllBytes(), StandardCharsets.UTF_8));
+        var unchanged = http.send(HttpRequest.newBuilder(base.resolve("/robots.txt"))
+            .header("If-Modified-Since", robots.headers().firstValue("last-modified").orElseThrow()).build(), HttpResponse.BodyHandlers.discarding());
+        assertEquals(304, unchanged.statusCode());
         assertEquals(base.resolve("/session/new").toString(), location(get("/")));
         assertEquals(base.resolve("/first_run").toString(), location(get("/session/new")));
 

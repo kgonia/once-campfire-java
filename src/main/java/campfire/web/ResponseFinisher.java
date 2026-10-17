@@ -18,6 +18,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
@@ -71,8 +72,9 @@ public class ResponseFinisher {
                 state.cachedGzip = gzip;
             }
         }
-        encode(response, gzipAccepted, state);
-        offer(response, routing);
+        byte[] plain = response.getEntity() instanceof byte[] body ? body : null;
+        byte[] gzip = encode(response, gzipAccepted, state);
+        offer(response, routing, plain, gzip);
     }
 
     /// Appends the stylesheet preloads to any `Link` the page set itself.
@@ -92,7 +94,7 @@ public class ResponseFinisher {
         }
     }
 
-    /// Not a 206: gzipping a range would leave its `Content-Range` pointing at the uncompressed bytes.
+    /// Never a 206: gzipping a range would make its `Content-Range` wrong.
     private static boolean compressible(ContainerResponseContext response) {
         int status = response.getStatus();
         return status >= 200 && status != 204 && status != 206 && status != 304 && header(response, "Content-Encoding") == null
@@ -100,11 +102,12 @@ public class ResponseFinisher {
     }
 
     /// Gzips a text body for a client that takes it; a cache hit brings its stored gzip along.
-    private static void encode(ContainerResponseContext response, boolean gzipAccepted, RequestState state) {
+    /// Returns a whole body gzipped, when it was.
+    private static byte @Nullable [] encode(ContainerResponseContext response, boolean gzipAccepted, RequestState state) {
         Object entity = response.getEntity();
-        if (entity == null || entity instanceof byte[] b && b.length == 0 || !compressible(response)) return;
+        if (entity == null || entity instanceof byte[] b && b.length == 0 || !compressible(response)) return null;
         addVary(response.getHeaders(), "Accept-Encoding");
-        if (!gzipAccepted) return;
+        if (!gzipAccepted) return null;
         response.getHeaders().putSingle("Content-Encoding", "gzip");
         response.getHeaders().remove("Content-Length");
         response.setEntity(switch (entity) {
@@ -123,6 +126,7 @@ public class ResponseFinisher {
             };
             default -> throw new IllegalStateException("cannot gzip a " + entity.getClass().getName());
         });
+        return response.getEntity() instanceof byte[] gzip ? gzip : null;
     }
 
     static void addVary(MultivaluedMap<String, Object> headers, String name) {
@@ -137,19 +141,22 @@ public class ResponseFinisher {
         headers.putSingle("Vary", existing + ", " + name);
     }
 
-    /// Offers the finished response to the public cache, which serves it without cookies.
-    private void offer(ContainerResponseContext response, RoutingContext routing) {
-        if (!(response.getEntity() instanceof byte[] body)) {
-            if (FrontCache.lifetime(response.getStatus(), header(response, "Cache-Control"), header(response, "Vary")) != null) {
-                response.getHeaders().remove("Set-Cookie");
-            }
-            return;
-        }
+    /// A public response goes out without cookies, as it may be served to anyone, and a whole one
+    /// is offered to the public cache, plain and gzipped.
+    private void offer(ContainerResponseContext response, RoutingContext routing, byte @Nullable [] plain, byte @Nullable [] gzip) {
+        String vary = header(response, "Vary");
+        Duration lifetime = FrontCache.lifetime(response.getStatus(), header(response, "Cache-Control"), vary);
+        if (lifetime == null) return;
+        MultivaluedMap<String, Object> responseHeaders = response.getHeaders();
+        responseHeaders.remove("Set-Cookie");
+        if (plain == null) return;
         var headers = new ArrayList<FrontCache.Header>();
-        response.getHeaders().forEach((name, values) -> {
+        responseHeaders.forEach((name, values) -> {
+            if (gzip != null && name.equalsIgnoreCase("Content-Encoding") || name.equalsIgnoreCase("Content-Length")) return;
             for (Object value : values) headers.add(new FrontCache.Header(name, String.valueOf(value)));
         });
-        if (front.offer(routing, response.getStatus(), headers, body)) response.getHeaders().remove("Set-Cookie");
+        byte[] gzipped = gzip == null && vary != null && responseHeaders.getFirst("Content-Encoding") == null ? Gzip.compress(plain) : gzip;
+        front.offer(routing, response.getStatus(), headers, plain, gzipped, lifetime);
     }
 
     /// A weak ETag of the first 32 hex digits of the body's SHA-256 (or its {@link PageDigest} when
