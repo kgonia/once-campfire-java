@@ -2,12 +2,18 @@ package campfire.view;
 
 import campfire.App;
 import campfire.rooms.RoomService;
+import campfire.sessions.Viewer;
 import campfire.useragent.Platform;
-import campfire.web.CurrentRequest;
+import campfire.web.Cookies;
+import campfire.web.Formats;
 import campfire.web.Params;
+import campfire.web.RailsSession;
+import campfire.web.RequestOrigin;
 import campfire.web.Responses;
 import gg.jte.TemplateOutput;
 import gg.jte.generated.precompiled.sessions.Jteincompatible_browserGenerated;
+import io.vertx.core.http.HttpServerRequest;
+import io.vertx.ext.web.RoutingContext;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.core.Response;
@@ -22,7 +28,15 @@ public class Pages {
     }
 
     @Inject
-    CurrentRequest request;
+    Viewer viewer;
+    @Inject
+    RailsSession railsSession;
+    @Inject
+    Cookies cookies;
+    @Inject
+    RequestOrigin origin;
+    @Inject
+    RoutingContext routing;
     @Inject
     App app;
     @Inject
@@ -46,11 +60,12 @@ public class Pages {
 
     private View newView() {
         App.AccountState account = app.account();
-        var flash = request.flash();
-        var user = request.userIfSignedIn();
-        String lastRoom = request.cookie("last_room");
+        var flash = railsSession.flash();
+        var user = viewer.userIfSignedIn();
+        String lastRoom = cookies.get("last_room");
+        HttpServerRequest request = routing.request();
         return new View(app, user, account.account(), account.hasLogo(), flash.get("notice"), flash.get("alert"),
-            Platform.of(request.userAgent()), request.baseUrl(), request.requestUrl(), request.header("referer"),
+            Platform.of(request.getHeader("user-agent")), origin.baseUrl(), origin.requestUrl(), request.getHeader("referer"),
             user == null ? null : () -> rooms.lastVisited(user.id(), Params.parseId(lastRoom)).orElse(null));
     }
 
@@ -58,7 +73,7 @@ public class Pages {
     /// with the request's protocol and host but never its port.
     public View detachedView() {
         var account = app.account();
-        return View.detached(app, account.account(), account.hasLogo(), request.protocol() + request.host());
+        return View.detached(app, account.account(), account.hasLogo(), origin.protocol() + origin.host());
     }
 
     public Response page(Template template) {
@@ -67,7 +82,7 @@ public class Pages {
 
     public Response page(int status, Template template) {
         View v = view();
-        v.frameLayout = request.isTurboFrame();
+        v.frameLayout = Formats.isTurboFrame(routing);
         return render(status, v, template);
     }
 
@@ -89,7 +104,7 @@ public class Pages {
     /// The page browsers too old for the app get (always HTML, status 200).
     public Response incompatibleBrowser(boolean fullLayout) {
         View v = view();
-        v.frameLayout = !fullLayout && request.isTurboFrame();
+        v.frameLayout = !fullLayout && Formats.isTurboFrame(routing);
         return render(200, v, (out, view) -> Jteincompatible_browserGenerated.render(out, null, view));
     }
 }

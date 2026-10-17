@@ -1,10 +1,12 @@
 package campfire.rooms;
 
+import campfire.sessions.Viewer;
 import campfire.users.User;
 import campfire.view.Pages;
-import campfire.web.CurrentRequest;
+import campfire.web.Cookies;
 import campfire.web.Params;
 import campfire.web.Paths;
+import campfire.web.RequestOrigin;
 import campfire.web.Responses;
 import gg.jte.generated.precompiled.welcome.JteshowGenerated;
 import io.smallrye.common.annotation.RunOnVirtualThread;
@@ -20,7 +22,11 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 public class WelcomeResource {
     @Inject
-    CurrentRequest request;
+    Viewer viewer;
+    @Inject
+    RequestOrigin origin;
+    @Inject
+    Cookies cookies;
     @Inject
     Pages pages;
     @Inject
@@ -28,9 +34,9 @@ public class WelcomeResource {
 
     @GET
     public Response show() {
-        User user = request.user();
+        User user = viewer.user();
         if (!rooms.anyForUser(user.id())) return pages.page((out, v) -> JteshowGenerated.render(out, null, v, user.name()));
-        long room = rooms.lastVisited(user.id(), Params.parseId(request.cookie("last_room"))).orElseThrow();
-        return Responses.redirect(request.url(Paths.room(room)));
+        long room = rooms.lastVisited(user.id(), Params.parseId(cookies.get("last_room"))).orElseThrow();
+        return Responses.redirect(origin.url(Paths.room(room)));
     }
 }

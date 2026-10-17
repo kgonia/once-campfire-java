@@ -1,7 +1,7 @@
 package campfire.rooms;
 
-import campfire.web.CurrentRequest;
 import campfire.web.Halt;
+import campfire.web.Params;
 import campfire.web.Responses;
 import java.util.List;
 import java.util.Map;
@@ -18,15 +18,15 @@ final class RoomParams {
     /// with a 500, as `permit` on a String does.
     record Name(boolean given, @Nullable String name) {}
 
-    static Name name(CurrentRequest request) {
-        Object room = request.params().get("room");
+    static Name name(Params params) {
+        Object room = params.get("room");
         if (room instanceof String s && !s.isBlank()) throw new IllegalStateException("undefined method 'permit' for an instance of String");
         if (!(room instanceof Map<?, ?> map) || map.isEmpty()) throw new Halt(Responses.head(400));
         return map.get("name") instanceof String name ? new Name(true, name) : new Name(false, null);
     }
 
     /// `user_ids[]`: distinct ids in submitted order, ignoring what isn't a number.
-    static List<Long> userIds(CurrentRequest request) {
-        return request.params().ids("user_ids");
+    static List<Long> userIds(Params params) {
+        return params.ids("user_ids");
     }
 }

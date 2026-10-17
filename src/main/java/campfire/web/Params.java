@@ -1,19 +1,109 @@
 package campfire.web;
 
 import campfire.rails.HttpFormats;
+import campfire.rails.Json;
+import io.vertx.core.http.HttpServerRequest;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import org.jboss.resteasy.reactive.server.multipart.FormValue;
+import org.jboss.resteasy.reactive.server.multipart.MultipartFormDataInput;
 import org.jspecify.annotations.Nullable;
 
 /// Rack's nested parameters: `a[b]=1` is `{a: {b: "1"}}`, `a[]=1&a[]=2` is `{a: ["1", "2"]}`.
-/// Values are `String`, `Upload`, `List` or `Map`.
+/// Values are `String`, `Upload`, `List` or `Map`. For the actions that take Rails' nested form
+/// fields or JSON; flat ones are resource method parameters.
 public final class Params {
     private final Map<String, Object> values = new LinkedHashMap<>();
+    /// A JSON body's own parameters, for {@link #wrapJson}.
+    private @Nullable Map<String, Object> json;
 
     /// An uploaded file from a multipart form.
     public record Upload(String filename, String contentType, java.nio.file.Path path, long size) {}
+
+    /// The query string and a form (URL-encoded or multipart), merged as Rails merges them. Files
+    /// sent without a name, which is what an empty file field sends, are left out.
+    public static Params of(HttpServerRequest request, MultipartFormDataInput form) {
+        var params = new Params();
+        params.addQuery(request.query());
+        form.getValues().forEach((name, values) -> {
+            for (FormValue value : values) {
+                if (!value.isFileItem()) {
+                    params.put(name, value.getValue());
+                } else if (value.getFileName() != null && !value.getFileName().isEmpty()) {
+                    String type = value.getHeaders().getFirst("Content-Type");
+                    try {
+                        params.put(name, new Upload(value.getFileName(), type == null ? "application/octet-stream" : type,
+                            value.getFileItem().getFile(), value.getFileItem().getFileSize()));
+                    } catch (IOException e) {
+                        throw new UncheckedIOException(e);
+                    }
+                }
+            }
+        });
+        return params;
+    }
+
+    /// The query string and a URL-encoded or JSON body. A JSON body that isn't an object is the
+    /// `_json` parameter; malformed JSON is a 400.
+    public static Params of(HttpServerRequest request, byte[] body) {
+        var params = new Params();
+        params.addQuery(request.query());
+        String contentType = request.getHeader("content-type");
+        String mime = contentType == null ? "" : contentType.split(";")[0].strip().toLowerCase(Locale.ROOT);
+        switch (mime) {
+            case "application/x-www-form-urlencoded" -> params.addQuery(new String(body, StandardCharsets.UTF_8));
+            case "application/json", "text/x-json", "application/jsonrequest" -> {
+                var json = new LinkedHashMap<String, Object>();
+                String text = new String(body, StandardCharsets.UTF_8);
+                if (!text.isBlank()) {
+                    Object parsed;
+                    try {
+                        parsed = Json.parse(text);
+                    } catch (Json.ParseException e) {
+                        throw new HttpError(400);
+                    }
+                    if (parsed instanceof Map<?, ?> map) map.forEach((key, value) -> json.put(String.valueOf(key), value));
+                    else json.put("_json", parsed);
+                }
+                json.forEach(params::putValue);
+                params.json = json;
+            }
+            default -> {}
+        }
+        return params;
+    }
+
+    /// The query string alone.
+    public static Params of(HttpServerRequest request) {
+        var params = new Params();
+        params.addQuery(request.query());
+        return params;
+    }
+
+    /// Nests a JSON body's parameters under `key` too, as Rails' `wrap_parameters` does for the
+    /// controller's model, unless the request already sent a `key` parameter.
+    public void wrapJson(String key) {
+        if (json == null || has(key)) return;
+        var wrapped = new LinkedHashMap<String, Object>(json);
+        wrapped.keySet().removeAll(List.of("authenticity_token", "_method", "utf8"));
+        putValue(key, wrapped);
+    }
+
+    /// The 400 error page unless `key` is present (strings, arrays and hashes alike).
+    public void require(String key) {
+        if (get(key) == null) throw new HttpError(400);
+    }
+
+    /// The 400 error page unless `key` is a nested hash (`message[body]=...`) with something in it.
+    public void requireHash(String key) {
+        if (!(get(key) instanceof Map<?, ?> map) || map.isEmpty()) throw new HttpError(400);
+    }
 
     public void addQuery(@Nullable String query) {
         if (query == null || query.isEmpty()) return;
@@ -111,8 +201,12 @@ public final class Params {
 
     /// `params[...].presence`
     public @Nullable String present(String... path) {
-        String s = string(path);
-        return s == null || s.isBlank() ? null : s;
+        return presence(string(path));
+    }
+
+    /// `value.presence`: null when blank.
+    public static @Nullable String presence(@Nullable String value) {
+        return value == null || value.isBlank() ? null : value;
     }
 
     public @Nullable Upload upload(String... path) {

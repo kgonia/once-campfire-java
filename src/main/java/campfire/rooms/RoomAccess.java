@@ -2,11 +2,14 @@ package campfire.rooms;
 
 import campfire.App;
 import campfire.accounts.Account;
-import campfire.web.CurrentRequest;
+import campfire.sessions.Viewer;
+import campfire.web.Cookies;
 import campfire.web.Halt;
 import campfire.web.Params;
 import campfire.web.Paths;
+import campfire.web.RailsSession;
 import campfire.web.RecordNotFound;
+import campfire.web.RequestOrigin;
 import campfire.web.Responses;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -22,7 +25,13 @@ public class RoomAccess {
     public enum Scope { ANY, SHARED, DIRECT }
 
     @Inject
-    CurrentRequest request;
+    Viewer viewer;
+    @Inject
+    RequestOrigin origin;
+    @Inject
+    RailsSession railsSession;
+    @Inject
+    Cookies cookies;
     @Inject
     RoomService rooms;
     @Inject
@@ -32,39 +41,39 @@ public class RoomAccess {
     public Membership.WithRoom membership(String roomId) {
         Long id = Params.parseId(roomId);
         if (id == null) throw new RecordNotFound();
-        return rooms.membership(request.user().id(), id).orElseThrow(RecordNotFound::new);
+        return rooms.membership(viewer.user().id(), id).orElseThrow(RecordNotFound::new);
     }
 
     /// One of the user's rooms in `scope`, or a redirect home saying it isn't there.
     public Room room(String roomId, Scope scope) {
         Long id = Params.parseId(roomId);
-        Optional<Room> room = id == null ? Optional.empty() : rooms.findForUser(request.user().id(), id);
+        Optional<Room> room = id == null ? Optional.empty() : rooms.findForUser(viewer.user().id(), id);
         return room.filter(r -> switch (scope) {
                 case ANY -> true;
                 case SHARED -> !r.isDirect();
                 case DIRECT -> r.isDirect();
             })
             .orElseThrow(() -> {
-                request.flash().set("alert", "Room not found or inaccessible");
-                return new Halt(Responses.redirect(request.url(Paths.ROOT)));
+                railsSession.flash().set("alert", "Room not found or inaccessible");
+                return new Halt(Responses.redirect(origin.url(Paths.ROOT)));
             });
     }
 
     /// 403 unless the user is an administrator or created the record.
     public void requireAdministrator(long creatorId) {
-        if (!request.user().canAdminister(creatorId)) throw new Halt(Responses.head(403));
+        if (!viewer.user().canAdminister(creatorId)) throw new Halt(Responses.head(403));
     }
 
     /// 403 when the account lets only administrators create rooms and the user isn't one.
     public void requireRoomCreation() {
         Account account = app.account().account();
-        if (account != null && account.restrictRoomCreationToAdministrators() && !request.user().isAdministrator()) throw new Halt(Responses.head(403));
+        if (account != null && account.restrictRoomCreationToAdministrators() && !viewer.user().isAdministrator()) throw new Halt(Responses.head(403));
     }
 
     /// Remembered in the `last_room` cookie, where the root page and the "back" links go. Only
     /// sent when it changes.
     public void rememberVisit(long roomId) {
         String id = Long.toString(roomId);
-        if (!id.equals(request.cookie("last_room"))) request.setPermanentCookie("last_room", id);
+        if (!id.equals(cookies.get("last_room"))) cookies.setPermanent("last_room", id);
     }
 }

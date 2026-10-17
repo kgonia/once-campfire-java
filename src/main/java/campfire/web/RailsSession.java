@@ -1,7 +1,7 @@
 package campfire.web;
 
-import campfire.rails.SecureRandoms;
 import campfire.rails.Secrets;
+import campfire.rails.SecureRandoms;
 import io.vertx.core.http.CookieSameSite;
 import io.vertx.ext.web.RoutingContext;
 import jakarta.annotation.PostConstruct;
@@ -70,12 +70,10 @@ public class RailsSession {
         return flash;
     }
 
-    /// Leaves the session and cookies as the request brought them. Rails renders an error page
-    /// after the action raised, and the session middleware then writes nothing.
+    /// Forgets changes to the session; see {@link RequestState#discardChanges}.
     void discardChanges() {
         flash = null;
         dirty = false;
-        cookies.discard();
     }
 
     /// Re-encrypts the session cookie when it changed, and deletes it once nothing but the

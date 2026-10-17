@@ -1,9 +1,10 @@
 package campfire.integrations.opengraph;
 
 import campfire.integrations.net.Network;
-import campfire.web.CurrentRequest;
 import campfire.web.Formats;
+import campfire.web.Params;
 import io.smallrye.common.annotation.RunOnVirtualThread;
+import io.vertx.ext.web.RoutingContext;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -18,20 +19,20 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 public class UnfurlLinkResource {
     @Inject
-    CurrentRequest request;
+    RoutingContext routing;
     @Inject
     Network net;
 
     @POST
-    public Response create() {
-        Object url = request.params().get("url");
+    public Response create(byte[] body) {
+        Object url = Params.of(routing.request(), body).get("url");
         if (url == null || url instanceof String s && s.isBlank()) return parameterMissing();
         // A hash or array passes the presence check but isn't a URL.
-        if (!(url instanceof String link)) return Formats.head(request, 204);
+        if (!(url instanceof String link)) return Formats.head(routing, 204);
         return switch (Opengraph.unfurl(net, link)) {
             case Opengraph.Unfurl.Json json ->
                 Response.ok(json.body().getBytes(StandardCharsets.UTF_8)).header("Content-Type", "application/json; charset=utf-8").build();
-            case Opengraph.Unfurl.NoContent none -> Formats.head(request, 204);
+            case Opengraph.Unfurl.NoContent none -> Formats.head(routing, 204);
         };
     }
 

@@ -1,16 +1,19 @@
 package campfire.rooms;
 
 import campfire.rooms.RoomForms.DirectEdit;
+import campfire.sessions.Viewer;
 import campfire.view.Pages;
 import campfire.view.View;
-import campfire.web.CurrentRequest;
+import campfire.web.Formats;
 import campfire.web.Params;
 import campfire.web.Paths;
 import campfire.web.RecordNotFound;
+import campfire.web.RequestOrigin;
 import campfire.web.Responses;
 import gg.jte.generated.precompiled.rooms.directs.JteeditGenerated;
 import gg.jte.generated.precompiled.rooms.directs.JtenewGenerated;
 import io.smallrye.common.annotation.RunOnVirtualThread;
+import io.vertx.ext.web.RoutingContext;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -18,6 +21,7 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.core.Response;
+import org.jboss.resteasy.reactive.server.multipart.MultipartFormDataInput;
 import org.jspecify.annotations.NullMarked;
 
 /// Direct rooms. Anyone may start one, whatever the account's room creation setting, and every
@@ -27,7 +31,11 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 public class DirectRoomResource {
     @Inject
-    CurrentRequest request;
+    Viewer viewer;
+    @Inject
+    RequestOrigin origin;
+    @Inject
+    RoutingContext routing;
     @Inject
     RoomAccess access;
     @Inject
@@ -52,9 +60,10 @@ public class DirectRoomResource {
     }
 
     @POST
-    public Response create() {
-        Room room = directs.findOrCreate(pages.detachedView(), request.user(), RoomParams.userIds(request));
-        return Responses.redirect(request.url(Paths.room(room.id())));
+    public Response create(MultipartFormDataInput form) {
+        Params params = Params.of(routing.request(), form);
+        Room room = directs.findOrCreate(pages.detachedView(), viewer.user(), RoomParams.userIds(params));
+        return Responses.redirect(origin.url(Paths.room(room.id())));
     }
 
     /// Off to the room page, which checks membership.
@@ -63,7 +72,7 @@ public class DirectRoomResource {
     public Response show(@PathParam("id") String id) {
         Long roomId = Params.parseId(id);
         if (roomId == null) throw new RecordNotFound();
-        return Responses.redirect(request.url(Paths.room(roomId)));
+        return Responses.redirect(origin.url(Paths.room(roomId)));
     }
 
     @GET
@@ -71,8 +80,8 @@ public class DirectRoomResource {
     public Response edit(@PathParam("id") String id) {
         Room room = access.room(id, RoomAccess.Scope.DIRECT);
         View v = pages.view();
-        v.frameLayout = request.isTurboFrame();
-        DirectEdit edit = directs.edit(v, room, request.user());
+        v.frameLayout = Formats.isTurboFrame(routing);
+        DirectEdit edit = directs.edit(v, room, viewer.user());
         return pages.render(200, v, (out, view) -> JteeditGenerated.render(out, null, view, edit));
     }
 
@@ -80,6 +89,6 @@ public class DirectRoomResource {
     @Path("{id}")
     public Response destroy(@PathParam("id") String id) {
         rooms.destroy(access.room(id, RoomAccess.Scope.DIRECT));
-        return Responses.redirect(request.url(Paths.ROOT));
+        return Responses.redirect(origin.url(Paths.ROOT));
     }
 }

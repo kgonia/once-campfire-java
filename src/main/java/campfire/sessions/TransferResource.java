@@ -3,10 +3,10 @@ package campfire.sessions;
 import campfire.users.User;
 import campfire.view.Pages;
 import campfire.web.Access;
-import campfire.web.CurrentRequest;
 import campfire.web.Responses;
 import gg.jte.generated.precompiled.sessions.transfers.JteshowGenerated;
 import io.smallrye.common.annotation.RunOnVirtualThread;
+import io.vertx.ext.web.RoutingContext;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.PATCH;
@@ -26,7 +26,7 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 public class TransferResource {
     @Inject
-    CurrentRequest request;
+    RoutingContext routing;
     @Inject
     Pages pages;
     @Inject
@@ -37,7 +37,7 @@ public class TransferResource {
     @GET
     @Produces(MediaType.TEXT_HTML)
     public Response show() {
-        String action = request.path();
+        String action = routing.request().path();
         return pages.page((out, v) -> JteshowGenerated.render(out, null, v, action));
     }
 

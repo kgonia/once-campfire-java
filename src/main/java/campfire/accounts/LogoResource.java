@@ -1,11 +1,13 @@
 package campfire.accounts;
 
 import campfire.App;
+import campfire.sessions.Viewer;
 import campfire.web.Access;
-import campfire.web.CurrentRequest;
 import campfire.web.Halt;
 import campfire.web.HttpCache;
 import campfire.web.Paths;
+import campfire.web.RailsSession;
+import campfire.web.RequestOrigin;
 import campfire.web.Responses;
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import jakarta.inject.Inject;
@@ -16,7 +18,10 @@ import jakarta.ws.rs.core.EntityTag;
 import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
 import java.util.Objects;
+import org.jboss.resteasy.reactive.RestHeader;
+import org.jboss.resteasy.reactive.RestQuery;
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 /// The account logo as a PNG, or the stock app icon without one; public, as it is the PWA's icon.
 /// Logo URLs carry the account's version, so browsers may reuse one for five minutes and
@@ -29,7 +34,11 @@ public class LogoResource {
     static final long STALE_WHILE_REVALIDATE_SECONDS = 7 * 24 * 60 * 60;
 
     @Inject
-    CurrentRequest request;
+    Viewer viewer;
+    @Inject
+    RequestOrigin origin;
+    @Inject
+    RailsSession railsSession;
     @Inject
     AccountService accounts;
     @Inject
@@ -38,13 +47,13 @@ public class LogoResource {
     /// `size=small` is at most 192 pixels square, anything else 512.
     @GET
     @Access.Public
-    public Response show(Request http) {
+    public Response show(Request http, @RestQuery @Nullable String size, @RestHeader("Turbo-Frame") @Nullable String turboFrame) {
         Account account = app.account().account();
         EntityTag etag = account == null ? null
-            : HttpCache.etag(request, HttpCache.cacheKeyWithVersion("accounts", account.id(), account.updatedAt()), null);
+            : HttpCache.etag(turboFrame, railsSession.flash(), HttpCache.cacheKeyWithVersion("accounts", account.id(), account.updatedAt()), null);
         Response notModified = etag == null ? null : HttpCache.notModified(http, etag);
         if (notModified != null) return notModified;
-        boolean small = "small".equals(request.params().string("size"));
+        boolean small = "small".equals(size);
         java.nio.file.Path logo = accounts.logo(small);
         Response.ResponseBuilder response;
         if (logo != null) {
@@ -60,8 +69,8 @@ public class LogoResource {
 
     @DELETE
     public Response destroy() {
-        if (!request.user().canAdminister()) throw new Halt(Responses.head(403));
+        if (!viewer.user().canAdminister()) throw new Halt(Responses.head(403));
         accounts.deleteLogo(accounts.account());
-        return Responses.redirect(request.url(Paths.editAccount()));
+        return Responses.redirect(origin.url(Paths.editAccount()));
     }
 }

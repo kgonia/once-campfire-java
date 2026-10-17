@@ -27,6 +27,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
 /// The whole app on a fresh install, through Vert.x, every filter and the finisher: unit tests
@@ -49,9 +50,7 @@ class AppSmokeTest {
     @TestHTTPResource("/")
     URI base;
 
-    // HTTP/1.1: a form POST over HTTP/2 fails while Front reads bodies with its own Vert.x
-    // BodyHandler, which Quarkus REST then tries to pause. Moving form reading to Quarkus REST fixes it.
-    private final HttpClient http = HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).cookieHandler(new CookieManager()).build();
+    private final HttpClient http = HttpClient.newBuilder().cookieHandler(new CookieManager()).build();
 
     @Test
     void firstRunSignInPostAndRead() throws Exception {
@@ -116,6 +115,22 @@ class AppSmokeTest {
         assertEquals(406, get("/account/edit.json").statusCode());
         assertEquals(406, get("/account/edit?format=json").statusCode());
 
+        // A multipart upload, and `_method` in a multipart form.
+        var attached = multipart(room + "/messages", Map.of("message[client_message_id]", UUID.randomUUID().toString()),
+            "message[attachment]", "notes.txt", "Smoke test notes");
+        assertEquals(200, attached.statusCode(), attached.body());
+        assertTrue(get(room).body().contains("notes.txt"));
+        var renamed = multipart("/users/me/profile", Map.of("_method", "patch", "user[name]", "Ada Lovelace"), null, null, null);
+        assertEquals(base.resolve("/users/me/profile").toString(), location(renamed));
+        assertTrue(get("/users/me/profile").body().contains("Ada Lovelace"));
+
+        // Signing out with `_method=delete`, and back in to the page that asked for it.
+        assertEquals(302, post("/session", Map.of("_method", "delete")).statusCode());
+        assertEquals(base.resolve("/session/new").toString(), location(get("/account/edit")));
+        var signedIn = post("/session", Map.of("email_address", "ada@example.com", "password", "correct horse"));
+        assertEquals(base.resolve("/account/edit").toString(), location(signedIn));
+        assertEquals(HttpClient.Version.HTTP_2, get("/account/edit").version());
+
         blobsServeRangesAndConditionalGets();
     }
 
@@ -161,6 +176,23 @@ class AppSmokeTest {
 
     private HttpResponse<byte[]> getWith(String path, String... headers) throws Exception {
         return http.send(HttpRequest.newBuilder(base.resolve(path)).headers(headers).build(), HttpResponse.BodyHandlers.ofByteArray());
+    }
+
+    private HttpResponse<String> multipart(String path, Map<String, String> fields, @Nullable String fileField, @Nullable String filename,
+                                           @Nullable String content) throws Exception {
+        String boundary = "smoke" + UUID.randomUUID();
+        var body = new StringBuilder();
+        fields.forEach((name, value) -> body.append("--").append(boundary).append("\r\nContent-Disposition: form-data; name=\"").append(name)
+            .append("\"\r\n\r\n").append(value).append("\r\n"));
+        if (fileField != null) {
+            body.append("--").append(boundary).append("\r\nContent-Disposition: form-data; name=\"").append(fileField).append("\"; filename=\"")
+                .append(filename).append("\"\r\nContent-Type: text/plain\r\n\r\n").append(content).append("\r\n");
+        }
+        body.append("--").append(boundary).append("--\r\n");
+        var request = HttpRequest.newBuilder(base.resolve(path)).header("Content-Type", "multipart/form-data; boundary=" + boundary)
+            .header("Sec-Fetch-Site", "same-origin").header("Accept", "text/vnd.turbo-stream.html, text/html")
+            .POST(HttpRequest.BodyPublishers.ofString(body.toString())).build();
+        return http.send(request, HttpResponse.BodyHandlers.ofString());
     }
 
     private HttpResponse<String> get(String path) throws Exception {

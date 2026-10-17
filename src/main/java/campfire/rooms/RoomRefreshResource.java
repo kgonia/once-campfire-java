@@ -3,11 +3,12 @@ package campfire.rooms;
 import campfire.cable.Broadcasts;
 import campfire.rails.RubyStrings;
 import campfire.view.Pages;
-import campfire.web.CurrentRequest;
 import campfire.web.Formats;
+import campfire.web.Params;
 import campfire.web.Responses;
 import gg.jte.generated.precompiled.rooms.refreshes.Jteshowturbo_streamGenerated;
 import io.smallrye.common.annotation.RunOnVirtualThread;
+import io.vertx.ext.web.RoutingContext;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -29,7 +30,7 @@ public class RoomRefreshResource {
     private static final Instant MAX = Instant.parse("9999-12-31T23:59:59.999999999Z");
 
     @Inject
-    CurrentRequest request;
+    RoutingContext routing;
     @Inject
     RoomAccess access;
     @Inject
@@ -40,7 +41,7 @@ public class RoomRefreshResource {
     @GET
     public Response show(@PathParam("room_id") String roomId) {
         Room room = access.membership(roomId).room();
-        Formats.respondTo(request, "turbo_stream");
+        Formats.respondTo(routing, "turbo_stream");
         var refresh = refreshes.since(pages.view(), room, since());
         String target = Broadcasts.roomDomId(room, Broadcasts.MESSAGES);
         return Responses.turboStream(Pages.bytes(null,
@@ -50,7 +51,7 @@ public class RoomRefreshResource {
     /// `since` in epoch milliseconds, read the way Ruby's `to_i` reads it; missing means the epoch,
     /// and an array or hash fails with a 500.
     private Instant since() {
-        long millis = switch (request.params().get("since")) {
+        long millis = switch (Params.of(routing.request()).get("since")) {
             case String s -> RubyStrings.toI(s);
             case List<?> l -> throw new IllegalStateException("undefined method 'to_i'");
             case Map<?, ?> m -> throw new IllegalStateException("undefined method 'to_i'");

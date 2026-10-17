@@ -1,6 +1,7 @@
 package campfire.web;
 
 import io.smallrye.common.annotation.RunOnVirtualThread;
+import io.vertx.ext.web.RoutingContext;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -16,12 +17,12 @@ import java.util.LinkedHashMap;
 @RunOnVirtualThread
 public class HealthResource {
     @Inject
-    CurrentRequest request;
+    RoutingContext routing;
 
     @GET
     public Response show() {
         Response.ResponseBuilder response;
-        if (Formats.respondTo(request, "html", "json").equals("json")) {
+        if (Formats.respondTo(routing, "html", "json").equals("json")) {
             var status = new LinkedHashMap<String, Object>();
             status.put("status", "up");
             status.put("timestamp", Instant.now().truncatedTo(ChronoUnit.SECONDS).toString());
@@ -29,7 +30,7 @@ public class HealthResource {
         } else {
             response = Responses.html(200, "<!DOCTYPE html><html><body style=\"background-color: green\"></body></html>");
         }
-        if (Formats.variesOnAccept(request)) response.header("Vary", "Accept");
+        if (Formats.variesOnAccept(routing)) response.header("Vary", "Accept");
         return response.build();
     }
 }

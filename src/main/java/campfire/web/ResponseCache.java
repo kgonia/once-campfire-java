@@ -1,21 +1,28 @@
 package campfire.web;
 
 import campfire.sessions.Session;
+import campfire.sessions.Viewer;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import io.quarkus.arc.ClientProxy;
+import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpServerRequest;
+import io.vertx.ext.web.RoutingContext;
 import jakarta.ws.rs.core.Response;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
+import java.util.function.LongSupplier;
 import org.jspecify.annotations.Nullable;
 
 /// Whole private pages for the hot reads (room, messages page, sidebar, search), per user, session
@@ -48,15 +55,18 @@ public final class ResponseCache {
 
     /// The cached response for this request, or empty; on a miss the response the resource then
     /// returns is offered to {@link #admit}. Bots, flashes and anything but plain GETs never cache.
-    public Optional<Response> lookup(CurrentRequest current, String endpoint) {
-        CurrentRequest request = ClientProxy.unwrap(current);
-        RequestState state = request.state();
-        Session session = request.session();
-        if (!enabled || state.dataVersionAtStart < 0 || session == null || request.authenticatedByBot() || !request.flash().isEmpty()
-            || !eligible(request)) {
+    public Optional<Response> lookup(Viewer signedIn, RailsSession railsSession, RequestOrigin requestOrigin, RoutingContext routing,
+                                     String endpoint) {
+        // Each call through a request-scoped client proxy looks the instance up again.
+        Viewer viewer = ClientProxy.unwrap(signedIn);
+        RequestState state = RequestState.of(routing);
+        HttpServerRequest request = routing.request();
+        Session session = viewer.session();
+        if (!enabled || state.dataVersionAtStart < 0 || session == null || viewer.authenticatedByBot()
+            || !ClientProxy.unwrap(railsSession).flash().isEmpty() || !eligible(request)) {
             return Optional.empty();
         }
-        String key = key(request, session, endpoint);
+        String key = key(request, state, viewer.user().id(), session, ClientProxy.unwrap(requestOrigin).baseUrl(), endpoint);
         if (key == null) return Optional.empty();
         long version = state.dataVersionAtStart;
         Entry entry = entries.getIfPresent(key);
@@ -72,12 +82,12 @@ public final class ResponseCache {
 
     /// Keeps a finished 200 (headers and ETag final, before gzip) if nothing was committed since the
     /// version its render started from.
-    void admit(CurrentRequest request, int status, Map<String, List<String>> headers, byte[] body, byte @Nullable [] gzip) {
-        Ticket ticket = request.state().cacheTicket;
-        if (ticket == null || status != 200 || body.length > MAX_BODY || !request.flash().isEmpty()) return;
+    void admit(RequestState state, LongSupplier dataVersion, int status, Map<String, List<String>> headers, byte[] body, byte @Nullable [] gzip) {
+        Ticket ticket = state.cacheTicket;
+        if (ticket == null || status != 200 || body.length > MAX_BODY || state.session != null && !state.session.flash().isEmpty()) return;
         String cacheControl = first(headers, "Cache-Control");
         if (cacheControl != null && (cacheControl.contains("no-store") || cacheControl.contains("no-transform"))) return;
-        if (request.app().db().dataVersion() != ticket.version()) return;
+        if (dataVersion.getAsLong() != ticket.version()) return;
         var kept = new LinkedHashMap<String, List<String>>();
         headers.forEach((name, values) -> {
             if (!name.equalsIgnoreCase("Set-Cookie") && !name.equalsIgnoreCase("Date")) kept.put(name, List.copyOf(values));
@@ -92,18 +102,19 @@ public final class ResponseCache {
         return null;
     }
 
-    private static boolean eligible(CurrentRequest request) {
-        if (!request.method().equals("GET") && !request.method().equals("HEAD")) return false;
-        if (request.header("range") != null || request.header("upgrade") != null) return false;
-        String cacheControl = request.header("cache-control");
+    private static boolean eligible(HttpServerRequest request) {
+        if (request.method() != HttpMethod.GET && request.method() != HttpMethod.HEAD) return false;
+        if (request.getHeader("range") != null || request.getHeader("upgrade") != null) return false;
+        String cacheControl = request.getHeader("cache-control");
         if (cacheControl != null && (cacheControl.contains("no-cache") || cacheControl.contains("no-store"))) return false;
-        String pragma = request.header("pragma");
+        String pragma = request.getHeader("pragma");
         return pragma == null || !pragma.equalsIgnoreCase("no-cache");
     }
 
     /// Everything a page may vary on: data version, endpoint, user, session, URL and every request
     /// header except validators and tracing ids. Null when that's implausibly large.
-    private static @Nullable String key(CurrentRequest request, Session session, String endpoint) {
+    private static @Nullable String key(HttpServerRequest request, RequestState state, long userId, Session session, String baseUrl,
+                                        String endpoint) {
         MessageDigest digest = sha256();
         int[] length = {0};
         ByteBuffer size = ByteBuffer.allocate(8);
@@ -113,14 +124,17 @@ public final class ResponseCache {
             digest.update(size.putLong(0, bytes.length).array());
             digest.update(bytes);
         };
-        field.accept(Long.toString(request.state().dataVersionAtStart));
+        field.accept(Long.toString(state.dataVersionAtStart));
         field.accept(endpoint);
-        field.accept(Long.toString(request.user().id()));
+        field.accept(Long.toString(userId));
         field.accept(Long.toString(session.id()));
         String query = request.query();
         field.accept(request.path() + (query == null ? "" : "?" + query));
-        field.accept(request.baseUrl());
-        var headers = new TreeMap<>(request.headers());
+        field.accept(baseUrl);
+        var headers = new TreeMap<String, List<String>>();
+        for (var header : request.headers()) {
+            headers.computeIfAbsent(header.getKey().toLowerCase(Locale.ROOT), k -> new ArrayList<>(1)).add(header.getValue());
+        }
         for (var header : headers.entrySet()) {
             String name = header.getKey();
             if (name.equals("if-none-match") || name.equals("if-modified-since") || name.equals("x-request-id") || name.equals("x-request-start")) {

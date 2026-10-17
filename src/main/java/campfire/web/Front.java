@@ -1,6 +1,5 @@
 package campfire.web;
 
-import campfire.Config;
 import campfire.assets.Assets;
 import campfire.cable.Cable;
 import io.vertx.core.buffer.Buffer;
@@ -9,7 +8,6 @@ import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
-import io.vertx.ext.web.handler.BodyHandler;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
@@ -27,9 +25,7 @@ import org.jspecify.annotations.Nullable;
 /// - the shared cache of public responses ({@link FrontCache}) and static files, answered from
 ///   memory on the event loop, ahead of Quarkus' security handlers (route orders -200 and -100),
 ///   which public responses don't need;
-/// - the cable WebSocket;
-/// - request bodies (form fields and uploads, read once for everything after), and the `_method`
-///   field HTML forms use to send PUT, PATCH and DELETE.
+/// - the cable WebSocket.
 @ApplicationScoped
 @NullMarked
 public class Front {
@@ -42,8 +38,6 @@ public class Front {
     static final String CACHE_STATE = "campfire.front.cache";
 
     @Inject
-    Config config;
-    @Inject
     Assets assets;
     @Inject
     Cable cable;
@@ -53,25 +47,11 @@ public class Front {
     private final Map<String, byte[]> gzipped = new ConcurrentHashMap<>();
 
     void routes(@Observes Router router) {
-        BodyHandler bodies = BodyHandler.create(config.storage().resolve("tmp").resolve("uploads").toString())
-            .setBodyLimit(config.maxRequestBody()).setDeleteUploadedFilesOnEnd(true).setMergeFormAttributes(false);
         router.route().order(-310).handler(this::cached);
         router.route().order(-300).handler(rc -> {
             if (!serveStatic(rc)) rc.next();
         });
         router.route("/cable").order(-30).handler(cable::upgrade);
-        router.route().order(-20).handler(rc -> {
-            HttpMethod method = rc.request().method();
-            if (method == HttpMethod.GET || method == HttpMethod.HEAD || method == HttpMethod.OPTIONS) rc.next();
-            else bodies.handle(rc);
-        });
-        router.route().order(-10).method(HttpMethod.POST).handler(rc -> {
-            String override = rc.request().getFormAttribute("_method");
-            String method = override == null ? "" : override.toUpperCase(java.util.Locale.ROOT);
-            // The URI, not the path: Rails merges the query string into params for every method.
-            if (method.equals("PUT") || method.equals("PATCH") || method.equals("DELETE")) rc.reroute(HttpMethod.valueOf(method), rc.request().uri());
-            else rc.next();
-        });
     }
 
     private void cached(RoutingContext rc) {

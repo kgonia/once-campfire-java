@@ -7,11 +7,13 @@ import campfire.rails.RubyStrings;
 import campfire.sessions.Authentication;
 import campfire.web.Access;
 import campfire.web.AccessFilter;
-import campfire.web.CurrentRequest;
 import campfire.web.Formats;
 import campfire.web.HttpCache;
+import campfire.web.Params;
+import campfire.web.RequestOrigin;
 import campfire.web.Responses;
 import io.smallrye.common.annotation.RunOnVirtualThread;
+import io.vertx.ext.web.RoutingContext;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
@@ -54,7 +56,9 @@ public class ActiveStorageResource {
     private static final String DISK_CACHE_CONTROL = "max-age=3600, public";
 
     @Inject
-    CurrentRequest request;
+    RequestOrigin origin;
+    @Inject
+    RoutingContext routing;
     @Inject
     ActiveStorageService storage;
     @Inject
@@ -81,7 +85,7 @@ public class ActiveStorageResource {
         Blob blob = storage.blob(signedId).orElse(null);
         if (blob == null) return Responses.head(404);
         long size = Math.max(0, blob.byteSize());
-        ByteRange range = ByteRange.parse(request.header("range"), size);
+        ByteRange range = ByteRange.parse(routing.request().getHeader("range"), size);
         if (range == null) return stream(http, blob, true);
         if (!range.satisfiable()) return unsatisfiable(size).build();
         var file = storage.file(blob).orElseThrow(() -> new StorageException("file not found for blob " + blob.id()));
@@ -117,7 +121,7 @@ public class ActiveStorageResource {
     @Path("disk/{encoded_key}/{filename: .+}")
     public Response diskShow(@PathParam("encoded_key") String encodedKey, @Context Request http) {
         Disk.Key key = storage.diskKey(encodedKey).orElse(null);
-        if (key == null) return withHeader(Formats.head(request, 404), "Cache-Control", DISK_CACHE_CONTROL);
+        if (key == null) return withHeader(Formats.head(routing, 404), "Cache-Control", DISK_CACHE_CONTROL);
         java.nio.file.Path file = storage.pathFor(key.key());
         long size;
         Instant modified;
@@ -125,13 +129,13 @@ public class ActiveStorageResource {
             size = Files.size(file);
             modified = Files.getLastModifiedTime(file).toInstant();
         } catch (NoSuchFileException e) {
-            return withHeader(Formats.head(request, 404), "Cache-Control", DISK_CACHE_CONTROL);
+            return withHeader(Formats.head(routing, 404), "Cache-Control", DISK_CACHE_CONTROL);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
         Response.ResponseBuilder response = preconditions(http, modified, null);
         if (response == null) {
-            ByteRange range = ByteRange.parse(request.header("range"), size);
+            ByteRange range = ByteRange.parse(routing.request().getHeader("range"), size);
             response = range == null ? Response.ok(file) : range.satisfiable() ? partial(file, range, size) : unsatisfiable(size);
             response.header("Last-Modified", HttpCache.httpDate(modified))
                 .header("Content-Type", key.contentType() == null ? ContentTypes.BINARY : key.contentType())
@@ -144,13 +148,12 @@ public class ActiveStorageResource {
     /// for (and match its checksum).
     @PUT
     @Path("disk/{encoded_token}")
-    public Response diskUpdate(@PathParam("encoded_token") String encodedToken) {
-        if (!authentication.hasSession()) return Formats.head(request, 401);
+    public Response diskUpdate(@PathParam("encoded_token") String encodedToken, byte[] body) {
+        if (!authentication.hasSession()) return Formats.head(routing, 401);
         Disk.Token token = storage.uploadToken(encodedToken).orElse(null);
-        if (token == null) return Formats.head(request, 404);
-        byte[] body = request.body();
-        if (!acceptable(token, body) || !storage.upload(token, body)) return Formats.head(request, 422);
-        return Formats.head(request, 204);
+        if (token == null) return Formats.head(routing, 404);
+        if (!acceptable(token, body) || !storage.upload(token, body)) return Formats.head(routing, 422);
+        return Formats.head(routing, 204);
     }
 
     /// Creates the blob a client then PUTs to the returned URL. Rails guards this with its CSRF
@@ -158,10 +161,10 @@ public class ActiveStorageResource {
     /// other write instead, so Active Storage's JavaScript can call it from any signed-in page.
     @POST
     @Path("direct_uploads")
-    public Response directUploadsCreate() {
-        if (!AccessFilter.sameOriginWrite(request)) return exceptionPage(422);
-        if (!authentication.hasSession()) return Formats.head(request, 401);
-        Map<?, ?> params = blobParams();
+    public Response directUploadsCreate(byte[] body) {
+        if (!AccessFilter.sameOriginWrite(routing.request(), origin)) return exceptionPage(422);
+        if (!authentication.hasSession()) return Formats.head(routing, 401);
+        Map<?, ?> params = blobParams(body);
         if (params == null) return exceptionPage(400);
         String filename = text(params.get("filename"));
         String checksum = text(params.get("checksum"));
@@ -170,7 +173,7 @@ public class ActiveStorageResource {
         if (byteSize == null) return exceptionPage(422);
         if (byteSize < 0 || byteSize > storage.maxDirectUploadBytes()) return exceptionPage(413);
         Map<?, ?> metadata = params.get("metadata") instanceof Map<?, ?> m ? m : Map.of();
-        var upload = storage.createDirectUpload(request.baseUrl(), filename, text(params.get("content_type")), metadata, byteSize, checksum);
+        var upload = storage.createDirectUpload(origin.baseUrl(), filename, text(params.get("content_type")), metadata, byteSize, checksum);
         return Responses.json(200, upload.json());
     }
 
@@ -178,7 +181,7 @@ public class ActiveStorageResource {
 
     /// A private, five-minute redirect to the blob's disk URL.
     private Response redirectTo(Blob blob) {
-        String url = storage.serviceUrl(request.baseUrl(), blob, request.params().string("disposition"));
+        String url = storage.serviceUrl(origin.baseUrl(), blob, Params.of(routing.request()).string("disposition"));
         return Response.fromResponse(Responses.redirect(url)).header("Cache-Control", "max-age=300, private").header("Date", now()).build();
     }
 
@@ -190,7 +193,7 @@ public class ActiveStorageResource {
             var file = storage.file(blob).orElse(null);
             if (file == null) return validators(Response.fromResponse(Responses.head(404)), etag).header("Cache-Control", "no-cache").build();
             response = validators(Response.ok(file), etag).header("Content-Type", servingType(blob))
-                .header("Content-Disposition", disposition(blob, request.params().string("disposition")));
+                .header("Content-Disposition", disposition(blob, Params.of(routing.request()).string("disposition")));
             if (acceptRanges) response.header("Accept-Ranges", "bytes");
         } else {
             response.header("Last-Modified", HttpCache.httpDate(FOREVER_LAST_MODIFIED)).header("Date", now());
@@ -234,20 +237,19 @@ public class ActiveStorageResource {
 
     /// `params.expect(blob: [...])` from a JSON body (what Active Storage's JavaScript sends) or
     /// form parameters; null when there's no `blob` hash.
-    private @Nullable Map<?, ?> blobParams() {
-        String type = request.header("content-type");
-        byte[] body = request.body();
+    private @Nullable Map<?, ?> blobParams(byte[] body) {
+        String type = routing.request().getHeader("content-type");
         if (type != null && type.toLowerCase(Locale.ROOT).contains("json") && body.length > 0) {
             Object parsed = Json.parseOrNull(new String(body, StandardCharsets.UTF_8));
             return parsed instanceof Map<?, ?> m && m.get("blob") instanceof Map<?, ?> blob ? blob : null;
         }
-        return request.params().get("blob") instanceof Map<?, ?> blob ? blob : null;
+        return Params.of(routing.request(), body).get("blob") instanceof Map<?, ?> blob ? blob : null;
     }
 
     /// The token's type and length against the request's media type and `Content-Length` (the
     /// body's own length when sent chunked).
     private boolean acceptable(Disk.Token token, byte[] body) {
-        String header = request.header("content-type");
+        String header = routing.request().getHeader("content-type");
         String mediaType = null;
         if (header != null) {
             int semicolon = header.indexOf(';');
@@ -255,18 +257,18 @@ public class ActiveStorageResource {
             if (!type.isEmpty()) mediaType = type;
         }
         String expected = token.contentType() == null ? null : token.contentType().toLowerCase(Locale.ROOT);
-        String contentLength = request.header("content-length");
-        long length = request.header("transfer-encoding") != null ? body.length : RubyStrings.toI(contentLength == null ? "" : contentLength);
+        String contentLength = routing.request().getHeader("content-length");
+        long length = routing.request().getHeader("transfer-encoding") != null ? body.length : RubyStrings.toI(contentLength == null ? "" : contentLength);
         return java.util.Objects.equals(expected, mediaType) && token.contentLength() == length;
     }
 
     private String fullPath() {
-        String query = request.query();
-        return request.path() + (query == null || query.isEmpty() ? "" : "?" + query);
+        String query = routing.request().query();
+        return routing.request().path() + (query == null || query.isEmpty() ? "" : "?" + query);
     }
 
     private boolean isTurboFrame() {
-        String frame = request.header("turbo-frame");
+        String frame = routing.request().getHeader("turbo-frame");
         return frame != null && !frame.isBlank();
     }
 

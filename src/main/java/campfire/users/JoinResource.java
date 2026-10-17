@@ -1,18 +1,20 @@
 package campfire.users;
 
-import campfire.accounts.HelpContact;
 import campfire.accounts.Account;
+import campfire.accounts.HelpContact;
 import campfire.sessions.Authentication;
 import campfire.sessions.SessionService;
 import campfire.storage.AttachmentChange;
 import campfire.view.Pages;
 import campfire.view.View;
 import campfire.web.Access;
-import campfire.web.CurrentRequest;
+import campfire.web.Params;
 import campfire.web.Paths;
+import campfire.web.RequestOrigin;
 import campfire.web.Responses;
 import gg.jte.generated.precompiled.users.JtenewGenerated;
 import io.smallrye.common.annotation.RunOnVirtualThread;
+import io.vertx.ext.web.RoutingContext;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
@@ -23,6 +25,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.Map;
 import java.util.Objects;
+import org.jboss.resteasy.reactive.server.multipart.MultipartFormDataInput;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -33,7 +36,9 @@ import org.jspecify.annotations.Nullable;
 @NullMarked
 public class JoinResource {
     @Inject
-    CurrentRequest request;
+    RequestOrigin origin;
+    @Inject
+    RoutingContext routing;
     @Inject
     Pages pages;
     @Inject
@@ -56,19 +61,20 @@ public class JoinResource {
     /// prefilled with it.
     @POST
     @SuppressWarnings("unchecked")
-    public Response create(@PathParam("join_code") String joinCode) {
+    public Response create(@PathParam("join_code") String joinCode, MultipartFormDataInput form) {
         if (verifiedAccount(joinCode) == null) return Responses.head(404);
-        request.requireHash("user");
-        var params = (Map<String, Object>) Objects.requireNonNull(request.params().get("user"));
+        Params submitted = Params.of(routing.request(), form);
+        submitted.requireHash("user");
+        var params = (Map<String, Object>) Objects.requireNonNull(submitted.get("user"));
         String email = params.get("email_address") instanceof String s ? s : null;
         User user = users.join(params.get("name") instanceof String s ? s : null, email, params.get("password") instanceof String s ? s : null,
             AttachmentChange.of(params, "avatar"));
         if (user == null) {
             String query = email == null ? "" : "?email_address=" + View.cgiEscape(email);
-            return Responses.redirect(request.url(Paths.NEW_SESSION + query));
+            return Responses.redirect(origin.url(Paths.NEW_SESSION + query));
         }
         authentication.start(user);
-        return Responses.redirect(request.url(Paths.ROOT));
+        return Responses.redirect(origin.url(Paths.ROOT));
     }
 
     /// The account, if `joinCode` is its current join code.

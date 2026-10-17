@@ -1,14 +1,18 @@
 package campfire.rooms;
 
+import campfire.sessions.Viewer;
 import campfire.view.Pages;
 import campfire.view.View;
-import campfire.web.CurrentRequest;
+import campfire.web.Formats;
 import campfire.web.Params;
 import campfire.web.Paths;
+import campfire.web.RailsSession;
+import campfire.web.RequestOrigin;
 import campfire.web.ResponseCache;
 import campfire.web.Responses;
 import gg.jte.generated.precompiled.rooms.JteshowGenerated;
 import io.smallrye.common.annotation.RunOnVirtualThread;
+import io.vertx.ext.web.RoutingContext;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -24,7 +28,13 @@ import org.jspecify.annotations.Nullable;
 @NullMarked
 public class RoomResource {
     @Inject
-    CurrentRequest request;
+    Viewer viewer;
+    @Inject
+    RequestOrigin origin;
+    @Inject
+    RailsSession railsSession;
+    @Inject
+    RoutingContext routing;
     @Inject
     RoomAccess access;
     @Inject
@@ -37,8 +47,8 @@ public class RoomResource {
     /// The user's newest room. Rails fails on a user without rooms, and so does this.
     @GET
     public Response index() {
-        Room room = rooms.newestForUser(request.user().id()).orElseThrow(() -> new IllegalStateException("No route matches room_url(nil)"));
-        return Responses.redirect(request.url(Paths.room(room.id())));
+        Room room = rooms.newestForUser(viewer.user().id()).orElseThrow(() -> new IllegalStateException("No route matches room_url(nil)"));
+        return Responses.redirect(origin.url(Paths.room(room.id())));
     }
 
     @GET
@@ -57,11 +67,11 @@ public class RoomResource {
     private Response show(String id, @Nullable Long aroundMessageId) {
         Room room = access.room(id, RoomAccess.Scope.ANY);
         access.rememberVisit(room.id());
-        var cached = cache.lookup(request, "rooms#show");
+        var cached = cache.lookup(viewer, railsSession, origin, routing, "rooms#show");
         if (cached.isPresent()) return cached.get();
         View v = pages.view();
-        v.frameLayout = request.isTurboFrame();
-        RoomPage page = rooms.page(v, room, request.user(), aroundMessageId);
+        v.frameLayout = Formats.isTurboFrame(routing);
+        RoomPage page = rooms.page(v, room, viewer.user(), aroundMessageId);
         return pages.render(200, v, (out, view) -> JteshowGenerated.render(out, null, view, page));
     }
 
@@ -78,6 +88,6 @@ public class RoomResource {
         Room room = access.room(id, RoomAccess.Scope.ANY);
         access.requireAdministrator(room.creatorId());
         rooms.destroy(room);
-        return Responses.redirect(request.url(Paths.ROOT));
+        return Responses.redirect(origin.url(Paths.ROOT));
     }
 }

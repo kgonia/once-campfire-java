@@ -3,7 +3,6 @@ package campfire.users;
 import campfire.rails.Secrets;
 import campfire.sessions.SessionService;
 import campfire.view.Pages;
-import campfire.web.CurrentRequest;
 import gg.jte.generated.precompiled.users.JteshowGenerated;
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import jakarta.inject.Inject;
@@ -20,8 +19,6 @@ import org.jspecify.annotations.NullMarked;
 @RunOnVirtualThread
 @NullMarked
 public class UserResource {
-    @Inject
-    CurrentRequest request;
     @Inject
     Pages pages;
     @Inject

@@ -24,6 +24,13 @@ public final class RequestState {
 
     private RequestState() {}
 
+    /// Leaves the session and cookies as the request brought them. Rails renders an error page
+    /// after the action raised, and the session middleware then writes nothing.
+    void discardChanges() {
+        if (session != null) session.discardChanges();
+        if (cookies != null) cookies.discard();
+    }
+
     /// See {@link #dataVersionAtStart}.
     public static long dataVersionAtStart(RoutingContext routing) {
         return of(routing).dataVersionAtStart;

@@ -1,5 +1,7 @@
 package campfire.web;
 
+import io.vertx.core.http.HttpMethod;
+import io.vertx.ext.web.RoutingContext;
 import jakarta.ws.rs.core.Response;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -39,16 +41,16 @@ public final class Formats {
 
     /// The request's acceptable formats, most preferred first; unregistered types are dropped, so
     /// the list can be empty (`Accept: image/*`).
-    public static List<String> of(CurrentRequest request) {
+    public static List<String> of(RoutingContext request) {
         String explicit = explicitFormat(request);
         if (explicit != null) {
             String format = byExtension(explicit);
             return format == null ? List.of() : List.of(format);
         }
         if (validAcceptHeader(request)) {
-            String accept = request.header("accept");
+            String accept = header(request, "accept");
             if (accept == null || accept.isBlank()) {
-                String type = request.header("content-type");
+                String type = header(request, "content-type");
                 if (type == null) return List.of();
                 String format = MIME.get(type.split("[,;]")[0].strip().toLowerCase(Locale.ROOT));
                 return format == null ? List.of() : List.of(format);
@@ -59,7 +61,7 @@ public final class Formats {
     }
 
     /// The first of `offered` the client accepts (the first offered for `*/*`), or a 406.
-    public static String respondTo(CurrentRequest request, String... offered) {
+    public static String respondTo(RoutingContext request, String... offered) {
         for (String format : of(request)) {
             if (format.equals("all")) return offered[0];
             for (String candidate : offered) if (candidate.equals(format)) return candidate;
@@ -70,13 +72,13 @@ public final class Formats {
     /// `head status` as Rails' own controllers answer it: no body, typed as the format the
     /// request asked for first (HTML for `*/*` or nothing recognized), untyped when bodiless by
     /// definition. `/disk/<key>/moon.png` that isn't found is an empty `image/png`.
-    public static Response head(CurrentRequest request, int status) {
+    public static Response head(RoutingContext request, int status) {
         if (status < 200 || status == 204 || status == 205 || status == 304) return Response.status(status).build();
         return Response.status(status).entity(new byte[0]).header("Content-Type", renderedType(request)).build();
     }
 
     /// The MIME type of the first accepted format, `text/html` for `*/*` or none.
-    static String renderedType(CurrentRequest request) {
+    static String renderedType(RoutingContext request) {
         List<String> formats = of(request);
         String type = canonicalType(formats.isEmpty() || formats.getFirst().equals("all") ? "html" : formats.getFirst());
         return type != null ? type : "text/html";
@@ -105,14 +107,14 @@ public final class Formats {
 
     /// Whether a render varies on `Accept`: its format came from that header. Only endpoints that
     /// offer more than one type say so.
-    public static boolean variesOnAccept(CurrentRequest request) {
+    public static boolean variesOnAccept(RoutingContext request) {
         return explicitFormat(request) == null && validAcceptHeader(request);
     }
 
     /// The 406 Rails' exception pages answer: the status and reason in the request's format for
     /// JSON, XML and YAML, an empty page otherwise.
-    static Response notAcceptable(CurrentRequest request) {
-        request.discardChanges();
+    static Response notAcceptable(RoutingContext request) {
+        RequestState.of(request).discardChanges();
         List<String> formats = of(request);
         String format = formats.isEmpty() ? "html" : formats.getFirst();
         String body = switch (format) {
@@ -122,7 +124,7 @@ public final class Formats {
             default -> "";
         };
         String type = body.isEmpty() ? "text/html" : mimeType(format);
-        byte[] bytes = request.isHead() ? new byte[0] : body.getBytes(StandardCharsets.UTF_8);
+        byte[] bytes = (request.request().method() == HttpMethod.HEAD) ? new byte[0] : body.getBytes(StandardCharsets.UTF_8);
         return Response.status(406).entity(bytes).header("Content-Type", type + "; charset=UTF-8").header("Content-Length", bytes.length).build();
     }
 
@@ -134,9 +136,36 @@ public final class Formats {
         };
     }
 
-    private static @Nullable String explicitFormat(CurrentRequest request) {
-        String suffix = request.format();
-        return suffix != null ? suffix : request.params().string("format");
+    private static @Nullable String explicitFormat(RoutingContext request) {
+        String suffix = format(request);
+        return suffix != null || request.request().query() == null ? suffix : request.queryParams().get("format");
+    }
+
+    /// The `.json`/`.js` suffix the path came with (or the route's default), or null.
+    public static @Nullable String format(RoutingContext request) {
+        return RequestState.of(request).format;
+    }
+
+    /// For routes with a format of their own (the bot API's is JSON), unless the path names one.
+    public static void defaultFormat(RoutingContext request, String format) {
+        RequestState state = RequestState.of(request);
+        if (state.format == null) state.format = format;
+    }
+
+    /// JSON by the path suffix, or by an `Accept` that starts with it.
+    public static boolean wantsJson(RoutingContext request) {
+        String format = format(request);
+        if ("json".equals(format)) return true;
+        String accept = header(request, "accept");
+        return format == null && accept != null && accept.startsWith("application/json");
+    }
+
+    public static boolean isTurboFrame(RoutingContext request) {
+        return header(request, "turbo-frame") != null;
+    }
+
+    private static @Nullable String header(RoutingContext request, String name) {
+        return request.request().getHeader(name);
     }
 
     private static @Nullable String byExtension(String extension) {
@@ -146,15 +175,15 @@ public final class Formats {
         return EXTENSIONS.contains(e) ? e : null;
     }
 
-    private static boolean xhr(CurrentRequest request) {
-        String requestedWith = request.header("x-requested-with");
+    private static boolean xhr(RoutingContext request) {
+        String requestedWith = header(request, "x-requested-with");
         return requestedWith != null && requestedWith.toLowerCase(Locale.ROOT).contains("xmlhttprequest");
     }
 
-    private static boolean validAcceptHeader(CurrentRequest request) {
-        String accept = request.header("accept");
+    private static boolean validAcceptHeader(RoutingContext request) {
+        String accept = header(request, "accept");
         boolean present = accept != null && !accept.isBlank();
-        String contentType = request.header("content-type");
+        String contentType = header(request, "content-type");
         if (xhr(request) && (present || (contentType != null && !contentType.isEmpty()))) return true;
         if (accept == null || !present) return false;
         String compact = accept.replaceAll("\\s", "");

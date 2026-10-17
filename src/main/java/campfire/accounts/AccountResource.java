@@ -1,14 +1,18 @@
 package campfire.accounts;
 
+import campfire.sessions.Viewer;
 import campfire.storage.AttachmentChange;
 import campfire.users.User;
 import campfire.view.Pages;
-import campfire.web.CurrentRequest;
 import campfire.web.Halt;
+import campfire.web.Params;
 import campfire.web.Paths;
+import campfire.web.RailsSession;
+import campfire.web.RequestOrigin;
 import campfire.web.Responses;
 import gg.jte.generated.precompiled.accounts.JteeditGenerated;
 import io.smallrye.common.annotation.RunOnVirtualThread;
+import io.vertx.ext.web.RoutingContext;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.PATCH;
@@ -20,6 +24,8 @@ import jakarta.ws.rs.core.Response;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.jboss.resteasy.reactive.RestQuery;
+import org.jboss.resteasy.reactive.server.multipart.MultipartFormDataInput;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -30,7 +36,13 @@ import org.jspecify.annotations.Nullable;
 @NullMarked
 public class AccountResource {
     @Inject
-    CurrentRequest request;
+    Viewer viewer;
+    @Inject
+    RequestOrigin origin;
+    @Inject
+    RailsSession railsSession;
+    @Inject
+    RoutingContext routing;
     @Inject
     Pages pages;
     @Inject
@@ -39,33 +51,34 @@ public class AccountResource {
     @GET
     @Produces(MediaType.TEXT_HTML)
     @Path("edit")
-    public Response edit() {
+    public Response edit(@RestQuery @Nullable String page) {
         Account account = accounts.account();
-        boolean canAdminister = request.user().canAdminister();
+        boolean canAdminister = viewer.user().canAdminister();
         List<User> people = accounts.people(canAdminister);
-        var page = PeoplePage.of(request.params().string("page"), people.size());
+        var shown = PeoplePage.of(page, people.size());
         var accountPage = new AccountPage(account, people.stream().filter(User::isAdministrator).toList(),
-            people.stream().filter(user -> !user.isAdministrator()).toList(), page.isLast() ? null : Long.toString(page.number() + 1));
+            people.stream().filter(user -> !user.isAdministrator()).toList(), shown.isLast() ? null : Long.toString(shown.number() + 1));
         return pages.page((out, v) -> JteeditGenerated.render(out, null, v, accountPage));
     }
 
     @PUT
-    public Response replace() {
-        return update();
+    public Response replace(MultipartFormDataInput form) {
+        return update(form);
     }
 
     @PATCH
-    public Response update() {
+    public Response update(MultipartFormDataInput form) {
         requireAdministrator();
         Account account = accounts.account();
-        request.require("account");
-        if (!(request.params().get("account") instanceof Map<?, ?> attributes)) throw new IllegalStateException("undefined method 'permit' for String");
+        Params params = Params.of(routing.request(), form);
+        params.require("account");
+        if (!(params.get("account") instanceof Map<?, ?> attributes)) throw new IllegalStateException("undefined method 'permit' for String");
         @SuppressWarnings("unchecked")
-        var params = (Map<String, Object>) attributes;
-        String name = params.get("name") instanceof String s ? s : null;
-        accounts.update(account, name, settings(params.get("settings")), AttachmentChange.of(params, "logo"));
-        request.flash().set("notice", "✓");
-        return Responses.redirect(request.url(Paths.editAccount()));
+        var fields = (Map<String, Object>) attributes;
+        String name = fields.get("name") instanceof String s ? s : null;
+        accounts.update(account, name, settings(fields.get("settings")), AttachmentChange.of(fields, "logo"));
+        railsSession.flash().set("notice", "✓");
+        return Responses.redirect(origin.url(Paths.editAccount()));
     }
 
     /// The submitted settings as strings, or null when no settings hash was sent.
@@ -77,6 +90,6 @@ public class AccountResource {
     }
 
     private void requireAdministrator() {
-        if (!request.user().canAdminister()) throw new Halt(Responses.head(403));
+        if (!viewer.user().canAdminister()) throw new Halt(Responses.head(403));
     }
 }

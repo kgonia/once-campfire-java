@@ -29,7 +29,7 @@ Packages are organized by feature. Inside a feature:
 | `storage` | the Active Storage HTTP surface, analysis and variants (libvips, ffmpeg) |
 | `cable` | the Action Cable server and channels |
 | `richtext`, `rails`, `useragent`, `integrations` | Action Text HTML, Rails-compatible crypto and serialization, browser detection, OpenGraph/QR/Web Push clients |
-| `web` | request context, access filter, the front layer (public cache, static files), gzip, error pages |
+| `web` | request origin, cookies and the Rails session, access filter, the front layer (public cache, static files), gzip, error pages |
 | `view` | the templates' helpers, the fragment cache and page digests |
 
 Access rules are annotations (`@Access.Public`, `@GuestOnly`, `@BotsAllowed`, `@NoForgeryProtection`) checked by
@@ -90,6 +90,8 @@ byte for byte, or a measured performance loss. Each deviation is listed below wi
 | Public responses (static files, avatars, logos, QR codes, Active Storage files) kept by URI in `web.FrontCache`, plain and gzipped, and answered from a Vert.x route on the event loop | a caching proxy in front, or none | Thruster does this in front of Rails. Answering from memory before Quarkus REST is what serves avatars and static files at about 190k req/s. |
 | The client's address for bans: the last untrusted `X-Forwarded-For` hop (`web.RequestOrigin`) | Quarkus' forwarded remote address | Quarkus takes the first hop, which the client writes. Rails takes the last one a trusted proxy didn't add, and Quarkus 3.40 has no hook to choose. |
 | Response cookies as Vert.x `Cookie`s (`web.Cookies`), the Rails session decrypted and written back by `web.RailsSession` | JAX-RS `NewCookie` | Quarkus REST writes a `NewCookie` with RFC 2109's `Version=1`, and Java's cookie jar then sends it back as `$Version="1"; session_token="…"`. Values stay Rack-escaped and the session stays Rails' encrypted JSON, so a Rails install's cookies keep working. |
+| Rails' nested form fields (`user[name]`, `user_ids[]`) and JSON bodies read into `web.Params`, from Quarkus REST's parsed form (`MultipartFormDataInput`) or the body; flat values are `@RestQuery`/`@RestHeader` parameters | `@RestForm` and `@BeanParam` throughout | The services take Rails' parameter hashes, with Rack's merge of query and form and its type checks (a string where a hash belongs is a 500, an empty hash a 400). Field names stay the frontend's. |
+| `_method` read by a pre-matching filter (`AccessFilter.methodOverride`) that reads a form POST's body off the event loop and hands it on | a filter on parsed form params | Quarkus REST reads the form only after it has matched the method, and reading the body in a Vert.x handler first breaks HTTP/2: Quarkus REST then pauses a request that has already ended. |
 | `web.Formats.respondTo` for endpoints that offer several types, a Turbo Stream, or JavaScript or JSON at a plain URL | `@Produces` | Rails ignores a browser's `Accept` once it lists `*/*`, and answers those 406. `@Produces` would match the `*/*` and serve the stream. HTML-only pages use `@Produces`, and the `.json` suffix and `format` parameter replace `Accept` before matching. |
 | Its own JSON writer (`rails.Json`) | Jackson | Historical: it escaped `<`, `>` and `&` and formatted numbers as Ruby does, for byte parity with the Rust port, which is no longer a goal. Being replaced. |
 
@@ -209,6 +211,8 @@ None of these show up in the parity suite or the harness:
   them. As in Rails they leave the session and cookies untouched.
 - The public cache keys on the URI alone, not the host, and doesn't keep responses that vary on anything but
   `Accept-Encoding`. HEAD requests go to the app.
+- `_method` counts in the first 16 KB of a multipart form, where Rails' forms put it. Rack reads the whole form.
+- Malformed JSON is a 400 when the action reads its parameters, after sign-in. Rails raises it before the action.
 - A trusted proxy's `X-Forwarded-Port` and `X-Forwarded-Ssl` count, as they do in Rack.
 - Static files carry the security headers too. Rails serves them before the app, without them.
 - `Vary: Accept` is sent only by endpoints that offer more than one type. Rails sends it whenever the format came

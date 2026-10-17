@@ -1,8 +1,9 @@
 package campfire.accounts;
 
-import campfire.web.CurrentRequest;
+import campfire.sessions.Viewer;
 import campfire.web.Halt;
 import campfire.web.Paths;
+import campfire.web.RequestOrigin;
 import campfire.web.Responses;
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import jakarta.inject.Inject;
@@ -17,14 +18,16 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 public class JoinCodeResource {
     @Inject
-    CurrentRequest request;
+    Viewer viewer;
+    @Inject
+    RequestOrigin origin;
     @Inject
     AccountService accounts;
 
     @POST
     public Response create() {
-        if (!request.user().canAdminister()) throw new Halt(Responses.head(403));
+        if (!viewer.user().canAdminister()) throw new Halt(Responses.head(403));
         accounts.resetJoinCode(accounts.account());
-        return Responses.redirect(request.url(Paths.editAccount()));
+        return Responses.redirect(origin.url(Paths.editAccount()));
     }
 }

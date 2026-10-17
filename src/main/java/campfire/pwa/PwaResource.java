@@ -4,11 +4,11 @@ import campfire.accounts.Account;
 import campfire.view.Pages;
 import campfire.view.View;
 import campfire.web.Access;
-import campfire.web.CurrentRequest;
 import campfire.web.Formats;
 import campfire.web.Paths;
 import gg.jte.generated.precompiled.pwa.JtemanifestjsonGenerated;
 import io.smallrye.common.annotation.RunOnVirtualThread;
+import io.vertx.ext.web.RoutingContext;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -30,7 +30,7 @@ public class PwaResource {
     private static final byte[] SERVICE_WORKER = load("/campfire/pwa/service_worker.js");
 
     @Inject
-    CurrentRequest request;
+    RoutingContext routing;
     @Inject
     Pages pages;
 
@@ -40,13 +40,13 @@ public class PwaResource {
     }
 
     private Response serviceWorker() {
-        Formats.respondTo(request, "js");
+        Formats.respondTo(routing, "js");
         return Response.ok(SERVICE_WORKER).header("Content-Type", "text/javascript; charset=utf-8").build();
     }
 
     /// The icons are the account's logo, versioned by the account so installed apps update.
     private Response manifest() {
-        Formats.respondTo(request, "json");
+        Formats.respondTo(routing, "json");
         View v = pages.view();
         Account account = v.account;
         String name = account == null || account.name() == null ? "Campfire" : account.name();

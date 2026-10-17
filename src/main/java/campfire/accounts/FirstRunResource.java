@@ -5,11 +5,13 @@ import campfire.storage.AttachmentChange;
 import campfire.users.User;
 import campfire.view.Pages;
 import campfire.web.Access;
-import campfire.web.CurrentRequest;
+import campfire.web.Params;
 import campfire.web.Paths;
+import campfire.web.RequestOrigin;
 import campfire.web.Responses;
 import gg.jte.generated.precompiled.first_runs.JteshowGenerated;
 import io.smallrye.common.annotation.RunOnVirtualThread;
+import io.vertx.ext.web.RoutingContext;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
@@ -19,6 +21,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.Map;
 import java.util.Objects;
+import org.jboss.resteasy.reactive.server.multipart.MultipartFormDataInput;
 import org.jspecify.annotations.NullMarked;
 
 /// The setup form a new installation opens with; afterwards both actions go to the root.
@@ -28,7 +31,9 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 public class FirstRunResource {
     @Inject
-    CurrentRequest request;
+    RequestOrigin origin;
+    @Inject
+    RoutingContext routing;
     @Inject
     Pages pages;
     @Inject
@@ -39,21 +44,22 @@ public class FirstRunResource {
     @GET
     @Produces(MediaType.TEXT_HTML)
     public Response show() {
-        if (firstRuns.done()) return Responses.redirect(request.url(Paths.ROOT));
+        if (firstRuns.done()) return Responses.redirect(origin.url(Paths.ROOT));
         return pages.page((out, v) -> JteshowGenerated.render(out, null, v));
     }
 
     /// Signs the new administrator in.
     @POST
     @SuppressWarnings("unchecked")
-    public Response create() {
-        if (firstRuns.done()) return Responses.redirect(request.url(Paths.ROOT));
-        request.requireHash("user");
-        var user = (Map<String, Object>) Objects.requireNonNull(request.params().get("user"));
+    public Response create(MultipartFormDataInput form) {
+        if (firstRuns.done()) return Responses.redirect(origin.url(Paths.ROOT));
+        Params params = Params.of(routing.request(), form);
+        params.requireHash("user");
+        var user = (Map<String, Object>) Objects.requireNonNull(params.get("user"));
         User administrator = firstRuns.create(stringOrNull(user, "name"), stringOrEmpty(user, "email_address"), stringOrEmpty(user, "password"),
             AttachmentChange.of(user, "avatar"));
         if (administrator != null) authentication.start(administrator);
-        return Responses.redirect(request.url(Paths.ROOT));
+        return Responses.redirect(origin.url(Paths.ROOT));
     }
 
     private static @org.jspecify.annotations.Nullable String stringOrNull(Map<String, Object> params, String key) {

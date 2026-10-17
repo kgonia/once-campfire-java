@@ -2,20 +2,30 @@ package campfire.web;
 
 import campfire.db.Database;
 import campfire.sessions.Authentication;
-import campfire.users.Ban;
+import campfire.sessions.Viewer;
 import campfire.useragent.AllowBrowser;
+import campfire.users.Ban;
 import campfire.view.Pages;
-import io.quarkus.arc.ClientProxy;
+import io.smallrye.mutiny.Uni;
+import io.smallrye.mutiny.infrastructure.Infrastructure;
+import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpServerRequest;
 import io.vertx.ext.web.RoutingContext;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ResourceInfo;
 import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.SequenceInputStream;
+import java.io.UncheckedIOException;
 import java.lang.annotation.Annotation;
 import java.net.URI;
-import java.util.HashMap;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.regex.Pattern;
 import org.jboss.resteasy.reactive.server.ServerRequestFilter;
 import org.jspecify.annotations.Nullable;
@@ -25,9 +35,13 @@ import org.jspecify.annotations.Nullable;
 /// get a page asking them to upgrade.
 public class AccessFilter {
     @Inject
-    CurrentRequest current;
-    @Inject
     Authentication authentication;
+    @Inject
+    Viewer viewer;
+    @Inject
+    RequestOrigin origin;
+    @Inject
+    RailsSession railsSession;
     @Inject
     Database db;
     @Inject
@@ -65,30 +79,69 @@ public class AccessFilter {
         if (type != null) context.getHeaders().putSingle(HttpHeaders.ACCEPT, type);
     }
 
+    /// HTML forms send PUT, PATCH and DELETE as a POST with a `_method` field, which wins over an
+    /// `X-HTTP-Method-Override` header, as in `Rack::MethodOverride`. The field is in the body, which
+    /// Quarkus REST reads only after matching, so a form POST's body is read here, off the event
+    /// loop, and handed on as the entity: all of a URL-encoded one, and of a multipart one the start,
+    /// where Rails' forms put `_method`.
+    @ServerRequestFilter(preMatching = true)
+    public @Nullable Uni<Void> methodOverride(ContainerRequestContext context) {
+        if (!context.getMethod().equals("POST")) return null;
+        MediaType type = context.getMediaType();
+        boolean urlEncoded = type != null && type.isCompatible(MediaType.APPLICATION_FORM_URLENCODED_TYPE);
+        boolean multipart = type != null && type.isCompatible(MediaType.MULTIPART_FORM_DATA_TYPE);
+        if (!urlEncoded && !multipart) {
+            override(context, null);
+            return null;
+        }
+        return Uni.createFrom().<Void>item(() -> {
+            try {
+                InputStream body = context.getEntityStream();
+                byte[] read = urlEncoded ? body.readAllBytes() : body.readNBytes(MULTIPART_PREFIX);
+                String field = urlEncoded ? MethodOverride.fromForm(read) : MethodOverride.fromMultipart(read, type.getParameters().get("boundary"));
+                context.setEntityStream(urlEncoded ? new ByteArrayInputStream(read) : new SequenceInputStream(new ByteArrayInputStream(read), body));
+                override(context, field);
+                return null;
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }).runSubscriptionOn(Infrastructure.getDefaultWorkerPool());
+    }
+
+    /// How much of a multipart body is searched for `_method`.
+    private static final int MULTIPART_PREFIX = 16 * 1024;
+
+    private static void override(ContainerRequestContext context, @Nullable String field) {
+        String method = field != null ? field : context.getHeaderString("X-HTTP-Method-Override");
+        if (method == null) return;
+        method = method.toUpperCase(Locale.ROOT);
+        if (method.equals("PUT") || method.equals("PATCH") || method.equals("DELETE")) context.setMethod(method);
+    }
+
     @ServerRequestFilter
     public @Nullable Response check(ContainerRequestContext context, ResourceInfo resource, RoutingContext routing) {
-        // Each call through the request-scoped client proxy looks the instance up again.
-        CurrentRequest request = ClientProxy.unwrap(current);
-        var pathParams = new HashMap<String, String>();
-        context.getUriInfo().getPathParameters().forEach((name, values) -> pathParams.put(name, values.getFirst()));
-        request.addPathParams(pathParams);
-        if (request.malformedBody()) return Response.status(400).entity(new byte[0]).header("Content-Type", "text/html; charset=UTF-8").build();
         RequestState state = RequestState.of(routing);
         if (has(resource, Access.Framework.class)) return null;
         state.dataVersionAtStart = db.dataVersion();
 
+        HttpServerRequest request = routing.request();
         boolean isPublic = has(resource, Access.Public.class);
         boolean guestOnly = has(resource, Access.GuestOnly.class);
-        if (!request.isGet() && db.read(conn -> Ban.banned(conn, request.remoteIp()))) return Responses.head(429);
+        if (!isGet(request) && db.read(conn -> Ban.banned(conn, origin.remoteIp()))) return Responses.head(429);
         if (!isPublic && !guestOnly && !authentication.resume() && !authentication.authenticateBot()) {
-            request.setSessionValue("return_to_after_authenticating", request.requestUrl());
-            return Responses.redirect(request.url(Paths.NEW_SESSION));
+            railsSession.set("return_to_after_authenticating", origin.requestUrl());
+            return Responses.redirect(origin.url(Paths.NEW_SESSION));
         }
-        if (request.authenticatedByBot() && !has(resource, Access.BotsAllowed.class)) return Responses.head(403);
-        if (!request.authenticatedByBot() && !has(resource, Access.NoForgeryProtection.class) && !sameOriginWrite(request)) return Responses.head(422);
-        if (AllowBrowser.blocked(request.userAgent())) return pages.incompatibleBrowser(ownLayout(request.path()));
-        if (guestOnly && authentication.resume()) return Responses.redirect(request.url(Paths.ROOT));
+        boolean bot = viewer.authenticatedByBot();
+        if (bot && !has(resource, Access.BotsAllowed.class)) return Responses.head(403);
+        if (!bot && !has(resource, Access.NoForgeryProtection.class) && !sameOriginWrite(request, origin)) return Responses.head(422);
+        if (AllowBrowser.blocked(request.getHeader("user-agent"))) return pages.incompatibleBrowser(ownLayout(Objects.requireNonNullElse(request.path(), "/")));
+        if (guestOnly && authentication.resume()) return Responses.redirect(origin.url(Paths.ROOT));
         return null;
+    }
+
+    private static boolean isGet(HttpServerRequest request) {
+        return request.method() == HttpMethod.GET || request.method() == HttpMethod.HEAD;
     }
 
     private static boolean has(ResourceInfo resource, Class<? extends Annotation> annotation) {
@@ -98,23 +151,23 @@ public class AccessFilter {
     /// Cross-site request forgery protection without tokens: writes must come from this origin by
     /// the browser's own account (`Sec-Fetch-Site: same-origin` or `same-site`, and a matching
     /// `Origin` if one is sent). Clients that send neither header are only trusted over plain HTTP.
-    public static boolean sameOriginWrite(CurrentRequest request) {
-        if (request.isGet()) return true;
-        String origin = request.header("origin");
-        if (origin != null && (origin.equals("null") || !sameOrigin(origin, request))) return false;
-        String site = request.header("sec-fetch-site");
-        if (site == null) return !request.ssl();
+    public static boolean sameOriginWrite(HttpServerRequest request, RequestOrigin requestOrigin) {
+        if (isGet(request)) return true;
+        String origin = request.getHeader("origin");
+        if (origin != null && (origin.equals("null") || !sameOrigin(origin, requestOrigin))) return false;
+        String site = request.getHeader("sec-fetch-site");
+        if (site == null) return !requestOrigin.ssl();
         return switch (site.toLowerCase(Locale.ROOT)) {
             case "same-origin", "same-site" -> true;
             default -> false;
         };
     }
 
-    private static boolean sameOrigin(String origin, CurrentRequest request) {
+    private static boolean sameOrigin(String origin, RequestOrigin requestOrigin) {
         try {
             URI uri = URI.create(origin);
             String actual = uri.getScheme() + "://" + uri.getHost() + (uri.getPort() >= 0 ? ":" + uri.getPort() : "");
-            return actual.equalsIgnoreCase(request.baseUrl());
+            return actual.equalsIgnoreCase(requestOrigin.baseUrl());
         } catch (IllegalArgumentException e) {
             return false;
         }

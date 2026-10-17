@@ -2,6 +2,7 @@ package campfire.web;
 
 import campfire.assets.Assets;
 import io.quarkus.logging.Log;
+import io.vertx.ext.web.RoutingContext;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.NotAcceptableException;
 import jakarta.ws.rs.NotAllowedException;
@@ -18,7 +19,7 @@ public class ErrorPages {
     @Inject
     Assets assets;
     @Inject
-    CurrentRequest request;
+    RoutingContext routing;
 
     @ServerExceptionMapper
     public Response notFound(NotFoundException e) {
@@ -33,7 +34,7 @@ public class ErrorPages {
     /// No type in an `@Produces` is acceptable.
     @ServerExceptionMapper
     public Response notAcceptable(NotAcceptableException e) {
-        return Formats.notAcceptable(request);
+        return Formats.notAcceptable(routing);
     }
 
     @ServerExceptionMapper
@@ -59,8 +60,8 @@ public class ErrorPages {
 
     /// JSON requests get the status as JSON instead of the page.
     private Response page(int status) {
-        request.discardChanges();
-        if (request.wantsJson()) {
+        RequestState.of(routing).discardChanges();
+        if (Formats.wantsJson(routing)) {
             String error = switch (status) {
                 case 400 -> "Bad Request";
                 case 404 -> "Not Found";

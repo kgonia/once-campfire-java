@@ -1,16 +1,19 @@
 package campfire.bots;
 
+import campfire.sessions.Viewer;
 import campfire.storage.AttachmentChange;
 import campfire.users.User;
 import campfire.view.Pages;
-import campfire.web.CurrentRequest;
 import campfire.web.Halt;
+import campfire.web.Params;
 import campfire.web.Paths;
+import campfire.web.RequestOrigin;
 import campfire.web.Responses;
 import gg.jte.generated.precompiled.accounts.bots.JteeditGenerated;
 import gg.jte.generated.precompiled.accounts.bots.JteindexGenerated;
 import gg.jte.generated.precompiled.accounts.bots.JtenewGenerated;
 import io.smallrye.common.annotation.RunOnVirtualThread;
+import io.vertx.ext.web.RoutingContext;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -23,6 +26,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.Map;
+import org.jboss.resteasy.reactive.server.multipart.MultipartFormDataInput;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -33,7 +37,11 @@ import org.jspecify.annotations.Nullable;
 @NullMarked
 public class BotAdminResource {
     @Inject
-    CurrentRequest request;
+    Viewer viewer;
+    @Inject
+    RequestOrigin origin;
+    @Inject
+    RoutingContext routing;
     @Inject
     Pages pages;
     @Inject
@@ -56,11 +64,11 @@ public class BotAdminResource {
     }
 
     @POST
-    public Response create() {
+    public Response create(MultipartFormDataInput form) {
         requireAdministrator();
-        Map<String, Object> params = botParams();
+        Map<String, Object> params = botParams(form);
         bots.create(text(params, "name"), text(params, "webhook_url"), AttachmentChange.of(params, "avatar"));
-        return Responses.redirect(request.url(Paths.accountBots()));
+        return Responses.redirect(origin.url(Paths.accountBots()));
     }
 
     @GET
@@ -69,24 +77,24 @@ public class BotAdminResource {
     public Response edit(@PathParam("id") String id) {
         requireAdministrator();
         User bot = bots.bot(id);
-        var form = bots.form(bot, request.baseUrl());
+        var form = bots.form(bot, origin.baseUrl());
         return pages.page((out, v) -> JteeditGenerated.render(out, null, v, bot.id(), form));
     }
 
     @PUT
     @Path("{id}")
-    public Response replace(@PathParam("id") String id) {
-        return update(id);
+    public Response replace(@PathParam("id") String id, MultipartFormDataInput form) {
+        return update(id, form);
     }
 
     @PATCH
     @Path("{id}")
-    public Response update(@PathParam("id") String id) {
+    public Response update(@PathParam("id") String id, MultipartFormDataInput form) {
         requireAdministrator();
         User bot = bots.bot(id);
-        Map<String, Object> params = botParams();
+        Map<String, Object> params = botParams(form);
         bots.update(bot, text(params, "name"), text(params, "webhook_url"), AttachmentChange.of(params, "avatar"));
-        return Responses.redirect(request.url(Paths.accountBots()));
+        return Responses.redirect(origin.url(Paths.accountBots()));
     }
 
     @DELETE
@@ -94,7 +102,7 @@ public class BotAdminResource {
     public Response destroy(@PathParam("id") String id) {
         requireAdministrator();
         bots.deactivate(bots.bot(id));
-        return Responses.redirect(request.url(Paths.accountBots()));
+        return Responses.redirect(origin.url(Paths.accountBots()));
     }
 
     @PUT
@@ -109,14 +117,15 @@ public class BotAdminResource {
     public Response updateKey(@PathParam("bot_id") String botId) {
         requireAdministrator();
         bots.resetKey(bots.bot(botId));
-        return Responses.redirect(request.url(Paths.accountBots()));
+        return Responses.redirect(origin.url(Paths.accountBots()));
     }
 
     /// The `user` attributes; a `user` that isn't a hash fails as Rails does.
     @SuppressWarnings("unchecked")
-    private Map<String, Object> botParams() {
-        request.require("user");
-        if (!(request.params().get("user") instanceof Map<?, ?> attributes)) throw new IllegalStateException("undefined method 'permit' for String");
+    private Map<String, Object> botParams(MultipartFormDataInput form) {
+        Params params = Params.of(routing.request(), form);
+        params.require("user");
+        if (!(params.get("user") instanceof Map<?, ?> attributes)) throw new IllegalStateException("undefined method 'permit' for String");
         return (Map<String, Object>) attributes;
     }
 
@@ -125,6 +134,6 @@ public class BotAdminResource {
     }
 
     private void requireAdministrator() {
-        if (!request.user().canAdminister()) throw new Halt(Responses.head(403));
+        if (!viewer.user().canAdminister()) throw new Halt(Responses.head(403));
     }
 }

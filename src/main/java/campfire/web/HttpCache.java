@@ -57,13 +57,12 @@ public final class HttpCache {
 
     /// The weak ETag of `validator` combined with what else a page varies on: being a Turbo-Frame
     /// request, the template's digest, and the flash.
-    public static EntityTag etag(CurrentRequest request, @Nullable String validator, @Nullable String templateDigest) {
+    public static EntityTag etag(@Nullable String turboFrame, RailsSession.Flash flash, @Nullable String validator,
+                                 @Nullable String templateDigest) {
         var parts = new ArrayList<String>();
         if (validator != null) parts.add(validator);
-        String frame = request.header("turbo-frame");
-        if (frame != null && !frame.isBlank()) parts.add("frame");
+        if (turboFrame != null && !turboFrame.isBlank()) parts.add("frame");
         if (templateDigest != null) parts.add(templateDigest);
-        var flash = request.flash();
         for (String key : List.of("notice", "alert")) {
             String message = flash.get(key);
             if (message != null) parts.add(key + "=" + message);

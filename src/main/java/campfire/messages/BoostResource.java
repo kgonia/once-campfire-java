@@ -1,14 +1,18 @@
 package campfire.messages;
 
+import campfire.sessions.Viewer;
 import campfire.view.Pages;
 import campfire.view.View;
-import campfire.web.CurrentRequest;
+import campfire.web.Formats;
+import campfire.web.Params;
 import campfire.web.Paths;
 import campfire.web.RecordNotFound;
+import campfire.web.RequestOrigin;
 import campfire.web.Responses;
 import gg.jte.generated.precompiled.messages.boosts.JteindexGenerated;
 import gg.jte.generated.precompiled.messages.boosts.JtenewGenerated;
 import io.smallrye.common.annotation.RunOnVirtualThread;
+import io.vertx.ext.web.RoutingContext;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -16,6 +20,7 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.core.Response;
+import org.jboss.resteasy.reactive.server.multipart.MultipartFormDataInput;
 import org.jspecify.annotations.NullMarked;
 
 /// A message's boosts, and the form for adding one (shown in a Turbo Frame under the message).
@@ -24,7 +29,11 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 public class BoostResource {
     @Inject
-    CurrentRequest request;
+    Viewer viewer;
+    @Inject
+    RequestOrigin origin;
+    @Inject
+    RoutingContext routing;
     @Inject
     BoostService boosts;
     @Inject
@@ -32,9 +41,9 @@ public class BoostResource {
 
     @GET
     public Response index(@PathParam("message_id") String messageId) {
-        Message message = boosts.reachableMessage(request.user(), messageId);
+        Message message = boosts.reachableMessage(viewer.user(), messageId);
         View v = pages.view();
-        v.frameLayout = request.isTurboFrame();
+        v.frameLayout = Formats.isTurboFrame(routing);
         MessageView view = boosts.view(v, message);
         return pages.render(200, v, (out, page) -> JteindexGenerated.render(out, null, page, view));
     }
@@ -42,28 +51,29 @@ public class BoostResource {
     @GET
     @Path("new")
     public Response newBoost(@PathParam("message_id") String messageId) {
-        Message message = boosts.reachableMessage(request.user(), messageId);
+        Message message = boosts.reachableMessage(viewer.user(), messageId);
         View v = pages.view();
-        v.frameLayout = request.isTurboFrame();
-        var boosting = boosts.boosting(v, message, request.user());
+        v.frameLayout = Formats.isTurboFrame(routing);
+        var boosting = boosts.boosting(v, message, viewer.user());
         return pages.render(200, v, (out, page) -> JtenewGenerated.render(out, null, page, boosting.message(), boosting.booster()));
     }
 
     @POST
-    public Response create(@PathParam("message_id") String messageId) {
-        Message message = boosts.reachableMessage(request.user(), messageId);
-        request.requireHash("boost");
-        String content = request.params().get("boost", "content") instanceof String s ? s : null;
-        boosts.create(pages.detachedView(), message, request.user(), content);
-        return Responses.redirect(request.url(Paths.messageBoosts(message.id())));
+    public Response create(@PathParam("message_id") String messageId, MultipartFormDataInput form) {
+        Message message = boosts.reachableMessage(viewer.user(), messageId);
+        Params params = Params.of(routing.request(), form);
+        params.requireHash("boost");
+        String content = params.get("boost", "content") instanceof String s ? s : null;
+        boosts.create(pages.detachedView(), message, viewer.user(), content);
+        return Responses.redirect(origin.url(Paths.messageBoosts(message.id())));
     }
 
     /// Only one's own boosts; 204 since Rails has no template for this.
     @DELETE
     @Path("{id}")
     public Response destroy(@PathParam("message_id") String messageId, @PathParam("id") String id) {
-        Message message = boosts.reachableMessage(request.user(), messageId);
-        Boost boost = RecordNotFound.require(boosts.findOwn(message, request.user(), id));
+        Message message = boosts.reachableMessage(viewer.user(), messageId);
+        Boost boost = RecordNotFound.require(boosts.findOwn(message, viewer.user(), id));
         boosts.delete(message, boost);
         return Responses.head(204);
     }

@@ -4,14 +4,16 @@ import campfire.rails.Json;
 import campfire.rails.RubyStrings;
 import campfire.rails.Secrets;
 import campfire.richtext.Html;
+import campfire.sessions.Viewer;
 import campfire.view.Pages;
 import campfire.view.View;
-import campfire.web.CurrentRequest;
 import campfire.web.Formats;
 import campfire.web.Params;
+import campfire.web.RequestOrigin;
 import campfire.web.Responses;
 import gg.jte.generated.precompiled.autocompletable.users.JteindexGenerated;
 import io.smallrye.common.annotation.RunOnVirtualThread;
+import io.vertx.ext.web.RoutingContext;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -36,7 +38,11 @@ public class AutocompleteResource {
     static final int PAGE_SIZE = 20;
 
     @Inject
-    CurrentRequest request;
+    Viewer viewer;
+    @Inject
+    RequestOrigin origin;
+    @Inject
+    RoutingContext routing;
     @Inject
     Pages pages;
     @Inject
@@ -47,36 +53,37 @@ public class AutocompleteResource {
     /// `room_id` narrows to that room's members; a room the user isn't in is a 404.
     @GET
     public Response index() {
+        Params params = Params.of(routing.request());
         Long roomId = null;
-        String room = request.params().present("room_id");
-        if (room != null) roomId = users.roomForUser(request.user().id(), Params.parseId(room)).orElseThrow(campfire.web.RecordNotFound::new);
-        String query = request.params().present("filter");
-        if (query == null) query = request.params().present("query");
+        String room = params.present("room_id");
+        if (room != null) roomId = users.roomForUser(viewer.user().id(), Params.parseId(room)).orElseThrow(campfire.web.RecordNotFound::new);
+        String query = params.present("filter");
+        if (query == null) query = params.present("query");
 
         List<User> matches = users.autocompletable(roomId, query);
-        long page = Math.clamp(pageParam(), 1, 1_000_000_000);
+        long page = Math.clamp(pageParam(params), 1, 1_000_000_000);
         List<UserPages.MentionUser> shown = matches.stream().skip((page - 1) * PAGE_SIZE).limit(PAGE_SIZE)
             .map(user -> UserPages.MentionUser.of(secrets, user)).toList();
 
-        String format = Formats.respondTo(request, "html", "json");
+        String format = Formats.respondTo(routing, "html", "json");
         View v = pages.view();
         Response.ResponseBuilder response;
         if (format.equals("json")) {
             response = Response.ok(json(shown, v).getBytes(StandardCharsets.UTF_8)).header("Content-Type", "application/json; charset=utf-8");
-            if (Formats.of(request).getFirst().equals("json")) {
+            if (Formats.of(routing).getFirst().equals("json")) {
                 long pageCount = Math.max(1, (matches.size() + PAGE_SIZE - 1) / PAGE_SIZE);
                 response.header("x-total-count", matches.size());
-                if (page != pageCount) response.header("link", "<" + withPage(request.requestUrl(), page + 1) + ">; rel=\"next\"");
+                if (page != pageCount) response.header("link", "<" + withPage(origin.requestUrl(), page + 1) + ">; rel=\"next\"");
             }
         } else {
             response = Responses.html(200, Pages.bytes(v, (out, view) -> JteindexGenerated.render(out, null, view, shown)));
         }
-        if (Formats.variesOnAccept(request)) response.header("Vary", "Accept");
+        if (Formats.variesOnAccept(routing)) response.header("Vary", "Accept");
         return response.build();
     }
 
-    private long pageParam() {
-        String page = request.params().string("page");
+    private static long pageParam(Params params) {
+        String page = params.string("page");
         return page == null ? 0 : RubyStrings.toI(page);
     }
 

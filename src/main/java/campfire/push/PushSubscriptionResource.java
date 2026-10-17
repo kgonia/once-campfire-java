@@ -1,12 +1,14 @@
 package campfire.push;
 
+import campfire.sessions.Viewer;
 import campfire.view.Pages;
-import campfire.web.CurrentRequest;
 import campfire.web.Params;
 import campfire.web.Paths;
+import campfire.web.RequestOrigin;
 import campfire.web.Responses;
 import gg.jte.generated.precompiled.users.push_subscriptions.JteindexGenerated;
 import io.smallrye.common.annotation.RunOnVirtualThread;
+import io.vertx.ext.web.RoutingContext;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -30,7 +32,11 @@ import org.jspecify.annotations.Nullable;
 @NullMarked
 public class PushSubscriptionResource {
     @Inject
-    CurrentRequest request;
+    Viewer viewer;
+    @Inject
+    RequestOrigin origin;
+    @Inject
+    RoutingContext routing;
     @Inject
     Pages pages;
     @Inject
@@ -39,18 +45,19 @@ public class PushSubscriptionResource {
     @GET
     @Produces(MediaType.TEXT_HTML)
     public Response index() {
-        List<PushSubscriptionView> list = subscriptions.list(request.user().id());
+        List<PushSubscriptionView> list = subscriptions.list(viewer.user().id());
         return pages.page((out, v) -> JteindexGenerated.render(out, null, v, list));
     }
 
     /// 200 when registered or refreshed, 422 for an endpoint that isn't an allowed push service.
     @POST
     @SuppressWarnings("unchecked")
-    public Response create() {
-        request.wrapJsonParameters("push_subscription");
-        long userId = request.user().id();
-        request.requireHash("push_subscription");
-        var params = (Map<String, Object>) Objects.requireNonNull(request.params().get("push_subscription"));
+    public Response create(byte[] body) {
+        Params submitted = Params.of(routing.request(), body);
+        submitted.wrapJson("push_subscription");
+        long userId = viewer.user().id();
+        submitted.requireHash("push_subscription");
+        var params = (Map<String, Object>) Objects.requireNonNull(submitted.get("push_subscription"));
         var fields = new LinkedHashMap<String, @Nullable String>();
         params.forEach((key, value) -> {
             if (!PushSubscriptionService.FIELDS.contains(key)) return;
@@ -62,24 +69,24 @@ public class PushSubscriptionResource {
                 default -> {}
             }
         });
-        return Responses.head(subscriptions.register(userId, fields, request.userAgent()) ? 200 : 422);
+        return Responses.head(subscriptions.register(userId, fields, routing.request().getHeader("user-agent")) ? 200 : 422);
     }
 
     @DELETE
     @Path("{id}")
     public Response destroy(@PathParam("id") String id) {
         Long subscriptionId = Params.parseId(id);
-        if (subscriptionId != null) subscriptions.delete(request.user().id(), subscriptionId);
-        return Responses.redirect(request.url(Paths.USER_PUSH_SUBSCRIPTIONS));
+        if (subscriptionId != null) subscriptions.delete(viewer.user().id(), subscriptionId);
+        return Responses.redirect(origin.url(Paths.USER_PUSH_SUBSCRIPTIONS));
     }
 
     @POST
     @Path("{push_subscription_id}/test_notifications")
     public Response testNotification(@PathParam("push_subscription_id") String id) {
-        long userId = request.user().id();
+        long userId = viewer.user().id();
         Long subscriptionId = Params.parseId(id);
         if (subscriptionId == null) throw new campfire.web.RecordNotFound();
-        String location = request.url(Paths.USER_PUSH_SUBSCRIPTIONS);
+        String location = origin.url(Paths.USER_PUSH_SUBSCRIPTIONS);
         subscriptions.sendTest(userId, subscriptionId, location);
         return Responses.redirect(location);
     }

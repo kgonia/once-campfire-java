@@ -15,7 +15,7 @@ public final class Responses {
         return Response.status(status).entity(new byte[0]).header("Content-Type", "text/html").build();
     }
 
-    /// A 302 to `url`, which must be absolute (`CurrentRequest.url(path)`): Rails resolves
+    /// A 302 to `url`, which must be absolute (`RequestOrigin.url(path)`): Rails resolves
     /// `redirect_to` paths against the request's own scheme and host, which `assume_ssl` makes
     /// `https` behind a TLS-terminating proxy, and JAX-RS's `location()` would use the
     /// connection's instead.

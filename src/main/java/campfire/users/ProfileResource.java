@@ -2,13 +2,17 @@ package campfire.users;
 
 import campfire.rails.Secrets;
 import campfire.sessions.SessionService;
+import campfire.sessions.Viewer;
 import campfire.storage.AttachmentChange;
 import campfire.view.Pages;
-import campfire.web.CurrentRequest;
+import campfire.web.Params;
 import campfire.web.Paths;
+import campfire.web.RailsSession;
+import campfire.web.RequestOrigin;
 import campfire.web.Responses;
 import gg.jte.generated.precompiled.users.profiles.JteshowGenerated;
 import io.smallrye.common.annotation.RunOnVirtualThread;
+import io.vertx.ext.web.RoutingContext;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.PATCH;
@@ -19,6 +23,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.Map;
 import java.util.Objects;
+import org.jboss.resteasy.reactive.server.multipart.MultipartFormDataInput;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -28,7 +33,13 @@ import org.jspecify.annotations.Nullable;
 @NullMarked
 public class ProfileResource {
     @Inject
-    CurrentRequest request;
+    Viewer viewer;
+    @Inject
+    RequestOrigin origin;
+    @Inject
+    RailsSession railsSession;
+    @Inject
+    RoutingContext routing;
     @Inject
     Pages pages;
     @Inject
@@ -39,7 +50,7 @@ public class ProfileResource {
     @GET
     @Produces(MediaType.TEXT_HTML)
     public Response show() {
-        User user = request.user();
+        User user = viewer.user();
         String transferId = SessionService.transferId(secrets, user.id());
         boolean avatarAttached = users.avatarAttached(user.id());
         var memberships = users.profileMemberships(user);
@@ -48,23 +59,24 @@ public class ProfileResource {
     }
 
     @PUT
-    public Response replace() {
-        return update();
+    public Response replace(MultipartFormDataInput form) {
+        return update(form);
     }
 
     /// Fields not sent stay as they are; an empty avatar field removes the avatar. A new avatar
     /// takes a while to reach every page, which the notice says.
     @PATCH
     @SuppressWarnings("unchecked")
-    public Response update() {
-        User user = request.user();
-        request.requireHash("user");
-        var params = (Map<String, Object>) Objects.requireNonNull(request.params().get("user"));
+    public Response update(MultipartFormDataInput form) {
+        User user = viewer.user();
+        Params submitted = Params.of(routing.request(), form);
+        submitted.requireHash("user");
+        var params = (Map<String, Object>) Objects.requireNonNull(submitted.get("user"));
         AttachmentChange avatar = params.get("avatar") == null ? new AttachmentChange.Unchanged() : AttachmentChange.of(params, "avatar");
         users.updateProfile(user, string(params, "name"), string(params, "email_address"), string(params, "password"), string(params, "bio"), avatar);
         String notice = params.get("avatar") != null ? "It may take up to 30 minutes to change everywhere." : "✓";
-        request.flash().set("notice", notice);
-        return Responses.redirect(request.url(Paths.USER_PROFILE));
+        railsSession.flash().set("notice", notice);
+        return Responses.redirect(origin.url(Paths.USER_PROFILE));
     }
 
     private static @Nullable String string(Map<String, Object> params, String key) {

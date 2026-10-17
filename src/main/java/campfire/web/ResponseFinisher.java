@@ -3,7 +3,8 @@ package campfire.web;
 import campfire.App;
 import campfire.view.PageDigest;
 import campfire.view.Pages;
-import io.quarkus.arc.ClientProxy;
+import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpServerRequest;
 import io.vertx.ext.web.RoutingContext;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.container.ContainerRequestContext;
@@ -33,7 +34,7 @@ import org.jspecify.annotations.Nullable;
 /// takes it.
 public class ResponseFinisher {
     @Inject
-    CurrentRequest current;
+    RequestOrigin origin;
     @Inject
     App app;
     @Inject
@@ -45,21 +46,20 @@ public class ResponseFinisher {
 
     @ServerResponseFilter
     public void finish(ContainerRequestContext context, ContainerResponseContext response, RoutingContext routing) {
-        // Each call through the request-scoped client proxy looks the instance up again.
-        CurrentRequest request = ClientProxy.unwrap(current);
+        HttpServerRequest request = routing.request();
         RequestState state = RequestState.of(routing);
         MultivaluedMap<String, Object> headers = response.getHeaders();
         if (state.session != null) state.session.commit();
         headers.putSingle("X-Version", app.config().appVersion());
         app.config().gitRevision().filter(r -> !r.isEmpty()).ifPresent(r -> headers.putSingle("X-Rev", r));
-        if (request.ssl()) headers.putSingle("Strict-Transport-Security", "max-age=63072000; includeSubDomains");
+        if (origin.ssl()) headers.putSingle("Strict-Transport-Security", "max-age=63072000; includeSubDomains");
         if (pages.stylesheetsLinked()) linkStylesheets(headers);
         if (response.getEntity() == null && header(response, "Cache-Control") == null) headers.putSingle("Cache-Control", "no-cache");
         readSmallFile(response);
-        boolean gzipAccepted = Gzip.accepted(request.header("accept-encoding"));
+        boolean gzipAccepted = Gzip.accepted(request.getHeader("accept-encoding"));
         if (response.getEntity() instanceof byte[] body) {
             etag(response, body);
-            if (response.getStatus() == 200 && request.isGet() && notModified(response, request)) {
+            if (response.getStatus() == 200 && (request.method() == HttpMethod.GET || request.method() == HttpMethod.HEAD) && notModified(response, request)) {
                 response.setStatus(304);
                 response.setEntity(null);
                 headers.remove("Content-Type");
@@ -68,7 +68,7 @@ public class ResponseFinisher {
             }
             if (state.cacheTicket != null) {
                 byte[] gzip = state.cachedGzip != null ? state.cachedGzip : gzipAccepted && compressible(response) ? Gzip.compress(body) : null;
-                cache.admit(request, response.getStatus(), liveHeaders(response), body, gzip);
+                cache.admit(state, app.db()::dataVersion, response.getStatus(), liveHeaders(response), body, gzip);
                 state.cachedGzip = gzip;
             }
         }
@@ -186,9 +186,9 @@ public class ResponseFinisher {
     }
 
     /// `If-None-Match` wins over `If-Modified-Since`; weak and strong tags compare equal.
-    private static boolean notModified(ContainerResponseContext response, CurrentRequest request) {
+    private static boolean notModified(ContainerResponseContext response, HttpServerRequest request) {
         String etag = header(response, "ETag");
-        String ifNoneMatch = request.header("if-none-match");
+        String ifNoneMatch = request.getHeader("if-none-match");
         if (etag != null && ifNoneMatch != null) {
             for (String candidate : ifNoneMatch.split(",")) {
                 String c = candidate.strip();
@@ -197,7 +197,7 @@ public class ResponseFinisher {
             return false;
         }
         String lastModified = header(response, "Last-Modified");
-        return lastModified != null && lastModified.equals(request.header("if-modified-since"));
+        return lastModified != null && lastModified.equals(request.getHeader("if-modified-since"));
     }
 
     /// The headers as they stand: `getStringHeaders()` is a snapshot from before this filter ran.

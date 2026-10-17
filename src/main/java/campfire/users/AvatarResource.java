@@ -1,15 +1,18 @@
 package campfire.users;
 
 import campfire.App;
+import campfire.sessions.Viewer;
 import campfire.storage.Blob;
 import campfire.view.Pages;
-import campfire.web.CurrentRequest;
 import campfire.web.Formats;
 import campfire.web.HttpCache;
 import campfire.web.Paths;
+import campfire.web.RailsSession;
+import campfire.web.RequestOrigin;
 import campfire.web.Responses;
 import gg.jte.generated.precompiled.users.avatars.JteshowGenerated;
 import io.smallrye.common.annotation.RunOnVirtualThread;
+import io.vertx.ext.web.RoutingContext;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -36,7 +39,13 @@ public class AvatarResource {
     static final long STALE_WHILE_REVALIDATE_SECONDS = 7 * 24 * 60 * 60;
 
     @Inject
-    CurrentRequest request;
+    Viewer viewer;
+    @Inject
+    RequestOrigin origin;
+    @Inject
+    RailsSession railsSession;
+    @Inject
+    RoutingContext routing;
     @Inject
     UserService users;
     @Inject
@@ -47,7 +56,7 @@ public class AvatarResource {
     public Response show(@PathParam("user_id") String token, Request http) {
         User user = users.fromAvatarToken(token);
         if (user == null) return Responses.head(404);
-        EntityTag etag = HttpCache.etag(request, HttpCache.cacheKeyWithVersion("users", user.id(), user.updatedAt()),
+        EntityTag etag = HttpCache.etag(routing.request().getHeader("turbo-frame"), railsSession.flash(), HttpCache.cacheKeyWithVersion("users", user.id(), user.updatedAt()),
             initialsMayRender() ? TEMPLATE_DIGEST : null);
         Response notModified = HttpCache.notModified(http, etag);
         if (notModified != null) return notModified;
@@ -69,14 +78,14 @@ public class AvatarResource {
 
     @DELETE
     public Response destroy() {
-        users.deleteAvatar(request.user().id());
-        return Responses.redirect(request.url(Paths.USER_PROFILE));
+        users.deleteAvatar(viewer.user().id());
+        return Responses.redirect(origin.url(Paths.USER_PROFILE));
     }
 
     /// The SVG template is found for these formats: anything, SVG, or none that Rails knows
     /// (`Accept: image/*`).
     private boolean initialsMayRender() {
-        List<String> formats = Formats.of(request);
+        List<String> formats = Formats.of(routing);
         return formats.isEmpty() || formats.contains("all") || formats.contains("svg");
     }
 }
