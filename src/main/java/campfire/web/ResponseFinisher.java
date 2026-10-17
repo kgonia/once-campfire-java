@@ -51,12 +51,7 @@ public class ResponseFinisher {
         for (String cookie : request.setCookies()) headers.add("Set-Cookie", cookie);
         headers.putSingle("X-Version", app.config().appVersion());
         app.config().gitRevision().filter(r -> !r.isEmpty()).ifPresent(r -> headers.putSingle("X-Rev", r));
-        headers.putSingle("x-frame-options", "SAMEORIGIN");
-        headers.putSingle("x-content-type-options", "nosniff");
-        headers.putSingle("x-xss-protection", "0");
-        headers.putSingle("x-permitted-cross-domain-policies", "none");
-        headers.putSingle("referrer-policy", "strict-origin-when-cross-origin");
-        if (request.ssl()) headers.putSingle("strict-transport-security", "max-age=63072000; includeSubDomains");
+        if (request.ssl()) headers.putSingle("Strict-Transport-Security", "max-age=63072000; includeSubDomains");
         if (pages.stylesheetsLinked()) linkStylesheets(headers);
         // Turbo Streams are always rendered, and a render whose format came from `Accept` says so.
         String type = header(response, "Content-Type");

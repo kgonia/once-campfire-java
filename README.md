@@ -60,6 +60,8 @@ byte for byte, or a measured performance loss. Each deviation is listed below wi
 
 **What's standard:**
 - Quarkus REST resources on virtual threads, CDI beans, `@ConfigMapping`, and request/response filters.
+- Rails' static security headers as `quarkus.http.header.*`. Only HSTS, which depends on the scheme, is set in
+  code.
 - Two Quarkus-managed Agroal datasources, `writer` and `readers`, configured in `application.properties`.
 - jOOQ code generation from the database schema, with queries built on the generated tables and columns. This is
   jOOQ's ["SQL builder with code generation"](https://www.jooq.org/doc/latest/manual/getting-started/use-cases/jooq-as-a-sql-builder-with-code-generation/)
@@ -192,6 +194,7 @@ None of these show up in the parity suite or the harness:
   uncompressed body, not a 406.
 - Error pages carry the security and version headers. Rails renders them outside the controller, without
   them. As in Rails they leave the session and cookies untouched.
+- Static files carry the security headers too. Rails serves them before the app, without them.
 
 Deliberate:
 

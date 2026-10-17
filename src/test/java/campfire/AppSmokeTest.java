@@ -54,6 +54,9 @@ class AppSmokeTest {
     @Test
     void firstRunSignInPostAndRead() throws Exception {
         assertEquals(200, get("/up").statusCode());
+        for (String path : new String[] {"/up", "/robots.txt", "/robots.txt"}) {
+            assertEquals("SAMEORIGIN", get(path).headers().firstValue("x-frame-options").orElse(null), path);
+        }
         assertEquals(base.resolve("/session/new").toString(), location(get("/")));
         assertEquals(base.resolve("/first_run").toString(), location(get("/session/new")));
 
