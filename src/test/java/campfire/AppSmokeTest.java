@@ -68,6 +68,10 @@ class AppSmokeTest {
             .header("If-Modified-Since", robots.headers().firstValue("last-modified").orElseThrow()).build(), HttpResponse.BodyHandlers.discarding());
         assertEquals(304, unchanged.statusCode());
         assertEquals(base.resolve("/session/new").toString(), location(get("/")));
+        // The test client is on loopback, a trusted proxy.
+        var forwarded = http.send(HttpRequest.newBuilder(base.resolve("/")).header("X-Forwarded-Proto", "https")
+            .header("X-Forwarded-Host", "campfire.example").build(), HttpResponse.BodyHandlers.discarding());
+        assertEquals("https://campfire.example/session/new", location(forwarded));
         assertEquals(base.resolve("/first_run").toString(), location(get("/session/new")));
 
         var signedUp = post("/first_run", Map.of("user[name]", "Ada", "user[email_address]", "ada@example.com", "user[password]", "correct horse"));

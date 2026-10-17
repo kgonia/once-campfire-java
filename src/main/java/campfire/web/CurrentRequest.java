@@ -1,7 +1,6 @@
 package campfire.web;
 
 import campfire.App;
-import campfire.users.Ban;
 import campfire.sessions.Session;
 import campfire.users.User;
 import campfire.rails.HttpFormats;
@@ -13,7 +12,6 @@ import io.vertx.ext.web.FileUpload;
 import io.vertx.ext.web.RoutingContext;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
-import java.net.InetAddress;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -39,6 +37,8 @@ public class CurrentRequest {
     App app;
     @Inject
     RoutingContext routing;
+    @Inject
+    RequestOrigin origin;
 
     /// What the Vert.x request says, read on first use; `cookies` also reflects the cookies set
     /// while serving the request.
@@ -49,9 +49,6 @@ public class CurrentRequest {
     /// Every header keyed in lower case, copied only for {@link #headers()}; single headers are read
     /// from Vert.x's own map, which ignores case.
     private @Nullable Map<String, List<String>> headers;
-    /// `ssl()` and `baseUrl()`, which links on a page ask for over and over.
-    private @Nullable Boolean ssl;
-    private @Nullable String baseUrl;
     /// The body claimed to be JSON but isn't; the request is a 400 before anything else.
     private boolean malformedBody;
     private final List<String> setCookies = new ArrayList<>();
@@ -63,7 +60,6 @@ public class CurrentRequest {
     private @Nullable Map<String, Object> railsSession;
     private boolean railsSessionDirty;
     private @Nullable Flash flash;
-    private @Nullable String remoteIp;
 
     /// The method is the overridden one when a form sent `_method` (the router re-routes those).
     private Facts facts() {
@@ -198,80 +194,32 @@ public class CurrentRequest {
         return header("user-agent");
     }
 
-    /// Every request counts as HTTPS unless `DISABLE_SSL` is set; then a trusted proxy's
-    /// `X-Forwarded-Proto` decides.
     public boolean ssl() {
-        if (ssl == null) {
-            String proto = !app.config().disableSsl() ? null : trustedForwarded() ? header("x-forwarded-proto") : null;
-            ssl = !app.config().disableSsl() || proto != null && proto.equalsIgnoreCase("https");
-        }
-        return ssl;
+        return origin.ssl();
     }
 
     public String protocol() {
-        return ssl() ? "https://" : "http://";
-    }
-
-    /// The Host (or a trusted proxy's X-Forwarded-Host) without the scheme's default port.
-    public String hostWithPort() {
-        String forwardedHost = trustedForwarded() ? header("x-forwarded-host") : null;
-        String host = forwardedHost != null ? forwardedHost : Front.authority(routing.request());
-        if (host == null || host.isBlank()) host = "localhost";
-        host = host.split(",")[0].strip();
-        if (ssl() && host.endsWith(":443")) host = host.substring(0, host.length() - 4);
-        if (!ssl() && host.endsWith(":80")) host = host.substring(0, host.length() - 3);
-        return host;
+        return origin.protocol();
     }
 
     public String host() {
-        String h = hostWithPort();
-        if (h.startsWith("[")) {
-            int close = h.indexOf(']');
-            return close > 0 ? h.substring(0, close + 1) : h;
-        }
-        int colon = h.lastIndexOf(':');
-        return colon > 0 ? h.substring(0, colon) : h;
+        return origin.host();
     }
 
     public String baseUrl() {
-        if (baseUrl == null) baseUrl = protocol() + hostWithPort();
-        return baseUrl;
+        return origin.baseUrl();
     }
 
     public String url(String path) {
-        return baseUrl() + path;
+        return origin.url(path);
     }
 
     public String requestUrl() {
-        String query = query();
-        return baseUrl() + path() + (query == null || query.isEmpty() ? "" : "?" + query);
+        return origin.requestUrl();
     }
 
-    private boolean trustedForwarded() {
-        return isTrustedProxy(facts().peerAddress());
-    }
-
-    /// Loopback, private, unique-local and link-local addresses: where a reverse proxy may sit.
-    static boolean isTrustedProxy(@Nullable String address) {
-        InetAddress ip = Ban.literal(address);
-        return ip != null && (ip.isLoopbackAddress() || ip.isSiteLocalAddress() || ip.isLinkLocalAddress() || Ban.isUniqueLocal(ip));
-    }
-
-    /// The client's address: the last untrusted hop of a trusted proxy's `X-Forwarded-For`, else
-    /// the peer. Bans and rate limits key on it.
     public String remoteIp() {
-        if (remoteIp != null) return remoteIp;
-        String peerAddress = facts().peerAddress();
-        String forwarded = header("x-forwarded-for");
-        if (forwarded != null && isTrustedProxy(peerAddress)) {
-            String[] chain = forwarded.split(",");
-            for (int i = chain.length - 1; i >= 0; i--) {
-                String candidate = chain[i].strip();
-                if (!candidate.isEmpty() && !isTrustedProxy(candidate)) return remoteIp = candidate;
-            }
-            if (chain.length > 0 && !chain[0].isBlank()) return remoteIp = chain[0].strip();
-        }
-        return remoteIp = peerAddress == null ? "" : peerAddress;
+        return origin.remoteIp();
     }
 
     public boolean wantsJson() {

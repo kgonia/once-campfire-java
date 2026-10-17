@@ -62,6 +62,8 @@ byte for byte, or a measured performance loss. Each deviation is listed below wi
 - Quarkus REST resources on virtual threads, CDI beans, `@ConfigMapping`, and request/response filters.
 - Actions that validate their own responses (`fresh_when`) use JAX-RS `EntityTag`, `Request#evaluatePreconditions`
   and `CacheControl`.
+- The scheme and host behind a reverse proxy from `quarkus.http.proxy.*`, trusting the same private ranges Rails
+  does.
 - Rails' static security headers as `quarkus.http.header.*`. Only HSTS, which depends on the scheme, is set in
   code.
 - Two Quarkus-managed Agroal datasources, `writer` and `readers`, configured in `application.properties`.
@@ -82,6 +84,7 @@ byte for byte, or a measured performance loss. Each deviation is listed below wi
 | jOOQ classes generated from `schema.sql` loaded into SQLite at build time (`src/build/jooq`) | running migrations, e.g. Flyway, then generating | Rails owns the migrations. `schema.sql` is exactly what `db:prepare` creates. |
 | One gzip step in `web.ResponseFinisher`, with pooled `Deflater`s (`web.Gzip`) | Quarkus/Vert.x HTTP compression | Speed: a page is gzipped once and served compressed from the caches, where Vert.x would recompress every response on the event loop (69 µs for a 9 KB page, against about 105 µs of CPU for a whole cached room page). |
 | Public responses (static files, avatars, logos, QR codes, Active Storage files) kept by URI in `web.FrontCache`, plain and gzipped, and answered from a Vert.x route on the event loop | a caching proxy in front, or none | Thruster does this in front of Rails. Answering from memory before Quarkus REST is what serves avatars and static files at about 190k req/s. |
+| The client's address for bans: the last untrusted `X-Forwarded-For` hop (`web.RequestOrigin`) | Quarkus' forwarded remote address | Quarkus takes the first hop, which the client writes. Rails takes the last one a trusted proxy didn't add, and Quarkus 3.40 has no hook to choose. |
 | `web.Formats.respondTo` for endpoints that offer several types, a Turbo Stream, or JavaScript or JSON at a plain URL | `@Produces` | Rails ignores a browser's `Accept` once it lists `*/*`, and answers those 406. `@Produces` would match the `*/*` and serve the stream. HTML-only pages use `@Produces`, and the `.json` suffix and `format` parameter replace `Accept` before matching. |
 | Its own JSON writer (`rails.Json`) | Jackson | Historical: it matched Rails byte for byte (`<` escapes, Ruby number formats) for parity with the Rust port, which is no longer a goal. Being replaced. |
 
@@ -200,6 +203,7 @@ None of these show up in the parity suite or the harness:
   them. As in Rails they leave the session and cookies untouched.
 - The public cache keys on the URI alone, not the host, and doesn't keep responses that vary on anything but
   `Accept-Encoding`. HEAD requests go to the app.
+- A trusted proxy's `X-Forwarded-Port` and `X-Forwarded-Ssl` count, as they do in Rack.
 - Static files carry the security headers too. Rails serves them before the app, without them.
 - `Vary: Accept` is sent only by endpoints that offer more than one type. Rails sends it whenever the format came
   from `Accept`.

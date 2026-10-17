@@ -3,7 +3,6 @@ package campfire.web;
 import campfire.Config;
 import campfire.assets.Assets;
 import campfire.cable.Cable;
-import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerRequest;
@@ -25,10 +24,10 @@ import org.jspecify.annotations.Nullable;
 
 /// Vert.x handlers in front of the REST resources, outermost first:
 ///
-/// - the `X-Forwarded-*` request headers and the shared cache of public responses
-///   ({@link FrontCache}), answered on the event loop;
+/// - the shared cache of public responses ({@link FrontCache}) and static files, answered from
+///   memory on the event loop, ahead of Quarkus' security handlers (route orders -200 and -100),
+///   which public responses don't need;
 /// - the cable WebSocket;
-/// - static files straight from memory on the event loop;
 /// - request bodies (form fields and uploads, read once for everything after), and the `_method`
 ///   field HTML forms use to send PUT, PATCH and DELETE.
 @ApplicationScoped
@@ -56,10 +55,12 @@ public class Front {
     void routes(@Observes Router router) {
         BodyHandler bodies = BodyHandler.create(config.storage().resolve("tmp").resolve("uploads").toString())
             .setBodyLimit(config.maxRequestBody()).setDeleteUploadedFilesOnEnd(true).setMergeFormAttributes(false);
-        router.route().order(-40).handler(this::proxy);
+        router.route().order(-310).handler(this::cached);
+        router.route().order(-300).handler(rc -> {
+            if (!serveStatic(rc)) rc.next();
+        });
         router.route("/cable").order(-30).handler(cable::upgrade);
         router.route().order(-20).handler(rc -> {
-            if (serveStatic(rc)) return;
             HttpMethod method = rc.request().method();
             if (method == HttpMethod.GET || method == HttpMethod.HEAD || method == HttpMethod.OPTIONS) rc.next();
             else bodies.handle(rc);
@@ -73,7 +74,7 @@ public class Front {
         });
     }
 
-    private void proxy(RoutingContext rc) {
+    private void cached(RoutingContext rc) {
         HttpServerRequest request = rc.request();
         if (FrontCache.cacheable(request)) {
             FrontCache.Stored stored = cache.lookup(request.uri());
@@ -83,32 +84,16 @@ public class Front {
             }
             rc.put(CACHE_STATE, request.uri());
         }
-        forward(request);
         rc.next();
     }
 
     /// The request's host and port: the `Host` header over HTTP/1.1, the `:authority` pseudo-header
-    /// over HTTP/2 (which has no `Host`). Null when the client sent neither.
+    /// over HTTP/2 (which has no `Host`), or a trusted proxy's `X-Forwarded-Host`. Null when the
+    /// client sent none.
     public static @Nullable String authority(HttpServerRequest request) {
         var authority = request.authority();
         if (authority == null) return null;
         return authority.port() < 0 ? authority.host() : authority.host() + ":" + authority.port();
-    }
-
-    /// The headers a reverse proxy adds: the client's address appended to `X-Forwarded-For`, and
-    /// this request's host and scheme. Without TLS the client's own `X-Forwarded-*` are trusted
-    /// and kept, as Thruster keeps them.
-    private static void forward(HttpServerRequest request) {
-        MultiMap headers = request.headers();
-        String prior = String.join(", ", headers.getAll("x-forwarded-for"));
-        String incomingHost = headers.get("x-forwarded-host");
-        String incomingProto = headers.get("x-forwarded-proto");
-        String host = authority(request);
-        String client = request.remoteAddress() == null ? "" : request.remoteAddress().hostAddress();
-        headers.remove("forwarded");
-        headers.set("X-Forwarded-For", prior.isEmpty() ? client : prior + ", " + client);
-        headers.set("X-Forwarded-Host", incomingHost != null && !incomingHost.isEmpty() ? incomingHost : host == null ? "" : host);
-        headers.set("X-Forwarded-Proto", incomingProto != null && !incomingProto.isEmpty() ? incomingProto : "http");
     }
 
     private static void serveHit(HttpServerRequest request, HttpServerResponse response, FrontCache.Stored stored) {
