@@ -4,6 +4,7 @@ import campfire.assets.Assets;
 import campfire.cable.Broadcasts;
 import campfire.cable.Cable;
 import campfire.db.Database;
+import campfire.integrations.net.Network;
 import campfire.integrations.webpush.WebPush;
 import campfire.push.PushSubscription;
 import campfire.rails.Secrets;
@@ -14,9 +15,11 @@ import campfire.sessions.SessionLookup;
 import io.agroal.api.AgroalDataSource;
 import io.quarkus.agroal.DataSource;
 import io.quarkus.logging.Log;
+import io.vertx.core.Vertx;
 import jakarta.enterprise.inject.Disposes;
 import jakarta.enterprise.inject.Produces;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Singleton;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
@@ -86,12 +89,23 @@ public class Infrastructure {
         return new ResponseCache(config.responseCacheBytes());
     }
 
+    /// Outgoing HTTP (link previews, push delivery, bot webhooks) on Quarkus' Vert.x.
+    @Produces
+    @Singleton
+    Network network(Vertx vertx) {
+        return Network.system(vertx);
+    }
+
+    void close(@Disposes Network net) {
+        net.http().close();
+    }
+
     /// Disabled (sends nothing) without both VAPID keys. Subscriptions the push service reports as
     /// gone are deleted.
     @Produces
     @ApplicationScoped
-    WebPush webPush(Config config, Database db) {
-        var push = new WebPush(config.vapidPublicKey().orElse(null), config.vapidPrivateKey().orElse(null), config.vapidSubject());
+    WebPush webPush(Config config, Database db, Network net) {
+        var push = new WebPush(config.vapidPublicKey().orElse(null), config.vapidPrivateKey().orElse(null), config.vapidSubject(), net);
         push.setInvalidSubscriptionHandler(id -> {
             Log.infof("Destroying push subscription: %d", id);
             db.write(tx -> {

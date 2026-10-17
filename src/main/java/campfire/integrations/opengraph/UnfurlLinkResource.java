@@ -1,5 +1,6 @@
 package campfire.integrations.opengraph;
 
+import campfire.integrations.net.Network;
 import campfire.web.CurrentRequest;
 import campfire.web.Formats;
 import io.smallrye.common.annotation.RunOnVirtualThread;
@@ -18,6 +19,8 @@ import org.jspecify.annotations.NullMarked;
 public class UnfurlLinkResource {
     @Inject
     CurrentRequest request;
+    @Inject
+    Network net;
 
     @POST
     public Response create() {
@@ -25,7 +28,7 @@ public class UnfurlLinkResource {
         if (url == null || url instanceof String s && s.isBlank()) return parameterMissing();
         // A hash or array passes the presence check but isn't a URL.
         if (!(url instanceof String link)) return Formats.head(request, 204);
-        return switch (Opengraph.unfurl(link)) {
+        return switch (Opengraph.unfurl(net, link)) {
             case Opengraph.Unfurl.Json json -> {
                 var response = Response.ok(json.body().getBytes(StandardCharsets.UTF_8)).header("Content-Type", "application/json; charset=utf-8");
                 if (Formats.variesOnAccept(request)) response.header("Vary", "Accept");

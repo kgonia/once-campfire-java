@@ -1,6 +1,5 @@
 package campfire.integrations.opengraph;
 
-import campfire.integrations.net.Deadline;
 import campfire.integrations.net.Network;
 import campfire.integrations.net.RubyUri;
 import campfire.rails.Json;
@@ -40,24 +39,23 @@ public final class Metadata {
     /// The model's attributes as instance variables, in the order they were first assigned
     /// (which is the order `render json:` emits them). Values may be null.
     private final LinkedHashMap<String, String> attributes;
-    private final Fetch.Context context;
+    private final Network net;
 
-    private Metadata(LinkedHashMap<String, String> attributes, Fetch.Context context) {
+    private Metadata(LinkedHashMap<String, String> attributes, Network net) {
         this.attributes = attributes;
-        this.context = context;
+        this.net = net;
     }
 
     /// `Metadata.from_url(url)`
-    static Metadata fromUrl(Network net, String url, Deadline deadline) throws RaisedException {
-        var context = new Fetch.Context(net, deadline);
-        byte[] body = fetchDocument(context, url);
+    static Metadata fromUrl(Network net, String url) throws RaisedException {
+        byte[] body = fetchDocument(net, url);
         Map<String, String> found = Document.opengraphAttributes(body);
-        String canonicalUrl = validCanonicalUrl(context, found.get("url"), url);
-        String image = validImageContentType(context, found.get("image"));
+        String canonicalUrl = validCanonicalUrl(net, found.get("url"), url);
+        String image = validImageContentType(net, found.get("image"));
         var attributes = new LinkedHashMap<>(found);
         attributes.put("url", canonicalUrl);
         attributes.put("image", image);
-        return new Metadata(attributes, context);
+        return new Metadata(attributes, net);
     }
 
     /// The `title`, `url`, `image` or `description`.
@@ -74,7 +72,7 @@ public final class Metadata {
         }
         boolean valid = present("title") && present("url") && present("description");
         String image = attributes.get("image");
-        if (image != null && !Document.isBlank(image)) valid &= new Location(context, image).isValid();
+        if (image != null && !Document.isBlank(image)) valid &= new Location(net, image).isValid();
         return valid;
     }
 
@@ -94,13 +92,13 @@ public final class Metadata {
     /// `fetch_document(untrusted_url)`: tweets are read through fxtwitter.com. A tweet whose
     /// fxtwitter page can't be read raises (`nil.force_encoding`), as does a URL that `URI.parse`
     /// rejects with `URI::InvalidComponentError`.
-    private static byte[] fetchDocument(Fetch.Context context, String url) throws RaisedException {
+    private static byte[] fetchDocument(Network net, String url) throws RaisedException {
         if (tweetUrl(url)) {
-            byte[] html = new Location(context, replaceTwitterDomain(url)).readHtml();
+            byte[] html = new Location(net, replaceTwitterDomain(url)).readHtml();
             if (html == null) throw new RaisedException("NoMethodError");
             return html;
         }
-        return new Location(context, url).readHtml();
+        return new Location(net, url).readHtml();
     }
 
     /// `tweet_url?`
@@ -123,18 +121,18 @@ public final class Metadata {
     }
 
     /// `valid_canonical_url(url, fallback)`
-    private static String validCanonicalUrl(Fetch.Context context, String url, String fallback) {
-        return url != null && new Location(context, url).isValid() ? url : fallback;
+    private static String validCanonicalUrl(Network net, String url, String fallback) {
+        return url != null && new Location(net, url).isValid() ? url : fallback;
     }
 
     /// `valid_image_content_type(image)`: kept only when a HEAD says it's a JPEG, PNG, GIF or WebP.
-    private static String validImageContentType(Fetch.Context context, String image) {
+    private static String validImageContentType(Network net, String image) {
         if (image == null || Document.isBlank(image)) return null;
         if (RubyUri.parseOrNull(image) == null) {
             LOG.warning("Failed to fetch image content tpye: " + image + " (bad URI(is not URI?): \"" + image + "\")");
             return null;
         }
-        String contentType = new Location(context, image).fetchContentType();
+        String contentType = new Location(net, image).fetchContentType();
         return contentType != null && ALLOWED_IMAGE_CONTENT_TYPES.contains(contentType.toLowerCase(Locale.ROOT)) ? image : null;
     }
 

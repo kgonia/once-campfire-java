@@ -10,7 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import campfire.integrations.TestSupport;
 import campfire.integrations.TestSupport.FakeResolver;
 import campfire.integrations.TestSupport.FakeServer;
-import campfire.integrations.TestSupport.MappingDialer;
+import campfire.integrations.TestSupport.MappingRoute;
 import campfire.integrations.TestSupport.Route;
 import campfire.integrations.net.Network;
 import campfire.rails.Base64s;
@@ -24,12 +24,14 @@ import java.security.interfaces.ECPublicKey;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import javax.crypto.Cipher;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
@@ -217,13 +219,13 @@ class WebPushTest {
         assertThrows(Vapid.VapidException.class, () -> Vapid.of("s", otherPublic, VAPID_PRIVATE_KEY));
         Vapid.of("s", VAPID_PUBLIC_KEY.replace("=", ""), VAPID_PRIVATE_KEY.replace("=", ""));
 
-        assertFalse(new WebPush(null, VAPID_PRIVATE_KEY, null).enabled());
-        assertFalse(new WebPush("dGVzdF9rZXk", VAPID_PRIVATE_KEY, null).enabled());
-        assertTrue(new WebPush(VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, null).enabled());
+        assertFalse(new WebPush(null, VAPID_PRIVATE_KEY, null, TestSupport.offline()).enabled());
+        assertFalse(new WebPush("dGVzdF9rZXk", VAPID_PRIVATE_KEY, null, TestSupport.offline()).enabled());
+        assertTrue(new WebPush(VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, null, TestSupport.offline()).enabled());
     }
 
     /// A push service answering `status` on TLS, with fcm.googleapis.com at a fake public address.
-    record PushService(FakeServer server, FakeResolver resolver, MappingDialer dialer, Network net) implements AutoCloseable {
+    record PushService(FakeServer server, FakeResolver resolver, MappingRoute route, Network net) implements AutoCloseable {
         static PushService start(int status, String reason) throws Exception {
             var routes = new ArrayList<Route>();
             for (String path : List.of("/fcm/send/abc", "/fcm/send/123", "/fcm/send/456")) {
@@ -233,8 +235,8 @@ class WebPushTest {
             }
             var server = FakeServer.startTls(routes);
             var resolver = new FakeResolver().set("fcm.googleapis.com", PUBLIC_IP);
-            var dialer = new MappingDialer(Set.copyOf(TestSupport.ips(PUBLIC_IP)), server.port());
-            return new PushService(server, resolver, dialer, TestSupport.network(resolver, dialer));
+            var route = new MappingRoute(Set.copyOf(TestSupport.ips(PUBLIC_IP)), server.port());
+            return new PushService(server, resolver, route, TestSupport.network(resolver, route));
         }
 
         WebPush webPush() {
@@ -254,15 +256,15 @@ class WebPushTest {
             var result = push.deliverNow(receiver.subscription(1, ENDPOINT), "t", "b", "/", 0, WebPush.ACCOUNT_LOGO_PATH);
             assertEquals(new WebPush.Result.Delivered(201), result);
             assertEquals(List.of("fcm.googleapis.com"), service.resolver().lookups);
-            assertEquals(PUBLIC_IP, service.dialer().dialed.getFirst().getAddress().getHostAddress());
-            assertEquals(443, service.dialer().dialed.getFirst().getPort());
+            assertEquals(PUBLIC_IP, service.route().dialed.getFirst().getAddress().getHostAddress());
+            assertEquals(443, service.route().dialed.getFirst().getPort());
 
             var request = service.server().received.getFirst();
             assertEquals("POST", request.method());
             assertEquals("/fcm/send/abc", request.target());
-            List<String> names = request.headers().stream().map(h -> h[0]).toList();
-            assertEquals(List.of("Content-Type", "Ttl", "Urgency", "Content-Encoding", "Content-Length", "Authorization", "Accept-Encoding", "Accept",
-                "User-Agent", "Connection", "Host"), names);
+            Set<String> names = request.headers().stream().map(h -> h[0].toLowerCase(Locale.ROOT)).collect(Collectors.toSet());
+            assertEquals(Set.of("content-type", "ttl", "urgency", "content-encoding", "content-length", "authorization", "accept-encoding", "accept",
+                "user-agent", "connection", "host"), names);
             @SuppressWarnings("unchecked")
             var expectedHeaders = (List<List<String>>) EXPECTED.get("headers");
             for (var header : expectedHeaders) {
@@ -305,19 +307,21 @@ class WebPushTest {
         assertEquals(List.of(), WebPush.endpointErrors("https://FCM.googleapis.com/x", resolver.set("FCM.googleapis.com", PUBLIC_IP)));
     }
 
+    /// The statuses the gem tells apart; only 404 and 410 say the subscription is gone.
     @Test
-    void raisesWhatTheGemRaises() throws Exception {
+    void classifiesPushServiceResponses() throws Exception {
         var subscription = new Receiver().subscription(1, ENDPOINT);
-        record Case(int status, String reason, String rubyClass, boolean invalidates) {}
-        for (var c : List.of(new Case(410, "Gone", "WebPush::ExpiredSubscription", true), new Case(404, "Not Found", "WebPush::InvalidSubscription", true),
-            new Case(403, "Forbidden", "WebPush::Unauthorized", false), new Case(400, "UnauthorizedRegistration", "WebPush::Unauthorized", false),
-            new Case(400, "Bad Request", "WebPush::ResponseError", false), new Case(413, "Payload Too Large", "WebPush::PayloadTooLarge", false),
-            new Case(429, "Too Many Requests", "WebPush::TooManyRequests", false), new Case(503, "Service Unavailable", "WebPush::PushServiceError", false),
-            new Case(302, "Found", "WebPush::ResponseError", false))) {
+        record Case(int status, String reason, WebPush.DeliveryException.Kind kind) {}
+        var gone = WebPush.DeliveryException.Kind.SUBSCRIPTION_GONE;
+        var response = WebPush.DeliveryException.Kind.RESPONSE;
+        for (var c : List.of(new Case(410, "Gone", gone), new Case(404, "Not Found", gone), new Case(403, "Forbidden", response),
+            new Case(400, "UnauthorizedRegistration", response), new Case(400, "Bad Request", response), new Case(413, "Payload Too Large", response),
+            new Case(429, "Too Many Requests", response), new Case(503, "Service Unavailable", response), new Case(302, "Found", response))) {
             try (var service = PushService.start(c.status(), c.reason()); var push = service.webPush()) {
                 var failed = assertInstanceOf(WebPush.Result.Failed.class, push.deliverNow(subscription, "t", "b", "/", 0, "/"));
-                assertEquals(c.rubyClass(), failed.error().rubyClass, c.toString());
-                assertEquals(c.invalidates(), failed.error().invalidatesSubscription(), c.toString());
+                assertEquals(c.kind(), failed.error().kind, c.toString());
+                assertEquals(c.status(), failed.error().status, c.toString());
+                assertEquals(c.kind() == gone, failed.error().invalidatesSubscription(), c.toString());
             }
         }
     }
@@ -327,19 +331,20 @@ class WebPushTest {
         try (var service = PushService.start(201, "Created"); var push = service.webPush()) {
             var badKey = new WebPush.Subscription(1, ENDPOINT, "dGVzdF9rZXk", "dGVzdF9hdXRo");
             var error = assertInstanceOf(WebPush.Result.Failed.class, push.deliverNow(badKey, "t", "b", "/", 0, "/")).error();
-            assertEquals("OpenSSL::PKey::EC::Point::Error", error.rubyClass);
+            assertEquals(WebPush.DeliveryException.Kind.INVALID_SUBSCRIPTION_KEY, error.kind);
             assertTrue(error.invalidatesSubscription());
 
             // A certificate that doesn't verify may be our fault (an empty CA store, a skewed clock).
-            try (var untrusted = new WebPush(VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, null, service.net().withTls(TestSupport.untrustingTls()))) {
+            var untrustingNet = TestSupport.network(service.resolver(), service.route(), TestSupport.untrustingTls());
+            try (var untrusted = new WebPush(VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, null, untrustingNet)) {
                 var tls = assertInstanceOf(WebPush.Result.Failed.class, untrusted.deliverNow(new Receiver().subscription(1, ENDPOINT), "t", "b", "/", 0, "/"));
-                assertEquals("OpenSSL::SSL::SSLError", tls.error().rubyClass);
+                assertEquals(WebPush.DeliveryException.Kind.TLS, tls.error().kind);
                 assertFalse(tls.error().invalidatesSubscription());
             }
 
             var blank = new WebPush.Subscription(1, ENDPOINT, "", "dGVzdF9hdXRo");
             var argument = assertInstanceOf(WebPush.Result.Failed.class, push.deliverNow(blank, "t", "b", "/", 0, "/")).error();
-            assertEquals("ArgumentError", argument.rubyClass);
+            assertEquals(WebPush.DeliveryException.Kind.ARGUMENT, argument.kind);
             assertFalse(argument.invalidatesSubscription());
         }
     }
@@ -392,7 +397,7 @@ class WebPushTest {
 
     @Test
     void disabledPushDeliversNothing() {
-        try (var push = new WebPush(null, null, null)) {
+        try (var push = new WebPush(null, null, null, TestSupport.offline())) {
             assertFalse(push.enabled());
             push.deliverLater(new Receiver().subscription(1, ENDPOINT), "t", "b", "/", 0, "/");
             assertEquals(0, push.pending());

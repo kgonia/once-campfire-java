@@ -40,8 +40,9 @@ public class WebhookService {
     Storage storage;
     @Inject
     MessageService messages;
+    @Inject
+    Network net;
 
-    private final Network net = Network.system();
     private final ExecutorService jobs = Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("campfire-webhook-", 0).factory());
 
     public void deliverLater(Room room, Message message) {

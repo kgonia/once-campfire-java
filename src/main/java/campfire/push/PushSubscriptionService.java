@@ -38,7 +38,7 @@ public class PushSubscriptionService {
             return id == null ? null : PushSubscription.find(conn, userId, id);
         });
         String endpoint = existing != null ? existing.endpoint() : fields.get("endpoint");
-        if (!WebPush.endpointErrors(endpoint, Network.system().resolver()).isEmpty()) return false;
+        if (!WebPush.endpointErrors(endpoint, Network.SYSTEM_RESOLVER).isEmpty()) return false;
         db.write(tx -> {
             if (existing != null) PushSubscription.touch(tx, existing.id());
             else PushSubscription.create(tx, userId, endpoint, fields.get("p256dh_key"), fields.get("auth_key"), userAgent);

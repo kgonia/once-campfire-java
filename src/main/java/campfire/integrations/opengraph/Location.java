@@ -1,6 +1,7 @@
 package campfire.integrations.opengraph;
 
 import campfire.integrations.net.Guard;
+import campfire.integrations.net.Network;
 import campfire.integrations.net.RubyUri;
 import java.net.InetAddress;
 import java.util.logging.Logger;
@@ -16,15 +17,15 @@ final class Location {
     private static final Pattern FILES_AND_MEDIA_URL = Pattern.compile("\\bhttps?://\\S+\\.(?:zip|tar|tar\\.gz|tar\\.bz2|tar\\.xz|gz|bz2|rar|7z"
         + "|dmg|exe|msi|pkg|deb|iso|jpg|jpeg|png|gif|bmp|mp4|mov|avi|mkv|wmv|flv|heic|heif|mp3|wav|ogg|aac|wma|webm|ogv|mpg|mpeg)\\b");
 
-    private final Fetch.Context context;
+    private final Network net;
     private final String url;
     private final RubyUri parsedUrl;
     private boolean resolved;
     private InetAddress resolvedIp;
 
     /// `Location.new(url)`: `parsed_url` is `URI.parse(url) rescue nil`.
-    Location(Fetch.Context context, String url) {
-        this.context = context;
+    Location(Network net, String url) {
+        this.net = net;
         this.url = url;
         this.parsedUrl = RubyUri.parseOrNull(url);
     }
@@ -42,7 +43,7 @@ final class Location {
             resolved = true;
             if (parsedUrl != null && parsedUrl.host() != null) {
                 try {
-                    resolvedIp = Guard.resolve(context.net().resolver(), parsedUrl.host());
+                    resolvedIp = Guard.resolve(net.resolver(), parsedUrl.host());
                 } catch (Guard.GuardException e) {
                     resolvedIp = null;
                 }
@@ -55,7 +56,7 @@ final class Location {
     byte[] readHtml() {
         if (!isValid() || FILES_AND_MEDIA_URL.matcher(url == null ? "" : url).find()) return null;
         try {
-            return Fetch.fetchDocument(context, parsedUrl, resolvedIp());
+            return Fetch.fetchDocument(net, parsedUrl, resolvedIp());
         } catch (Fetch.FetchException e) {
             LOG.warning("Failed to fetch " + parsedUrl + " at " + resolvedIp().getHostAddress() + " (" + e.getMessage() + ")");
             return null;
@@ -66,7 +67,7 @@ final class Location {
     String fetchContentType() {
         if (!isValid()) return null;
         try {
-            return Fetch.fetchContentType(context, parsedUrl, resolvedIp());
+            return Fetch.fetchContentType(net, parsedUrl, resolvedIp());
         } catch (Fetch.FetchException e) {
             LOG.warning("Failed to fetch " + parsedUrl + " at " + resolvedIp().getHostAddress() + " (" + e.getMessage() + ")");
             return null;

@@ -1,6 +1,5 @@
 package campfire.bots;
 
-import campfire.integrations.net.Deadline;
 import campfire.integrations.net.Network;
 import campfire.integrations.net.PinnedHttp;
 import campfire.integrations.net.PinnedHttp.HttpException;
@@ -49,18 +48,20 @@ final class WebhookClient {
         }
     }
 
+    private static final PinnedHttp.Timeouts TIMEOUTS = new PinnedHttp.Timeouts(ENDPOINT_TIMEOUT, ENDPOINT_TIMEOUT, DELIVERY_DEADLINE);
+
     static Reply deliver(Network net, String url, String payload) throws DeliveryException {
-        Deadline deadline = Deadline.after(DELIVERY_DEADLINE);
+        long started = System.nanoTime();
         try {
-            return post(net, url, payload, deadline);
+            return post(net, url, payload);
         } catch (HttpException e) {
             if (e.kind != HttpException.Kind.OPEN_TIMEOUT && e.kind != HttpException.Kind.READ_TIMEOUT) throw new DeliveryException(String.valueOf(e.getMessage()), e);
-            Duration after = deadline.expired() ? DELIVERY_DEADLINE : ENDPOINT_TIMEOUT;
-            return new Reply.Text("Failed to respond within " + after.toSeconds() + " seconds");
+            boolean overall = System.nanoTime() - started >= DELIVERY_DEADLINE.toNanos();
+            return new Reply.Text("Failed to respond within " + (overall ? DELIVERY_DEADLINE : ENDPOINT_TIMEOUT).toSeconds() + " seconds");
         }
     }
 
-    private static Reply post(Network net, String url, String payload, Deadline deadline) throws DeliveryException, HttpException {
+    private static Reply post(Network net, String url, String payload) throws DeliveryException, HttpException {
         RubyUri uri;
         try {
             uri = RubyUri.parse(url);
@@ -81,11 +82,9 @@ final class WebhookClient {
             throw new DeliveryException("Failed to open TCP connection to " + host + ":" + port + " (getaddrinfo: " + e.getMessage() + ")", e);
         }
         var target = new PinnedHttp.Target(uri.isHttps(), host, port.intValue(), address);
-        String hostname = uri.hostname();
-        String uriHost = port == (uri.isHttps() ? 443 : 80) ? hostname : hostname + ":" + port;
-        var request = PinnedHttp.Request.netHttp("POST", uri.requestUri(), uriHost, List.of(new PinnedHttp.Header("Content-Type", "application/json")),
-            payload.getBytes(StandardCharsets.UTF_8)).transport(true, target);
-        try (var response = PinnedHttp.exchange(net, target, request, new PinnedHttp.Timeouts(ENDPOINT_TIMEOUT, ENDPOINT_TIMEOUT), deadline)) {
+        var request = new PinnedHttp.Request("POST", uri.requestUri(), List.of(new PinnedHttp.Header("Content-Type", "application/json")),
+            payload.getBytes(StandardCharsets.UTF_8));
+        try (var response = PinnedHttp.exchange(net, target, request, TIMEOUTS)) {
             String contentType = response.contentType();
             byte[] body = response.readBody(MAX_REPLY_SIZE);
             if (body == null) throw new DeliveryException("the reply is larger than " + MAX_REPLY_SIZE / 1024 / 1024 + " MB", null);

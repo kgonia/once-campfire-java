@@ -1,6 +1,5 @@
 package campfire.integrations.opengraph;
 
-import campfire.integrations.net.Deadline;
 import campfire.integrations.net.Network;
 import java.time.Duration;
 import java.util.concurrent.ExecutionException;
@@ -48,23 +47,20 @@ public final class Opengraph {
     }
 
     /// The action after `params.require(:url)` (a missing or blank `url` is the controller's
-    /// 400), with the system network. Blocks for at most {@link #UNFURL_DEADLINE}.
-    public static Unfurl unfurl(String url) {
-        return unfurl(Network.system(), url, UNFURL_DEADLINE);
-    }
-
+    /// 400). Blocks for at most {@link #UNFURL_DEADLINE}.
     public static Unfurl unfurl(Network net, String url) {
         return unfurl(net, url, UNFURL_DEADLINE);
     }
 
+    /// The worker is interrupted at the deadline, which ends the fetch it's waiting on.
     static Unfurl unfurl(Network net, String url, Duration limit) {
-        Deadline deadline = Deadline.after(limit);
+        long deadline = System.nanoTime() + limit.toNanos();
         Future<Unfurl> task = WORKERS.submit(() -> {
-            if (!SLOTS.tryAcquire(deadline.remainingNanos(), TimeUnit.NANOSECONDS)) return new Unfurl.NoContent();
+            if (!SLOTS.tryAcquire(deadline - System.nanoTime(), TimeUnit.NANOSECONDS)) return new Unfurl.NoContent();
             try {
-                Metadata opengraph = Metadata.fromUrl(net, url, deadline);
+                Metadata opengraph = Metadata.fromUrl(net, url);
                 boolean valid = opengraph.validate();
-                if (deadline.expired()) return new Unfurl.NoContent();
+                if (expired(deadline)) return new Unfurl.NoContent();
                 return valid ? new Unfurl.Json(opengraph, opengraph.toJson()) : new Unfurl.NoContent();
             } catch (Metadata.RaisedException e) {
                 return new Unfurl.Raised(e.rubyClass());
@@ -73,9 +69,9 @@ public final class Opengraph {
             }
         });
         try {
-            // A little grace past the deadline: sockets close at it, but a DNS lookup can't be cut short.
-            Unfurl result = task.get(deadline.remainingNanos() + TimeUnit.MILLISECONDS.toNanos(250), TimeUnit.NANOSECONDS);
-            if (deadline.expired() && !(result instanceof Unfurl.Raised)) return giveUp(url, limit);
+            // A little grace past the deadline, which a DNS lookup can't be cut short at.
+            Unfurl result = task.get(deadline - System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(250), TimeUnit.NANOSECONDS);
+            if (expired(deadline) && !(result instanceof Unfurl.Raised)) return giveUp(url, limit);
             return result;
         } catch (TimeoutException e) {
             task.cancel(true);
@@ -88,6 +84,10 @@ public final class Opengraph {
             LOG.log(Level.SEVERE, "Error unfurling " + url, e.getCause());
             return new Unfurl.Raised(e.getCause().getClass().getName());
         }
+    }
+
+    private static boolean expired(long deadline) {
+        return deadline - System.nanoTime() <= 0;
     }
 
     private static Unfurl giveUp(String url, Duration limit) {

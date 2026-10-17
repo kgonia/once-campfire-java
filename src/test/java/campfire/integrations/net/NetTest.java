@@ -10,7 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import campfire.integrations.TestSupport;
 import campfire.integrations.TestSupport.FakeResolver;
 import campfire.integrations.TestSupport.FakeServer;
-import campfire.integrations.TestSupport.MappingDialer;
+import campfire.integrations.TestSupport.MappingRoute;
 import campfire.integrations.TestSupport.Route;
 import java.time.Duration;
 import java.util.List;
@@ -87,15 +87,23 @@ class NetTest {
         assertEquals("/query?a=1&b=2", RubyUri.parse("http://h/query?a=1&b=2#frag").requestUri());
     }
 
+    private static final PinnedHttp.Timeouts TIMEOUTS = new PinnedHttp.Timeouts(Duration.ofSeconds(5), Duration.ofSeconds(5), Duration.ofSeconds(10));
+
+    private static MappingRoute routeTo(int port) {
+        return new MappingRoute(Set.copyOf(TestSupport.ips("93.184.216.34")), port);
+    }
+
     private static Network networkTo(FakeServer server) {
-        var resolver = new FakeResolver().set("www.example.com", "93.184.216.34");
-        return TestSupport.network(resolver, new MappingDialer(Set.copyOf(TestSupport.ips("93.184.216.34")), server.port()));
+        return TestSupport.network(new FakeResolver(), routeTo(server.port()));
     }
 
     private static PinnedHttp.Response get(Network net, boolean https, String path) throws Exception {
-        var target = new PinnedHttp.Target(https, "www.example.com", https ? 443 : 80, Guard.parseAddress("93.184.216.34"));
-        var request = PinnedHttp.Request.netHttp("GET", path, "www.example.com", List.of(), null).transport(false, target);
-        return PinnedHttp.exchange(net, target, request, PinnedHttp.Timeouts.NET_HTTP, Deadline.after(Duration.ofSeconds(10)));
+        return get(net, https, "www.example.com", path, TIMEOUTS);
+    }
+
+    private static PinnedHttp.Response get(Network net, boolean https, String host, String path, PinnedHttp.Timeouts timeouts) throws Exception {
+        var target = new PinnedHttp.Target(https, host, https ? 443 : 80, Guard.parseAddress("93.184.216.34"));
+        return PinnedHttp.exchange(net, target, new PinnedHttp.Request("GET", path), timeouts);
     }
 
     /// A gigabyte packed into a megabyte stops inflating just past the limit.
@@ -140,31 +148,25 @@ class NetTest {
             try (var response = get(net, true, "/")) {
                 assertEquals("hi", new String(response.readBody(100)));
             }
-            var untrusted = net.withTls(TestSupport.untrustingTls());
+            var untrusted = TestSupport.network(new FakeResolver(), routeTo(server.port()), TestSupport.untrustingTls());
             var error = assertThrows(PinnedHttp.HttpException.class, () -> get(untrusted, true, "/"));
             assertEquals(PinnedHttp.HttpException.Kind.TLS, error.kind);
             // A name the certificate isn't for.
-            var target = new PinnedHttp.Target(true, "other.example", 443, Guard.parseAddress("93.184.216.34"));
-            var request = PinnedHttp.Request.netHttp("GET", "/", null, List.of(), null).transport(true, target);
-            var mismatch = assertThrows(PinnedHttp.HttpException.class,
-                () -> PinnedHttp.exchange(net, target, request, PinnedHttp.Timeouts.NET_HTTP, Deadline.NONE));
+            var mismatch = assertThrows(PinnedHttp.HttpException.class, () -> get(net, true, "other.example", "/", TIMEOUTS));
             assertEquals(PinnedHttp.HttpException.Kind.TLS, mismatch.kind);
         }
     }
 
     /// A server that keeps sending a byte at a time never trips the read timeout, but the
-    /// deadline closes the connection.
+    /// exchange's total does.
     @Test
     void givesUpOnATricklingBodyAtTheDeadline() throws Exception {
         try (var listener = TestSupport.tricklingServer("HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n")) {
-            var net = new Network(new FakeResolver(), new MappingDialer(Set.copyOf(TestSupport.ips("93.184.216.34")), listener.getLocalPort()),
-                TestSupport.clientTls());
-            var target = new PinnedHttp.Target(false, "www.example.com", 80, Guard.parseAddress("93.184.216.34"));
-            var request = PinnedHttp.Request.netHttp("GET", "/", "www.example.com", List.of(), null);
+            var net = TestSupport.network(new FakeResolver(), routeTo(listener.getLocalPort()));
+            var timeouts = new PinnedHttp.Timeouts(Duration.ofSeconds(5), Duration.ofSeconds(5), Duration.ofMillis(500));
             long started = System.nanoTime();
             var error = assertThrows(PinnedHttp.HttpException.class, () -> {
-                try (var response = PinnedHttp.exchange(net, target, request, new PinnedHttp.Timeouts(Duration.ofSeconds(5), Duration.ofSeconds(5)),
-                    Deadline.after(Duration.ofMillis(500)))) {
+                try (var response = get(net, false, "www.example.com", "/", timeouts)) {
                     response.readBody(1 << 20);
                 }
             });

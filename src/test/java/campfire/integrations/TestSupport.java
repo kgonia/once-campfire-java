@@ -3,6 +3,8 @@ package campfire.integrations;
 import campfire.integrations.net.Guard;
 import campfire.integrations.net.Network;
 import campfire.rails.Json;
+import io.vertx.core.Vertx;
+import io.vertx.core.net.TrustOptions;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -28,19 +30,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.UnaryOperator;
 import java.util.zip.GZIPOutputStream;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.TrustManagerFactory;
 
-/// Fakes for the integration tests (after the Rust port's test_support.rs): DNS answers, a
-/// dialer that sends fake public addresses to a local server, and that server (plain or TLS),
-/// which replays canned responses and records what it was asked.
+/// Fakes for the integration tests (after the Rust port's test_support.rs): DNS answers, a route
+/// that sends fake public addresses to a local server, and that server (plain or TLS), which
+/// replays canned responses and records what it was asked.
 public final class TestSupport {
     private TestSupport() {}
 
     public static final Path TESTDATA = Path.of("src/test/java/campfire/integrations/testdata");
+
+    private static final Vertx VERTX = Vertx.vertx();
 
     public static Object json(String name) {
         try {
@@ -84,22 +89,22 @@ public final class TestSupport {
         return out;
     }
 
-    /// Connects the given addresses (any port) to `to`; anything else is dialed for real.
-    public static final class MappingDialer implements Network.Dialer {
+    /// Sends the given addresses (any port) to `toPort` on loopback; anything else goes where it
+    /// says.
+    public static final class MappingRoute implements UnaryOperator<InetSocketAddress> {
         private final Set<InetAddress> publicIps;
         private final int toPort;
         public final List<InetSocketAddress> dialed = new CopyOnWriteArrayList<>();
 
-        public MappingDialer(Set<InetAddress> publicIps, int toPort) {
+        public MappingRoute(Set<InetAddress> publicIps, int toPort) {
             this.publicIps = publicIps;
             this.toPort = toPort;
         }
 
         @Override
-        public Socket connect(InetSocketAddress address, int timeoutMillis) throws IOException {
+        public InetSocketAddress apply(InetSocketAddress address) {
             dialed.add(address);
-            var target = publicIps.contains(address.getAddress()) ? new InetSocketAddress(InetAddress.getLoopbackAddress(), toPort) : address;
-            return Network.TCP_DIALER.connect(target, timeoutMillis);
+            return publicIps.contains(address.getAddress()) ? new InetSocketAddress(InetAddress.getLoopbackAddress(), toPort) : address;
         }
     }
 
@@ -115,32 +120,28 @@ public final class TestSupport {
         return CertificateFactory.getInstance("X.509").generateCertificate(new java.io.ByteArrayInputStream(pem(name)));
     }
 
-    /// A client context that trusts only the test CA.
-    public static SSLContext clientTls() {
+    /// Trust in only the test CA.
+    public static TrustOptions clientTls() {
         try {
-            var store = KeyStore.getInstance("PKCS12");
-            store.load(null, null);
-            store.setCertificateEntry("ca", certificate("ca.pem"));
-            var trust = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-            trust.init(store);
-            var context = SSLContext.getInstance("TLS");
-            context.init(null, trust.getTrustManagers(), null);
-            return context;
+            return trusting(certificate("ca.pem"));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    /// A client context that trusts nothing.
-    public static SSLContext untrustingTls() {
+    /// Trust in nothing.
+    public static TrustOptions untrustingTls() {
+        return trusting();
+    }
+
+    private static TrustOptions trusting(Certificate... certificates) {
         try {
             var store = KeyStore.getInstance("PKCS12");
             store.load(null, null);
+            for (int i = 0; i < certificates.length; i++) store.setCertificateEntry("ca" + i, certificates[i]);
             var trust = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
             trust.init(store);
-            var context = SSLContext.getInstance("TLS");
-            context.init(null, trust.getTrustManagers(), null);
-            return context;
+            return TrustOptions.wrap(trust);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -164,8 +165,17 @@ public final class TestSupport {
         }
     }
 
-    public static Network network(FakeResolver resolver, MappingDialer dialer) {
-        return new Network(resolver, dialer, clientTls());
+    public static Network network(FakeResolver resolver, MappingRoute route) {
+        return network(resolver, route, clientTls());
+    }
+
+    public static Network network(FakeResolver resolver, MappingRoute route, TrustOptions trust) {
+        return Network.create(VERTX, resolver, route, trust);
+    }
+
+    /// No names resolve, so nothing is ever sent.
+    public static Network offline() {
+        return Network.create(VERTX, new FakeResolver(), UnaryOperator.identity(), clientTls());
     }
 
     // --- The server ---------------------------------------------------------------------------

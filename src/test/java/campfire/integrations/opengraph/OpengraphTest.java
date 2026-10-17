@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import campfire.integrations.TestSupport;
 import campfire.integrations.TestSupport.FakeResolver;
 import campfire.integrations.TestSupport.FakeServer;
-import campfire.integrations.TestSupport.MappingDialer;
+import campfire.integrations.TestSupport.MappingRoute;
 import campfire.integrations.TestSupport.Route;
 import campfire.integrations.net.Guard;
 import campfire.integrations.net.Network;
@@ -77,7 +77,7 @@ class OpengraphTest {
                     for (var list : (List<List<String>>) host.getValue()) answers.add(TestSupport.ips(list.toArray(String[]::new)));
                     resolver.set(host.getKey(), answers);
                 }
-                var net = TestSupport.network(resolver, new MappingDialer(publicIps, server.port()));
+                var net = TestSupport.network(resolver, new MappingRoute(publicIps, server.port()));
                 int before = server.received.size();
 
                 var response = new LinkedHashMap<String, Object>();
@@ -166,7 +166,7 @@ class OpengraphTest {
 
     private static Network networkTo(int port, String... publicIps) {
         var resolver = new FakeResolver().set("www.example.com", "93.184.216.34").set("example.com", "93.184.216.35");
-        return TestSupport.network(resolver, new MappingDialer(Set.copyOf(TestSupport.ips(publicIps)), port));
+        return TestSupport.network(resolver, new MappingRoute(Set.copyOf(TestSupport.ips(publicIps)), port));
     }
 
     /// test/controllers/unfurl_links_controller_test.rb over HTTPS: the pinned address, with the
@@ -178,16 +178,17 @@ class OpengraphTest {
         try (var server = FakeServer.startTls(List.of(new Route("GET", "www.example.com", "/", 200).header("Content-Type", "text/html").body(page),
             new Route("HEAD", "example.com", "/image.png", 200).header("Content-Type", "image/png")))) {
             var resolver = new FakeResolver().set("www.example.com", "93.184.216.34").set("example.com", "93.184.216.35");
-            var dialer = new MappingDialer(Set.copyOf(TestSupport.ips("93.184.216.34", "93.184.216.35")), server.port());
-            var net = TestSupport.network(resolver, dialer);
+            var route = new MappingRoute(Set.copyOf(TestSupport.ips("93.184.216.34", "93.184.216.35")), server.port());
+            var net = TestSupport.network(resolver, route);
             var json = assertInstanceOf(Opengraph.Unfurl.Json.class, Opengraph.unfurl(net, "https://www.example.com"));
             assertEquals("{\"title\":\"Hey!\",\"url\":\"https://example.com\",\"image\":\"https://example.com/image.png\",\"description\":\"desc..\","
                 + "\"context_for_validation\":{\"context\":null},\"errors\":{}}", json.body());
             assertEquals(List.of("93.184.216.34:443", "93.184.216.35:443"),
-                dialer.dialed.stream().map(a -> a.getAddress().getHostAddress() + ":" + a.getPort()).toList());
+                route.dialed.stream().map(a -> a.getAddress().getHostAddress() + ":" + a.getPort()).toList());
 
             // A certificate that doesn't verify is a failed fetch.
-            assertInstanceOf(Opengraph.Unfurl.NoContent.class, Opengraph.unfurl(net.withTls(TestSupport.untrustingTls()), "https://www.example.com"));
+            var untrusted = TestSupport.network(resolver, route, TestSupport.untrustingTls());
+            assertInstanceOf(Opengraph.Unfurl.NoContent.class, Opengraph.unfurl(untrusted, "https://www.example.com"));
         }
     }
 

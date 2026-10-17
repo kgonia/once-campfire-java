@@ -1,6 +1,5 @@
 package campfire.integrations.webpush;
 
-import campfire.integrations.net.Deadline;
 import campfire.integrations.net.Guard;
 import campfire.integrations.net.Network;
 import campfire.integrations.net.PinnedHttp;
@@ -58,8 +57,7 @@ public final class WebPush implements AutoCloseable {
 
     /// `WebPush::Request#default_options[:ttl]`: four weeks.
     static final long TTL_SECONDS = 60L * 60 * 24 * 7 * 4;
-    private static final PinnedHttp.Timeouts TIMEOUTS = new PinnedHttp.Timeouts(Duration.ofSeconds(10), Duration.ofSeconds(10));
-    private static final Duration DELIVERY_DEADLINE = Duration.ofSeconds(30);
+    private static final PinnedHttp.Timeouts TIMEOUTS = new PinnedHttp.Timeouts(Duration.ofSeconds(10), Duration.ofSeconds(10), Duration.ofSeconds(30));
 
     /// `Concurrent::ThreadPoolExecutor.new(max_threads: 50, max_queue: 10000)`
     static final int MAX_THREADS = 50;
@@ -81,34 +79,31 @@ public final class WebPush implements AutoCloseable {
         record Failed(DeliveryException error) implements Result {}
     }
 
-    /// A failed delivery, with the Ruby exception class it stands for.
+    /// A failed delivery.
     public static final class DeliveryException extends Exception {
         public enum Kind {
-            /// `WebPush::ExpiredSubscription` (410) and `WebPush::InvalidSubscription` (404): the
-            /// push service doesn't know the subscription (any more).
+            /// 404 or 410: the push service doesn't know the subscription (any more).
             SUBSCRIPTION_GONE,
-            /// The gem's other `ResponseError`s: 401/403, 400 "UnauthorizedRegistration", 413, 429,
-            /// 5xx and any other non-2xx.
+            /// Any other status but a 2xx.
             RESPONSE,
-            /// `OpenSSL::PKey::EC::Point::Error`: the subscription's key isn't a P-256 point.
+            /// The subscription's key isn't a P-256 point.
             INVALID_SUBSCRIPTION_KEY,
-            /// `ArgumentError`: blank or malformed keys, an oversized payload.
+            /// Blank or malformed keys, an oversized payload.
             ARGUMENT,
-            /// `OpenSSL::SSL::SSLError`: may well be our side's fault (a clock or CA store problem).
+            /// The TLS handshake failed, which may well be our side's fault (a clock or CA store
+            /// problem).
             TLS,
             /// Connection failures and timeouts.
             HTTP
         }
 
         public final Kind kind;
-        public final String rubyClass;
         /// The push service's status, for response errors; 0 otherwise.
         public final int status;
 
-        DeliveryException(Kind kind, String rubyClass, String message, int status, Throwable cause) {
+        DeliveryException(Kind kind, String message, int status, Throwable cause) {
             super(message, cause, false, false);
             this.kind = kind;
-            this.rubyClass = rubyClass;
             this.status = status;
         }
 
@@ -132,12 +127,8 @@ public final class WebPush implements AutoCloseable {
     private final ExecutorService invalidations = Executors.newSingleThreadExecutor(Thread.ofVirtual().name("web-push-invalidation").factory());
     private volatile LongConsumer invalidSubscriptionHandler;
 
-    /// Web Push with the system network. Missing or invalid keys log a warning and leave push
-    /// off ({@link #enabled()} is false); nothing is delivered.
-    public WebPush(String publicKey, String privateKey, String subject) {
-        this(publicKey, privateKey, subject, Network.system());
-    }
-
+    /// Missing or invalid keys log a warning and leave push off ({@link #enabled()} is false);
+    /// nothing is delivered.
     public WebPush(String publicKey, String privateKey, String subject, Network net) {
         this.net = net;
         Vapid parsed = null;
@@ -268,7 +259,7 @@ public final class WebPush implements AutoCloseable {
     /// (`Users::PushSubscriptions::TestNotificationsController#create`, which lets errors raise).
     /// A failure here never invalidates the subscription.
     public Result deliverNow(Subscription subscription, String title, String body, String path, long badge, String iconPath) {
-        if (vapid == null) return new Result.Failed(new DeliveryException(DeliveryException.Kind.ARGUMENT, "ArgumentError", "Web Push is off", 0, null));
+        if (vapid == null) return new Result.Failed(new DeliveryException(DeliveryException.Kind.ARGUMENT, "Web Push is off", 0, null));
         InetAddress ip = resolvedEndpointIp(subscription.endpoint(), net.resolver());
         if (ip == null) return new Result.Skipped();
         try {
@@ -326,7 +317,7 @@ public final class WebPush implements AutoCloseable {
             if (e.invalidatesSubscription()) {
                 invalidateSubscriptionLater(subscription.id());
             } else {
-                LOG.severe("Error in WebPush::Pool.deliver: " + e.rubyClass + " " + e.getMessage());
+                LOG.severe("Error in WebPush::Pool.deliver: " + e.kind + " " + e.getMessage());
             }
         }
     }
@@ -353,7 +344,7 @@ public final class WebPush implements AutoCloseable {
     int payloadSend(Subscription subscription, InetAddress endpointIp, String message, long nowSeconds) throws DeliveryException {
         RubyUri uri = RubyUri.parseOrNull(subscription.endpoint());
         if (uri == null || uri.host() == null) {
-            throw new DeliveryException(DeliveryException.Kind.ARGUMENT, "ArgumentError", "bad URI(is not URI?): " + subscription.endpoint(), 0, null);
+            throw new DeliveryException(DeliveryException.Kind.ARGUMENT, "bad URI: " + subscription.endpoint(), 0, null);
         }
         String host = uri.host();
         byte[] payload;
@@ -361,8 +352,8 @@ public final class WebPush implements AutoCloseable {
             payload = Encryption.encrypt(message.getBytes(StandardCharsets.UTF_8), subscription.p256dh(), subscription.auth());
         } catch (Encryption.EncryptionException e) {
             throw e.invalidKey
-                ? new DeliveryException(DeliveryException.Kind.INVALID_SUBSCRIPTION_KEY, "OpenSSL::PKey::EC::Point::Error", e.getMessage(), 0, e)
-                : new DeliveryException(DeliveryException.Kind.ARGUMENT, "ArgumentError", e.getMessage(), 0, e);
+                ? new DeliveryException(DeliveryException.Kind.INVALID_SUBSCRIPTION_KEY, e.getMessage(), 0, e)
+                : new DeliveryException(DeliveryException.Kind.ARGUMENT, e.getMessage(), 0, e);
         }
 
         var headers = new ArrayList<Header>();
@@ -370,44 +361,24 @@ public final class WebPush implements AutoCloseable {
         headers.add(new Header("Ttl", Long.toString(TTL_SECONDS)));
         headers.add(new Header("Urgency", "high"));
         headers.add(new Header("Content-Encoding", "aes128gcm"));
-        headers.add(new Header("Content-Length", Integer.toString(payload.length)));
         headers.add(new Header("Authorization", vapid.authorization(uri.scheme().toLowerCase(Locale.ROOT) + "://" + host, nowSeconds)));
 
         int port = uri.port() == null ? 443 : (int) Math.min(uri.port(), 65535);
         var target = new PinnedHttp.Target(true, host, port, endpointIp);
-        var request = PinnedHttp.Request.netHttp("POST", uri.requestUri(), null, headers, payload).transport(true, target);
-        try (var response = PinnedHttp.exchange(net, target, request, TIMEOUTS, Deadline.after(DELIVERY_DEADLINE))) {
-            return verifyResponse(response.status, response.reason, host);
+        var request = new PinnedHttp.Request("POST", uri.requestUri(), headers, payload);
+        try (var response = PinnedHttp.exchange(net, target, request, TIMEOUTS)) {
+            return verifyResponse(response.status, host);
         } catch (HttpException e) {
             var kind = e.kind == HttpException.Kind.TLS ? DeliveryException.Kind.TLS : DeliveryException.Kind.HTTP;
-            throw new DeliveryException(kind, e.kind.rubyClass, e.getMessage(), 0, e);
+            throw new DeliveryException(kind, e.getMessage(), 0, e);
         }
     }
 
-    /// `WebPush::Request#verify_response`
-    static int verifyResponse(int status, String reason, String host) throws DeliveryException {
-        String rubyClass;
-        var kind = DeliveryException.Kind.RESPONSE;
-        if (status == 410) {
-            rubyClass = "WebPush::ExpiredSubscription";
-            kind = DeliveryException.Kind.SUBSCRIPTION_GONE;
-        } else if (status == 404) {
-            rubyClass = "WebPush::InvalidSubscription";
-            kind = DeliveryException.Kind.SUBSCRIPTION_GONE;
-        } else if (status == 401 || status == 403 || (status == 400 && "UnauthorizedRegistration".equals(reason))) {
-            rubyClass = "WebPush::Unauthorized";
-        } else if (status == 413) {
-            rubyClass = "WebPush::PayloadTooLarge";
-        } else if (status == 429) {
-            rubyClass = "WebPush::TooManyRequests";
-        } else if (status >= 500 && status <= 599) {
-            rubyClass = "WebPush::PushServiceError";
-        } else if (status >= 200 && status <= 299) {
-            return status;
-        } else {
-            rubyClass = "WebPush::ResponseError";
-        }
-        throw new DeliveryException(kind, rubyClass, "host: " + host + ", status: " + status, status, null);
+    /// `WebPush::Request#verify_response`: the push service's status.
+    static int verifyResponse(int status, String host) throws DeliveryException {
+        if (status >= 200 && status <= 299) return status;
+        var kind = status == 404 || status == 410 ? DeliveryException.Kind.SUBSCRIPTION_GONE : DeliveryException.Kind.RESPONSE;
+        throw new DeliveryException(kind, "host: " + host + ", status: " + status, status, null);
     }
 
     /// Deliveries queued or running.
