@@ -38,9 +38,12 @@ RUN groupadd --system --gid 1000 rails && \
 WORKDIR /rails
 COPY --from=build /out /rails/app
 
+# ZGC grows the heap toward its maximum (half the machine's memory without a container limit)
+# rather than collect more often; the soft maximum keeps it near 1 GB, a few times the app's live
+# set, and lets it grow past that only when it must.
 COPY --chmod=755 <<'EOF' /rails/bin/boot
 #!/bin/sh
-exec java -XX:+UseZGC -XX:MaxRAMPercentage=50 -XX:+UseCompactObjectHeaders --enable-native-access=ALL-UNNAMED \
+exec java -XX:+UseZGC -XX:MaxRAMPercentage=50 -XX:SoftMaxHeapSize=1g -XX:+UseCompactObjectHeaders --enable-native-access=ALL-UNNAMED \
   -Dquarkus.http.port="${HTTP_PORT:-80}" -jar /rails/app/quarkus-run.jar
 EOF
 

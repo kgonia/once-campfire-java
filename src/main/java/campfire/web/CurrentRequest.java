@@ -26,6 +26,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Pattern;
 import org.jspecify.annotations.Nullable;
 
 /// The request being served: its parameters (query, form and path merged, Rails style), cookies,
@@ -41,12 +42,18 @@ public class CurrentRequest {
     @Inject
     RoutingContext routing;
 
-    /// What the Vert.x request says, read on first use. Headers are keyed in lower case; `cookies`
-    /// also reflects the cookies set while serving the request.
-    private record Facts(String method, String path, @Nullable String query, Map<String, List<String>> headers,
-                         @Nullable String peerAddress, Params params, Map<String, String> cookies, @Nullable Map<String, Object> jsonBody) {}
+    /// What the Vert.x request says, read on first use; `cookies` also reflects the cookies set
+    /// while serving the request.
+    private record Facts(String method, String path, @Nullable String query, @Nullable String peerAddress, Params params,
+                         Map<String, String> cookies, @Nullable Map<String, Object> jsonBody) {}
 
     private @Nullable Facts facts;
+    /// Every header keyed in lower case, copied only for {@link #headers()}; single headers are read
+    /// from Vert.x's own map, which ignores case.
+    private @Nullable Map<String, List<String>> headers;
+    /// `ssl()` and `baseUrl()`, which links on a page ask for over and over.
+    private @Nullable Boolean ssl;
+    private @Nullable String baseUrl;
     /// The body claimed to be JSON but isn't; the request is a 400 before anything else.
     private boolean malformedBody;
     private final List<String> setCookies = new ArrayList<>();
@@ -76,10 +83,6 @@ public class CurrentRequest {
         if (facts != null) return facts;
         var http = routing.request();
         String method = http.method().name();
-        var headers = new LinkedHashMap<String, List<String>>();
-        for (var entry : http.headers()) {
-            headers.computeIfAbsent(entry.getKey().toLowerCase(Locale.ROOT), k -> new ArrayList<>(1)).add(entry.getValue());
-        }
         var params = new Params();
         params.addQuery(http.query());
         MultiMap form = http.isExpectMultipart() || method.equals("POST") || method.equals("PUT") || method.equals("PATCH")
@@ -89,13 +92,12 @@ public class CurrentRequest {
             if (upload.fileName() == null || upload.fileName().isEmpty()) continue;
             params.put(upload.name(), new Params.Upload(upload.fileName(), upload.contentType(), Path.of(upload.uploadedFileName()), upload.size()));
         }
-        List<String> contentType = headers.get("content-type");
-        Map<String, Object> jsonBody = contentType == null || contentType.isEmpty() ? null : jsonBody(contentType.getFirst());
+        String contentType = http.getHeader("content-type");
+        Map<String, Object> jsonBody = contentType == null ? null : jsonBody(contentType);
         if (jsonBody != null) jsonBody.forEach(params::putValue);
-        List<String> cookieHeader = headers.get("cookie");
         var address = http.remoteAddress();
-        facts = new Facts(method, Objects.requireNonNullElse(http.path(), "/"), http.query(), headers, address == null ? null : address.hostAddress(), params,
-            parseCookies(cookieHeader == null || cookieHeader.isEmpty() ? null : cookieHeader.getFirst()), jsonBody);
+        facts = new Facts(method, Objects.requireNonNullElse(http.path(), "/"), http.query(), address == null ? null : address.hostAddress(), params,
+            parseCookies(http.getHeader("cookie")), jsonBody);
         return facts;
     }
 
@@ -194,7 +196,14 @@ public class CurrentRequest {
     }
 
     public Map<String, List<String>> headers() {
-        return facts().headers();
+        if (headers == null) {
+            var copy = new LinkedHashMap<String, List<String>>();
+            for (var entry : routing.request().headers()) {
+                copy.computeIfAbsent(entry.getKey().toLowerCase(Locale.ROOT), k -> new ArrayList<>(1)).add(entry.getValue());
+            }
+            headers = copy;
+        }
+        return headers;
     }
 
     public Params params() {
@@ -220,8 +229,7 @@ public class CurrentRequest {
     }
 
     public @Nullable String header(String name) {
-        List<String> values = headers().get(name.toLowerCase(Locale.ROOT));
-        return values == null || values.isEmpty() ? null : values.getFirst();
+        return routing.request().getHeader(name);
     }
 
     public @Nullable String userAgent() {
@@ -231,9 +239,11 @@ public class CurrentRequest {
     /// Every request counts as HTTPS unless `DISABLE_SSL` is set; then a trusted proxy's
     /// `X-Forwarded-Proto` decides.
     public boolean ssl() {
-        if (!app.config().disableSsl()) return true;
-        String proto = trustedForwarded() ? header("x-forwarded-proto") : null;
-        return proto != null && proto.equalsIgnoreCase("https");
+        if (ssl == null) {
+            String proto = !app.config().disableSsl() ? null : trustedForwarded() ? header("x-forwarded-proto") : null;
+            ssl = !app.config().disableSsl() || proto != null && proto.equalsIgnoreCase("https");
+        }
+        return ssl;
     }
 
     public String protocol() {
@@ -262,7 +272,8 @@ public class CurrentRequest {
     }
 
     public String baseUrl() {
-        return protocol() + hostWithPort();
+        if (baseUrl == null) baseUrl = protocol() + hostWithPort();
+        return baseUrl;
     }
 
     public String url(String path) {
@@ -390,7 +401,7 @@ public class CurrentRequest {
     static Map<String, String> parseCookies(@Nullable String header) {
         var cookies = new LinkedHashMap<String, String>();
         if (header == null) return cookies;
-        for (String part : header.split("; *")) {
+        for (String part : COOKIE_SEPARATOR.split(header)) {
             if (part.isEmpty()) continue;
             int eq = part.indexOf('=');
             String name = eq < 0 ? part : part.substring(0, eq);
@@ -398,6 +409,9 @@ public class CurrentRequest {
         }
         return cookies;
     }
+
+    /// `String.split` compiles any pattern but a single plain character on every call.
+    private static final Pattern COOKIE_SEPARATOR = Pattern.compile("; *");
 
     public @Nullable String cookie(String name) {
         return facts().cookies().get(name);

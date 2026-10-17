@@ -20,7 +20,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ThreadLocalRandom;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -123,9 +125,13 @@ public class Front {
     }
 
     /// Rails' request id: the client's, cut down to word characters, `-` and `@` (at most 255),
-    /// else a new UUID.
+    /// else a new random (version 4) UUID. It's a tracing id, not a secret, so it comes from
+    /// `ThreadLocalRandom` rather than `UUID.randomUUID()`'s shared `SecureRandom`.
     static String requestId(@Nullable String incoming) {
-        if (incoming == null || incoming.isBlank()) return java.util.UUID.randomUUID().toString();
+        if (incoming == null || incoming.isBlank()) {
+            var random = ThreadLocalRandom.current();
+            return new UUID((random.nextLong() & ~0xF000L) | 0x4000L, (random.nextLong() & ~(3L << 62)) | (2L << 62)).toString();
+        }
         var sanitized = new StringBuilder();
         incoming.codePoints().filter(c -> Character.isLetterOrDigit(c) || c == '_' || c == '-' || c == '@').limit(255)
             .forEach(sanitized::appendCodePoint);
@@ -197,12 +203,32 @@ public class Front {
         lowercaseNames(headers);
     }
 
-    /// Rack 3 (and so Rails and the Rust port) sends every header name in lower case.
+    /// Rack 3 (and so Rails and the Rust port) sends every header name in lower case. The map
+    /// ignores case, so a name is renamed by taking all its values out and putting them back;
+    /// renamed headers move to the end, and the order of headers isn't part of the contract.
     private static void lowercaseNames(MultiMap headers) {
-        var entries = new ArrayList<>(headers.entries());
-        if (entries.stream().allMatch(e -> e.getKey().equals(e.getKey().toLowerCase(Locale.ROOT)))) return;
-        headers.clear();
-        for (var e : entries) headers.add(e.getKey().toLowerCase(Locale.ROOT), e.getValue());
+        List<String> mixedCase = null;
+        for (Map.Entry<String, String> header : headers) {
+            String name = header.getKey();
+            if (hasUpperCase(name) && (mixedCase == null || !mixedCase.contains(name))) {
+                if (mixedCase == null) mixedCase = new ArrayList<>(4);
+                mixedCase.add(name);
+            }
+        }
+        if (mixedCase == null) return;
+        for (String name : mixedCase) {
+            List<String> values = headers.getAll(name);
+            headers.remove(name);
+            headers.add(name.toLowerCase(Locale.ROOT), values);
+        }
+    }
+
+    private static boolean hasUpperCase(String name) {
+        for (int i = 0; i < name.length(); i++) {
+            char c = name.charAt(i);
+            if (c >= 'A' && c <= 'Z') return true;
+        }
+        return false;
     }
 
     /// Offers a response the app produced to the cache: kept when it's public, and then without

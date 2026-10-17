@@ -3,6 +3,7 @@ package campfire.web;
 import campfire.App;
 import campfire.view.PageDigest;
 import campfire.view.Pages;
+import io.quarkus.arc.ClientProxy;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerResponseContext;
@@ -33,7 +34,7 @@ import org.jspecify.annotations.Nullable;
 /// Exception pages carry none of the page headers, as Rails renders them outside the controller.
 public class ResponseFinisher {
     @Inject
-    CurrentRequest request;
+    CurrentRequest current;
     @Inject
     App app;
     @Inject
@@ -45,14 +46,16 @@ public class ResponseFinisher {
 
     @ServerResponseFilter
     public void finish(ContainerRequestContext context, ContainerResponseContext response) {
+        // Each call through the request-scoped client proxy looks the instance up again.
+        CurrentRequest request = ClientProxy.unwrap(current);
         MultivaluedMap<String, Object> headers = response.getHeaders();
         // The resource set the length itself (files, error pages): an empty body stays unencoded.
         boolean lengthSet = response.getHeaderString("Content-Length") != null;
         if (request.isExceptionResponse()) {
             if (request.ssl()) headers.putSingle("strict-transport-security", "max-age=63072000; includeSubDomains");
-            requestTracking(headers);
-            encode(response, true);
-            offer(response);
+            requestTracking(headers, request);
+            encode(response, true, request);
+            offer(response, request);
             return;
         }
         request.commitSession();
@@ -75,13 +78,13 @@ public class ResponseFinisher {
         if (type != null && type.startsWith("text/vnd.turbo-stream.html") && header(response, "Vary") == null && Formats.variesOnAccept(request)) {
             headers.putSingle("Vary", "Accept");
         }
-        requestTracking(headers);
+        requestTracking(headers, request);
         // Bodiless responses (204, 304) get Rack::ETag's default too.
         if (response.getEntity() == null && header(response, "Cache-Control") == null) headers.putSingle("Cache-Control", "no-cache");
         readSmallFile(response);
         if (response.getEntity() instanceof byte[] body) {
             etag(response, body, !request.isDownload());
-            if (response.getStatus() == 200 && request.isGet() && notModified(response)) {
+            if (response.getStatus() == 200 && request.isGet() && notModified(response, request)) {
                 response.setStatus(304);
                 response.setEntity(null);
                 headers.remove("Content-Type");
@@ -98,12 +101,12 @@ public class ResponseFinisher {
                 request.cachedGzip(gzip);
             }
         }
-        encode(response, lengthSet);
-        offer(response);
+        encode(response, lengthSet, request);
+        offer(response, request);
     }
 
     /// Rails' request id and runtime, for every response that isn't a static file.
-    private void requestTracking(MultivaluedMap<String, Object> headers) {
+    private static void requestTracking(MultivaluedMap<String, Object> headers, CurrentRequest request) {
         headers.putSingle("x-request-id", Front.requestId(request.header("x-request-id")));
         headers.putSingle("x-runtime", Front.runtime(request.routing()));
     }
@@ -126,7 +129,7 @@ public class ResponseFinisher {
     }
 
     /// The app's gzip, then the proxy's for what's still unencoded.
-    private void encode(ContainerResponseContext response, boolean lengthSet) {
+    private void encode(ContainerResponseContext response, boolean lengthSet, CurrentRequest request) {
         MultivaluedMap<String, Object> headers = response.getHeaders();
         Object entity = response.getEntity();
         boolean empty = entity == null || entity instanceof byte[] b && b.length == 0;
@@ -147,14 +150,14 @@ public class ResponseFinisher {
                 long mtime = ContentEncoding.mtime(header(response, "Last-Modified"));
                 headers.putSingle("Content-Encoding", "gzip");
                 headers.remove("Content-Length");
-                response.setEntity(gzipped(entity, mtime));
+                response.setEntity(gzipped(entity, mtime, request));
                 return;
             }
         }
-        compressUnencoded(response);
+        compressUnencoded(response, request);
     }
 
-    private Object gzipped(@Nullable Object entity, long mtime) {
+    private static Object gzipped(@Nullable Object entity, long mtime, CurrentRequest request) {
         return switch (entity) {
             case null -> Gzip.compress(new byte[0], mtime, null);
             case byte[] body when mtime == 0 && request.cachedGzip() != null -> request.cachedGzip();
@@ -176,7 +179,7 @@ public class ResponseFinisher {
 
     /// Bodies the app left unencoded that the client still wants compressed (by its qualities the
     /// proxy reads gzip as wanted where the app's negotiation picked identity).
-    private void compressUnencoded(ContainerResponseContext response) {
+    private void compressUnencoded(ContainerResponseContext response, CurrentRequest request) {
         if (!front.config().compression() || !(response.getEntity() instanceof byte[] body) || response.getStatus() < 200) return;
         FrontCompression compression = front.compression();
         var encoding = FrontCompression.select(request.isHead(), request.header("accept-encoding"));
@@ -192,7 +195,7 @@ public class ResponseFinisher {
     }
 
     /// Offers the finished response to the proxy's cache; a public one loses its cookies.
-    private void offer(ContainerResponseContext response) {
+    private void offer(ContainerResponseContext response, CurrentRequest request) {
         if (!(response.getEntity() instanceof byte[] body)) {
             if (FrontCache.lifetime(response.getStatus(), header(response, "Cache-Control"), header(response, "Vary")) != null) {
                 response.getHeaders().remove("Set-Cookie");
@@ -200,7 +203,9 @@ public class ResponseFinisher {
             return;
         }
         var headers = new ArrayList<FrontCache.Header>();
-        liveHeaders(response).forEach((name, values) -> values.forEach(value -> headers.add(new FrontCache.Header(name, value))));
+        response.getHeaders().forEach((name, values) -> {
+            for (Object value : values) headers.add(new FrontCache.Header(name, String.valueOf(value)));
+        });
         if (front.offer(request.routing(), response.getStatus(), headers, body)) response.getHeaders().remove("Set-Cookie");
     }
 
@@ -222,7 +227,7 @@ public class ResponseFinisher {
     }
 
     /// `If-None-Match` wins over `If-Modified-Since`; weak and strong tags compare equal.
-    private boolean notModified(ContainerResponseContext response) {
+    private static boolean notModified(ContainerResponseContext response, CurrentRequest request) {
         String etag = header(response, "ETag");
         String ifNoneMatch = request.header("if-none-match");
         if (etag != null && ifNoneMatch != null) {
@@ -245,7 +250,11 @@ public class ResponseFinisher {
     /// The headers as they stand: `getStringHeaders()` is a snapshot from before this filter ran.
     private static Map<String, List<String>> liveHeaders(ContainerResponseContext response) {
         var headers = new LinkedHashMap<String, List<String>>();
-        response.getHeaders().forEach((name, values) -> headers.put(name, values.stream().map(String::valueOf).toList()));
+        response.getHeaders().forEach((name, values) -> {
+            var strings = new ArrayList<String>(values.size());
+            for (Object value : values) strings.add(String.valueOf(value));
+            headers.put(name, strings);
+        });
         return headers;
     }
 

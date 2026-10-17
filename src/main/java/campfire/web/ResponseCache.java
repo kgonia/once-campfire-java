@@ -3,6 +3,7 @@ package campfire.web;
 import campfire.sessions.Session;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import io.quarkus.arc.ClientProxy;
 import jakarta.ws.rs.core.Response;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -47,7 +48,8 @@ public final class ResponseCache {
 
     /// The cached response for this request, or empty; on a miss the response the resource then
     /// returns is offered to {@link #admit}. Bots, flashes and anything but plain GETs never cache.
-    public Optional<Response> lookup(CurrentRequest request, String endpoint) {
+    public Optional<Response> lookup(CurrentRequest current, String endpoint) {
+        CurrentRequest request = ClientProxy.unwrap(current);
         Session session = request.session();
         if (!enabled || request.dataVersionAtStart() < 0 || session == null || request.authenticatedByBot() || !request.flash().isEmpty()
             || !eligible(request)) {
@@ -102,17 +104,13 @@ public final class ResponseCache {
     /// Everything a page may vary on: data version, endpoint, user, session, URL and every request
     /// header except validators and tracing ids. Null when that's implausibly large.
     private static @Nullable String key(CurrentRequest request, Session session, String endpoint) {
-        MessageDigest digest;
-        try {
-            digest = MessageDigest.getInstance("SHA-256");
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException(e);
-        }
+        MessageDigest digest = sha256();
         int[] length = {0};
+        ByteBuffer size = ByteBuffer.allocate(8);
         java.util.function.Consumer<String> field = value -> {
             byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
             length[0] += bytes.length + 8;
-            digest.update(ByteBuffer.allocate(8).putLong(bytes.length).array());
+            digest.update(size.putLong(0, bytes.length).array());
             digest.update(bytes);
         };
         field.accept(Long.toString(request.dataVersionAtStart()));
@@ -133,5 +131,24 @@ public final class ResponseCache {
             field.accept("");
         }
         return length[0] > MAX_KEY_INPUT ? null : HexFormat.of().formatHex(digest.digest());
+    }
+
+    /// Cloning a prototype skips the provider lookup `MessageDigest.getInstance` does each time.
+    private static final MessageDigest SHA256;
+
+    static {
+        try {
+            SHA256 = MessageDigest.getInstance("SHA-256");
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    private static MessageDigest sha256() {
+        try {
+            return (MessageDigest) SHA256.clone();
+        } catch (CloneNotSupportedException e) {
+            throw new IllegalStateException(e);
+        }
     }
 }

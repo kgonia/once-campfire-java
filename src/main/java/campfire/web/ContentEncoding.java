@@ -7,6 +7,8 @@ import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.jspecify.annotations.NullMarked;
@@ -46,11 +48,26 @@ final class ContentEncoding {
         return String.join(",", names);
     }
 
+    /// Answers by header value: browsers send the same few `Accept-Encoding`s on every request. ""
+    /// stands for none acceptable. Cleared when full, as the values come from clients.
+    private static final ConcurrentHashMap<String, String> NEGOTIATED = new ConcurrentHashMap<>();
+
     /// "gzip" or "identity", or null when the client accepts neither.
     static @Nullable String negotiate(@Nullable String acceptEncoding) {
+        String header = acceptEncoding == null ? "" : acceptEncoding;
+        String answer = NEGOTIATED.get(header);
+        if (answer == null) {
+            if (NEGOTIATED.size() >= 1024) NEGOTIATED.clear();
+            answer = Objects.requireNonNullElse(choose(header), "");
+            NEGOTIATED.put(header, answer);
+        }
+        return answer.isEmpty() ? null : answer;
+    }
+
+    private static @Nullable String choose(String acceptEncoding) {
         record Accepted(String coding, double quality, int preference) {}
         var accepted = new ArrayList<Accepted>();
-        List<String[]> parsed = parse(acceptEncoding == null ? "" : acceptEncoding);
+        List<String[]> parsed = parse(acceptEncoding);
         List<String[]> considered = parsed.subList(0, Math.min(16, parsed.size()));
         boolean wildcardSeen = false;
         for (String[] entry : considered) {

@@ -59,11 +59,12 @@ WORKDIR /rails
 COPY --from=build /out /rails/app
 
 # A cache only applies to a JVM started with the same GC and object layout as the training run,
-# so both read their options from this file.
+# so both read their options from this file. The soft maximum heap: see ./Dockerfile.
 COPY <<'EOF' /rails/bin/jvm.options
 -XX:+UseZGC
 -XX:+UseCompactObjectHeaders
 -XX:MaxRAMPercentage=50
+-XX:SoftMaxHeapSize=1g
 --enable-native-access=ALL-UNNAMED
 EOF
 

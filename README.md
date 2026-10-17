@@ -109,20 +109,26 @@ native build.
 
 Median req/s:
 
-| route | Rust | Java (JVM) | Java (native) |
-|---|---:|---:|---:|
-| room_show | 28,977 | 26,472 | 21,412 |
-| messages_page | 25,208 | 29,533 | 24,681 |
-| sidebar | 32,546 | 45,103 | 25,802 |
-| search | 31,248 | 45,857 | 26,952 |
-| post_message | 3,209 | 2,711 | 2,108 |
-| avatar | 118,177 | 179,154 | 124,276 |
-| static_css | 135,590 | 203,655 | 133,319 |
-| up | 61,239 | 69,322 | 42,175 |
+| route | Rust | Java (JVM) | Java (JDK 26 + AOT cache) | Java (native) |
+|---|---:|---:|---:|---:|
+| room_show | 27,994 | 36,466 | 32,164 | 23,071 |
+| messages_page | 26,801 | 37,071 | 37,213 | 26,318 |
+| sidebar | 31,526 | 52,701 | 46,476 | 29,264 |
+| search | 33,572 | 45,997 | 46,156 | 29,514 |
+| post_message | 3,126 | 2,657 | 2,679 | 2,146 |
+| avatar | 108,541 | 190,859 | 175,417 | 123,126 |
+| static_css | 140,961 | 194,644 | 195,437 | 137,337 |
+| up | 61,773 | 77,443 | 75,295 | 44,214 |
 
 Expect about ±20% between rounds, because Hyper-V schedules vCPUs onto both P- and E-cores. Compare results only
-from the same interleaved run. The native build starts in about 30 ms, against about 0.7 s for the JVM, but it is
-slower under sustained load: it has no JIT, and the Community Edition has neither PGO nor G1.
+from the same interleaved run.
+
+- **Native build:** starts in about 30 ms, against about 0.7 s for the JVM. It's slower under sustained load,
+  because it has no JIT and the Community Edition has neither PGO nor G1.
+- **AOT cache:** cuts JVM startup to about 0.5 s. It barely helps the first seconds under load, because the JIT
+  still has to compile on the same 4 CPUs.
+- **room_show:** the harness measures it first, about 5 s after the container starts, so it carries most of the
+  JVM's warmup.
 
 ## Known differences from the Rust port
 
