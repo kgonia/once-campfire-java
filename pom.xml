@@ -76,6 +76,13 @@
       <artifactId>tika-core</artifactId>
       <version>3.3.1</version>
     </dependency>
+    <!-- TLS_DOMAIN's certificates, as Thruster gets them with autocert. Brings Bouncy Castle for
+         CSRs and PEM. -->
+    <dependency>
+      <groupId>org.shredzone.acme4j</groupId>
+      <artifactId>acme4j-client</artifactId>
+      <version>5.1.0</version>
+    </dependency>
     <dependency>
       <groupId>org.jspecify</groupId>
       <artifactId>jspecify</artifactId>

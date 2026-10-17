@@ -30,6 +30,7 @@ Packages are organized by feature. Inside a feature:
 | `cable` | the Action Cable server and channels |
 | `richtext`, `rails`, `useragent`, `integrations` | Action Text HTML, Rails-compatible crypto and serialization, browser detection, OpenGraph/QR/Web Push clients |
 | `web` | request origin, cookies and the Rails session, access filter, the front layer (public cache, static files), gzip, error pages |
+| `tls` | HTTPS for `TLS_DOMAIN`: ACME certificates, the HTTP port's challenges and redirect |
 | `view` | the templates' helpers, the fragment cache and page digests |
 
 Access rules are annotations (`@Access.Public`, `@GuestOnly`, `@BotsAllowed`, `@NoForgeryProtection`) checked by
@@ -70,6 +71,9 @@ byte for byte, or a measured performance loss. Each deviation is listed below wi
   does.
 - Rails' static security headers as `quarkus.http.header.*`. Only HSTS, which depends on the scheme, is set in
   code.
+- HTTPS through the Quarkus TLS registry: `tls.Certificates` is the `KeyStoreProvider` of the configuration the
+  HTTP server uses, and a `CertificateUpdatedEvent` after `reload()` swaps a new certificate in. ACME is
+  acme4j's.
 - Two Quarkus-managed Agroal datasources, `writer` and `readers`, configured in `application.properties`.
 - jOOQ code generation from the database schema, with queries built on the generated tables and columns. This is
   jOOQ's ["SQL builder with code generation"](https://www.jooq.org/doc/latest/manual/getting-started/use-cases/jooq-as-a-sql-builder-with-code-generation/)
@@ -117,6 +121,12 @@ CAMPFIRE_STORAGE=./storage SECRET_KEY_BASE=… HTTP_PORT=3000 java -jar target/q
 Configuration is the Rails app's environment: `SECRET_KEY_BASE`, `DISABLE_SSL`, `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY`,
 `APP_VERSION`, `GIT_REVISION`, `HTTP_PORT`, plus `CAMPFIRE_STORAGE` (default `/rails/storage`, which holds `db/` and
 `files/`) and `DB_READERS` (the most read connections, opened as needed; default 16).
+
+HTTPS takes Thruster's settings, `THRUSTER_`-prefixed forms included. `TLS_DOMAIN` (comma-separated) turns it on:
+HTTPS on `HTTPS_PORT` (443) with a Let's Encrypt certificate per name, obtained over HTTP-01 and renewed 30 days
+before it expires, while `HTTP_PORT` only answers ACME challenges and redirects to HTTPS. `ACME_DIRECTORY` names
+another CA, `EAB_KID`/`EAB_HMAC_KEY` bind an external account, and certificates and the account key live in
+`STORAGE_PATH` (default `storage/thruster`), in autocert's layout, so an install that ran Thruster keeps both.
 
 Images, with the same user, layout, port contract and ONCE backup hooks as the Rails image (`/hooks/pre-backup` runs
 `campfire backup`, an online copy of the database into `storage/backups`):
@@ -227,8 +237,9 @@ None of these show up in the parity suite or the harness:
   redirects to sign-in, or answers 404 or 403, first.
 - A `Range` with several ranges gets the whole file with a 200, not a `multipart/byteranges` 206. RFC 9110 lets a
   server ignore ranges; single ranges get a 206 as before.
-- No built-in TLS. Thruster, and the Rust port after it, obtain a Let's Encrypt certificate for `TLS_DOMAIN`
-  and serve HTTPS themselves; Java ignores `TLS_DOMAIN` and needs a TLS-terminating proxy in front.
+- With `TLS_DOMAIN`, a name without a cached certificate gets one ordered at boot rather than during its first
+  handshake, and until it arrives (seconds, normally) HTTPS serves a self-signed placeholder. Only HTTP-01 is
+  answered, not TLS-ALPN-01, and a cached certificate for a name no longer in `TLS_DOMAIN` isn't served.
 
 Deliberate:
 
