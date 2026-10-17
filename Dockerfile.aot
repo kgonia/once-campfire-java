@@ -24,11 +24,13 @@ RUN --mount=type=cache,id=campfire-java-m2,target=/root/.m2 mvn -q -B package -D
 
 
 # A runtime with only the modules the app uses. jdeps on the unpacked classes lists more: java.desktop
-# (Quarkus's native-image substitutions, Jakarta EL), java.net.http (jsoup's Jsoup.connect),
-# java.compiler (Vert.x verticle compilation) and java.rmi (JTA), none of which run here. java.sql
-# brings java.logging, java.xml and java.transaction.xa; jdk.zipfs is required by SmallRye's class
-# loader; jdk.net, which jdeps can't see, is looked up reflectively by the JDK's and Netty's socket
-# code. Logging class loads through the parity suite, posting, uploads and TLS unfurls shows nothing
+# (Quarkus's native-image substitutions, Jakarta EL), java.net.http (jsoup's Jsoup.connect) and
+# java.compiler (Vert.x verticle compilation), none of which run here. java.rmi is needed: SmallRye
+# context propagation loads Narayana's JTA context provider at boot, whose exceptions extend
+# RemoteException. java.sql brings java.logging, java.xml and java.transaction.xa; jdk.zipfs is
+# required by SmallRye's class loader; jdk.net, which jdeps can't see, is looked up reflectively by
+# the JDK's and Netty's socket code. Logging class loads through the parity suite, posting, uploads
+# and TLS unfurls shows nothing
 # else in use except security providers listed in java.security (PKCS#11, XML DSig, Kerberos, ...),
 # which the JDK skips when the image lacks them.
 #
@@ -39,7 +41,7 @@ RUN --mount=type=cache,id=campfire-java-m2,target=/root/.m2 mvn -q -B package -D
 # doesn't help. Any of jdk.internal.le, jdk.attach, jdk.compiler or jdk.jartool avoids it, and
 # jdk.internal.le adds no tool.
 FROM docker.io/library/eclipse-temurin:26-jdk AS runtime
-RUN jlink --add-modules java.base,java.management,java.naming,java.sql,jdk.net,jdk.unsupported,jdk.zipfs,jdk.internal.le \
+RUN jlink --add-modules java.base,java.management,java.naming,java.rmi,java.sql,jdk.net,jdk.unsupported,jdk.zipfs,jdk.internal.le \
       --strip-debug --no-man-pages --no-header-files --generate-cds-archive --output /runtime
 
 
@@ -85,7 +87,8 @@ mkdir -p $CAMPFIRE_STORAGE/db $CAMPFIRE_STORAGE/files
 java @/rails/bin/jvm.options -XX:AOTCacheOutput=/rails/app/app.aot -Dquarkus.http.port=3000 -jar /rails/app/quarkus-run.jar &
 app=$!
 B=http://127.0.0.1:3000
-until curl -fs -o /dev/null $B/up; do sleep 0.2; done
+# A failed boot would otherwise wait here forever.
+until curl -fs -o /dev/null $B/up; do kill -0 $app; sleep 0.2; done
 
 jar=/tmp/cookies
 c() { curl -fs --compressed -b $jar -c $jar "$@"; }
