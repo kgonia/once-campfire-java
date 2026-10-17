@@ -47,6 +47,14 @@ exec java -XX:+UseZGC -XX:MaxRAMPercentage=50 -XX:SoftMaxHeapSize=1g -XX:+UseCom
   -Dquarkus.http.port="${HTTP_PORT:-80}" -jar /rails/app/quarkus-run.jar
 EOF
 
+# ONCE's backup and restore hooks: pre-backup is `script/admin/prepare-backup`; post-restore is the
+# reference's own script.
+COPY --chmod=755 <<'EOF' /hooks/pre-backup
+#!/bin/sh
+exec java --enable-native-access=ALL-UNNAMED -jar /rails/app/quarkus-run.jar backup
+EOF
+COPY --chmod=755 reference/hooks/post-restore /hooks/post-restore
+
 RUN mkdir -p /rails/storage/db /rails/storage/files /rails/storage/backups && \
     chown -R 1000:1000 /rails
 

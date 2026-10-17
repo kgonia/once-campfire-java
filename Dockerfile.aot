@@ -131,6 +131,14 @@ RUN apt-get update -qq && apt-get install --no-install-recommends -y curl && \
     /tmp/train && \
     apt-get purge -y --auto-remove curl && rm -rf /var/lib/apt/lists /var/cache/apt/archives /tmp/train
 
+# ONCE's backup and restore hooks: pre-backup is `script/admin/prepare-backup`; post-restore is the
+# reference's own script.
+COPY --chmod=755 <<'EOF' /hooks/pre-backup
+#!/bin/sh
+exec java --enable-native-access=ALL-UNNAMED -jar /rails/app/quarkus-run.jar backup
+EOF
+COPY --chmod=755 reference/hooks/post-restore /hooks/post-restore
+
 RUN mkdir -p /rails/storage/db /rails/storage/files /rails/storage/backups && \
     chown -R 1000:1000 /rails
 

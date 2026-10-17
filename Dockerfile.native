@@ -39,6 +39,14 @@ COPY --chmod=755 <<'EOF' /rails/bin/boot
 exec /usr/local/bin/campfire -Dquarkus.http.port="${HTTP_PORT:-80}"
 EOF
 
+# ONCE's backup and restore hooks: pre-backup is `script/admin/prepare-backup`; post-restore is the
+# reference's own script.
+COPY --chmod=755 <<'EOF' /hooks/pre-backup
+#!/bin/sh
+exec /usr/local/bin/campfire backup
+EOF
+COPY --chmod=755 reference/hooks/post-restore /hooks/post-restore
+
 RUN mkdir -p /rails/storage/db /rails/storage/files /rails/storage/backups && \
     chown -R 1000:1000 /rails
 

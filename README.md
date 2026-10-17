@@ -112,7 +112,8 @@ Configuration is the Rails app's environment: `SECRET_KEY_BASE`, `DISABLE_SSL`, 
 `APP_VERSION`, `GIT_REVISION`, `HTTP_PORT`, plus `CAMPFIRE_STORAGE` (default `/rails/storage`, which holds `db/` and
 `files/`) and `DB_READERS` (the most read connections, opened as needed; default 16).
 
-Images, with the same user, layout and port contract as the Rails image:
+Images, with the same user, layout, port contract and ONCE backup hooks as the Rails image (`/hooks/pre-backup` runs
+`campfire backup`, an online copy of the database into `storage/backups`):
 
 ```sh
 docker build -t once-campfire-java:app .                              # JVM (ZGC)
