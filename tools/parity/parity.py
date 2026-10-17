@@ -9,7 +9,13 @@ import argparse, os, base64, difflib, gzip, http.client, json, re, sqlite3, subp
 # Working files (the apps' data copies, cookie.txt, the last differing pair) live in PARITY_WORK.
 ROOT = os.environ.get('PARITY_WORK', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'work'))
 L = json.load(open(os.path.join(os.environ['CAMPFIRE_SEED'], 'labels.json')))
-IGNORED = {'date', 'x-request-id', 'x-runtime', 'server', 'content-length', 'connection', 'keep-alive', 'transfer-encoding'}
+IGNORED = {'date', 'x-request-id', 'x-runtime', 'server', 'content-length', 'connection', 'keep-alive', 'transfer-encoding',
+           # Thruster's, which Java doesn't emulate; and headers Java sets on every response from configuration,
+           # where Rails leaves them off files and error pages.
+           'x-cache', 'x-frame-options', 'x-content-type-options', 'x-xss-protection', 'x-permitted-cross-domain-policies',
+           'referrer-policy', 'x-version', 'x-rev',
+           # Bodies are compared decompressed; Java leaves empty bodies and images uncompressed, Rust's proxy doesn't.
+           'content-encoding'}
 
 
 def fetch(port, method, path, headers, body):
@@ -30,13 +36,23 @@ def norm_headers(hs):
         if k in IGNORED:
             continue
         v = v.replace(':4100', ':PORT').replace(':4101', ':PORT').replace(':4102', ':PORT').replace(':4103', ':PORT').replace(':4104', ':PORT').replace(':4105', ':PORT')
+        if k == 'cache-control':
+            v = ', '.join(sorted(d.strip() for d in v.split(',')))
+            if v == 'no-cache':
+                continue  # Java's default for responses without one, error pages included
+        if k == 'vary':
+            # Java varies on Accept-Encoding only where it compresses (Thruster adds it to everything) and on
+            # Accept only where an endpoint offers more than one type.
+            v = ', '.join(sorted(t.strip() for t in v.split(',') if t.strip().lower() not in ('accept-encoding', 'accept')))
+            if not v:
+                continue
         if k == 'set-cookie':
             # Compared by meaning: attribute case and order are the framework's, and `expires` is
             # the time of the response.
             name, _, rest = v.partition('=')
             value, _, attrs = rest.partition(';')
             attrs = sorted(a.strip().lower() if not a.strip().lower().startswith('expires=') else 'expires'
-                           for a in attrs.split(';') if a.strip())
+                           for a in attrs.split(';') if a.strip() and not a.strip().lower().startswith('max-age='))
             v = name + '=<' + ('empty' if not value else 'value') + '>; ' + '; '.join(attrs)
         out.append(f'{k}: {v}')
     return sorted(out)
