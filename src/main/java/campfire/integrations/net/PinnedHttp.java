@@ -123,7 +123,7 @@ public final class PinnedHttp {
             .setHeaders(headers)
             .setFollowRedirects(false)
             .setConnectTimeout(timeouts.open().toMillis());
-        var exchange = new Exchange(net, options, Buffer.buffer(request.body()));
+        var exchange = new Exchange(net, options, request.body());
         exchange.await(exchange.opened, timeouts.open(), deadline, HttpException.Kind.OPEN_TIMEOUT);
         HttpClientResponse response = exchange.await(exchange.head, timeouts.read(), deadline, HttpException.Kind.READ_TIMEOUT);
         return new Response(exchange, response, decode, timeouts.read(), deadline);
@@ -182,7 +182,7 @@ public final class PinnedHttp {
         /// Body chunks ({@link Buffer}), then {@link #END} or the failure.
         final BlockingQueue<Object> body = new LinkedBlockingQueue<>();
 
-        Exchange(Network net, RequestOptions options, Buffer payload) {
+        Exchange(Network net, RequestOptions options, byte[] payload) {
             context = net.vertx().getOrCreateContext();
             context.runOnContext(v -> {
                 try {
@@ -199,7 +199,7 @@ public final class PinnedHttp {
                         }
                         // The handlers are set in this callback, on the event loop, so no chunk
                         // can arrive before them.
-                        request.send(payload).onComplete(sent -> {
+                        (payload.length == 0 ? request.send() : request.send(Buffer.buffer(payload))).onComplete(sent -> {
                             if (sent.failed()) {
                                 head.completeExceptionally(sent.cause());
                                 return;

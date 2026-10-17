@@ -151,6 +151,7 @@ class NetTest {
             assertEquals("www.example.com", request.header("Host"));
             assertEquals(PinnedHttp.NET_HTTP_ACCEPT_ENCODING, request.header("Accept-Encoding"));
             assertEquals("Ruby", request.header("User-Agent"));
+            assertNull(request.header("Content-Length"));
         }
     }
 
