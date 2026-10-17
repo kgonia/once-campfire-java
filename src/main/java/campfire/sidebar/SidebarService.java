@@ -79,7 +79,7 @@ public class SidebarService {
             User own = User.find(conn, membership.userId());
             if (own != null) others.add(own);
         }
-        return new DirectRoom(room.id(), membership.isUnread(), Times.epochMillis(room.updatedAt()), others);
+        return new DirectRoom(room.id(), membership.isUnread(), room.updatedAt().toEpochMilli(), others);
     }
 
     /// Active users the user has no direct room with yet. The user's own id is excluded twice when

@@ -30,11 +30,11 @@ public record MessageView(long id, String clientMessageId, long roomId, String r
     }
 
     public long createdAtEpoch() {
-        return Times.epochMillis(createdAt);
+        return createdAt.toEpochMilli();
     }
 
     public long updatedAtEpoch() {
-        return Times.epochMillis(updatedAt);
+        return updatedAt.toEpochMilli();
     }
 
     public String atPath() {

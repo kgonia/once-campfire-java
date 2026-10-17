@@ -1,6 +1,5 @@
 package campfire.rooms;
 
-import campfire.db.Times;
 import campfire.users.UserView;
 import campfire.view.Safe;
 import java.time.Instant;
@@ -14,6 +13,6 @@ public record RoomPage(RoomView room, Instant updatedAt, UserView user, List<Saf
                        String messagesStreamName) {
     /// The page's freshness stamp in epoch millis; the client refreshes when the room is newer.
     public long loadedAt() {
-        return Times.epochMillis(updatedAt);
+        return updatedAt.toEpochMilli();
     }
 }

@@ -64,23 +64,6 @@ public final class Times {
         }
     }
 
-    /// `(time.to_f * 1000).to_i`: milliseconds, as JavaScript's `getTime()`. Going through a double
-    /// can land a millisecond below the exact value, so it's reproduced rather than truncated;
-    /// `to_f` is the double nearest the exact rational, which parsing the decimal gives.
-    public static long epochMillis(Instant time) {
-        long seconds = time.getEpochSecond();
-        int nanos = time.getNano();
-        String decimal = seconds < 0 && nanos != 0
-            ? (seconds + 1 == 0 ? "-" : "") + (seconds + 1) + "." + nanoDigits(1_000_000_000 - nanos)
-            : seconds + "." + nanoDigits(nanos);
-        return (long) (Double.parseDouble(decimal) * 1000);
-    }
-
-    private static String nanoDigits(int nanos) {
-        String digits = Integer.toString(nanos);
-        return "0".repeat(9 - digits.length()) + digits;
-    }
-
     /// `to_fs(:number)`: `20260301090000`, as fresh avatar/logo URLs carry.
     public static String number(Instant time) {
         return NUMBER.format(time);
