@@ -2,6 +2,7 @@ package campfire.sessions;
 
 import campfire.db.Database;
 import java.util.concurrent.ConcurrentHashMap;
+import org.jspecify.annotations.Nullable;
 
 /// `Session.find_by(token:)` with its user, remembered until the next commit. Any commit (here or
 /// in another process) changes SQLite's data version and empties the memory, so a revoked
@@ -23,10 +24,16 @@ public final class SessionLookup {
         return find(token, db.dataVersion());
     }
 
+    /// The remembered answer, if it's still current; null means look it up.
+    public Session.@Nullable WithUser cached(String token, long version) {
+        Entry entry = entries.get(token);
+        return entry != null && entry.version() == version ? entry.found() : null;
+    }
+
     /// The same, as of a data version the caller just read.
     public Session.WithUser find(String token, long version) {
-        Entry entry = entries.get(token);
-        if (entry != null && entry.version() == version) return entry.found();
+        Session.WithUser cached = cached(token, version);
+        if (cached != null) return cached;
         Session.WithUser found = db.read(conn -> Session.findByToken(conn, token));
         if (found != null) {
             if (entries.size() >= MAX_ENTRIES) entries.clear();

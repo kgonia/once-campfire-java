@@ -52,7 +52,7 @@ public class FirstRunResource {
         var user = (Map<String, Object>) Objects.requireNonNull(request.params().get("user"));
         User administrator = firstRuns.create(stringOrNull(user, "name"), stringOrEmpty(user, "email_address"), stringOrEmpty(user, "password"),
             AttachmentChange.of(user, "avatar"));
-        if (administrator != null) authentication.start(request, administrator);
+        if (administrator != null) authentication.start(administrator);
         return Responses.redirect(request.url(Paths.ROOT));
     }
 

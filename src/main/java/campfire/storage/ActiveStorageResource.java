@@ -145,7 +145,7 @@ public class ActiveStorageResource {
     @PUT
     @Path("disk/{encoded_token}")
     public Response diskUpdate(@PathParam("encoded_token") String encodedToken) {
-        if (!authentication.hasSession(request)) return Formats.head(request, 401);
+        if (!authentication.hasSession()) return Formats.head(request, 401);
         Disk.Token token = storage.uploadToken(encodedToken).orElse(null);
         if (token == null) return Formats.head(request, 404);
         byte[] body = request.body();
@@ -160,7 +160,7 @@ public class ActiveStorageResource {
     @Path("direct_uploads")
     public Response directUploadsCreate() {
         if (!AccessFilter.sameOriginWrite(request)) return exceptionPage(422);
-        if (!authentication.hasSession(request)) return Formats.head(request, 401);
+        if (!authentication.hasSession()) return Formats.head(request, 401);
         Map<?, ?> params = blobParams();
         if (params == null) return exceptionPage(400);
         String filename = text(params.get("filename"));

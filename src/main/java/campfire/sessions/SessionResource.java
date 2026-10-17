@@ -53,8 +53,8 @@ public class SessionResource {
         String password = request.params().string("password");
         User user = email == null || password == null ? null : sessions.authenticate(email, password);
         if (user == null) return rejected(401);
-        authentication.start(request, user);
-        return Responses.redirect(authentication.afterSignIn(request));
+        authentication.start(user);
+        return Responses.redirect(authentication.afterSignIn());
     }
 
     /// Also forgets the push subscription of the device signing out, if it says which.
@@ -62,7 +62,7 @@ public class SessionResource {
     public Response destroy() {
         String endpoint = request.params().string("push_subscription_endpoint");
         if (endpoint != null) sessions.forgetPushSubscription(request.user().id(), endpoint);
-        authentication.terminate(request);
+        authentication.terminate();
         return Responses.redirect(request.url(Paths.ROOT));
     }
 

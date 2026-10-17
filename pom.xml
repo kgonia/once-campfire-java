@@ -43,6 +43,10 @@
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-arc</artifactId>
     </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-security</artifactId>
+    </dependency>
     <!-- Without it quarkus.vertx.prefer-native-transport and so-reuse-port fall back to NIO.
          The images are x86-64 Linux; elsewhere Vert.x logs that epoll is unavailable and uses NIO.
          Its POM's Linux profile names unix-common with an ${os.detected.*} classifier that netty's

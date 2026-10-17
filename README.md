@@ -62,6 +62,10 @@ byte for byte, or a measured performance loss. Each deviation is listed below wi
 - Quarkus REST resources on virtual threads, CDI beans, `@ConfigMapping`, and request/response filters.
 - Actions that validate their own responses (`fresh_when`) use JAX-RS `EntityTag`, `Request#evaluatePreconditions`
   and `CacheControl`.
+- Sign-in through Quarkus Security: an `HttpAuthenticationMechanism` (`sessions.SessionMechanism`) reads the
+  Rails-signed `session_token` cookie or the bot API's `bot_key`, and identity providers look them up. It runs only
+  when the access filter asks (`quarkus.http.auth.proactive=false`), and a remembered session is answered without
+  a thread hop.
 - The scheme and host behind a reverse proxy from `quarkus.http.proxy.*`, trusting the same private ranges Rails
   does.
 - Rails' static security headers as `quarkus.http.header.*`. Only HSTS, which depends on the scheme, is set in

@@ -80,14 +80,14 @@ public class AccessFilter {
         boolean isPublic = has(resource, Access.Public.class);
         boolean guestOnly = has(resource, Access.GuestOnly.class);
         if (!request.isGet() && db.read(conn -> Ban.banned(conn, request.remoteIp()))) return Responses.head(429);
-        if (!isPublic && !guestOnly && !authentication.resume(request) && !authentication.authenticateBot(request)) {
+        if (!isPublic && !guestOnly && !authentication.resume() && !authentication.authenticateBot()) {
             request.setSessionValue("return_to_after_authenticating", request.requestUrl());
             return Responses.redirect(request.url(Paths.NEW_SESSION));
         }
         if (request.authenticatedByBot() && !has(resource, Access.BotsAllowed.class)) return Responses.head(403);
         if (!request.authenticatedByBot() && !has(resource, Access.NoForgeryProtection.class) && !sameOriginWrite(request)) return Responses.head(422);
         if (AllowBrowser.blocked(request.userAgent())) return pages.incompatibleBrowser(ownLayout(request.path()));
-        if (guestOnly && authentication.resume(request)) return Responses.redirect(request.url(Paths.ROOT));
+        if (guestOnly && authentication.resume()) return Responses.redirect(request.url(Paths.ROOT));
         return null;
     }
 

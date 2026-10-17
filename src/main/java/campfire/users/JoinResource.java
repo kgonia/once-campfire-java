@@ -67,7 +67,7 @@ public class JoinResource {
             String query = email == null ? "" : "?email_address=" + View.cgiEscape(email);
             return Responses.redirect(request.url(Paths.NEW_SESSION + query));
         }
-        authentication.start(request, user);
+        authentication.start(user);
         return Responses.redirect(request.url(Paths.ROOT));
     }
 

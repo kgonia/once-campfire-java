@@ -51,7 +51,7 @@ public class TransferResource {
     public Response update(@PathParam("id") String id) {
         User user = sessions.transferredUser(id);
         if (user == null) return Responses.head(400);
-        authentication.start(request, user);
-        return Responses.redirect(authentication.afterSignIn(request));
+        authentication.start(user);
+        return Responses.redirect(authentication.afterSignIn());
     }
 }

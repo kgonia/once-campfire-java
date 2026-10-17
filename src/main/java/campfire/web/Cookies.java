@@ -48,7 +48,7 @@ public class Cookies {
         return incoming(routing.request(), name);
     }
 
-    static @Nullable String incoming(HttpServerRequest request, String name) {
+    public static @Nullable String incoming(HttpServerRequest request, String name) {
         Cookie cookie = request.getCookie(HttpFormats.escape(name));
         return cookie == null ? null : HttpFormats.unescape(cookie.getValue());
     }
@@ -62,7 +62,7 @@ public class Cookies {
         return verify(secrets, name, get(name));
     }
 
-    static @Nullable String verify(Secrets secrets, String name, @Nullable String raw) {
+    public static @Nullable String verify(Secrets secrets, String name, @Nullable String raw) {
         if (raw == null) return null;
         String key = name + "=" + raw;
         String cached = VERIFIED.get(key);

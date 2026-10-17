@@ -24,6 +24,11 @@ public final class RequestState {
 
     private RequestState() {}
 
+    /// See {@link #dataVersionAtStart}.
+    public static long dataVersionAtStart(RoutingContext routing) {
+        return of(routing).dataVersionAtStart;
+    }
+
     static RequestState of(RoutingContext routing) {
         RequestState state = routing.get(KEY);
         if (state == null) routing.put(KEY, state = new RequestState());

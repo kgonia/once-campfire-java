@@ -41,6 +41,8 @@ public class CurrentRequest {
     Cookies cookies;
     @Inject
     RailsSession railsSession;
+    @Inject
+    campfire.sessions.Viewer viewer;
 
     /// What the Vert.x request says, read on first use.
     private record Facts(String method, String path, @Nullable String query, Params params, @Nullable Map<String, Object> jsonBody) {}
@@ -52,9 +54,6 @@ public class CurrentRequest {
     /// The body claimed to be JSON but isn't; the request is a 400 before anything else.
     private boolean malformedBody;
 
-    private @Nullable User user;
-    private @Nullable Session session;
-    private boolean authenticatedByBot;
 
 
     /// The method is the overridden one when a form sent `_method` (the router re-routes those).
@@ -229,42 +228,22 @@ public class CurrentRequest {
 
     // -- Who is signed in -----------------------------------------------------------------------------
 
-    /// The signed-in user (or bot). Only for resources behind sign-in, which is all but the
-    /// {@link Access.Public} and {@link Access.GuestOnly} ones.
     public User user() {
-        if (user == null) throw new IllegalStateException("not signed in");
-        return user;
+        return viewer.user();
     }
 
     public @Nullable User userIfSignedIn() {
-        return user;
+        return viewer.userIfSignedIn();
     }
 
-    /// The browser session; null for guests and bots.
     public @Nullable Session session() {
-        return session;
+        return viewer.session();
     }
 
     public boolean authenticatedByBot() {
-        return authenticatedByBot;
+        return viewer.authenticatedByBot();
     }
 
-    public void signIn(Session session, User user) {
-        this.session = session;
-        this.user = user;
-        this.authenticatedByBot = false;
-    }
-
-    public void signInBot(User bot) {
-        this.session = null;
-        this.user = bot;
-        this.authenticatedByBot = true;
-    }
-
-    public void signOut() {
-        this.session = null;
-        this.user = null;
-    }
 
     // -- Cookies and the Rails session ---------------------------------------------------------------
 
