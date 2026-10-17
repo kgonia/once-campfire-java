@@ -1,6 +1,7 @@
 package campfire.db;
 
 import io.agroal.api.AgroalDataSource;
+import io.quarkus.logging.Log;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
@@ -10,8 +11,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.sqlite.JDBC;
 
 /// The SQLite database: one write connection behind a lock, a pool of read-only connections, an
@@ -30,8 +29,6 @@ import org.sqlite.JDBC;
 /// the way Active Record runs `after_commit` callbacks. A write nested in another on the same
 /// thread joins it, and a read inside a write sees the write's own changes.
 public final class Database implements AutoCloseable {
-    private static final Logger LOG = Logger.getLogger(Database.class.getName());
-
     /// Commits between background PASSIVE checkpoints (SQLite's auto-checkpoint is 1,000 pages).
     private static final int CHECKPOINT_EVERY_COMMITS = 64;
     /// WAL size at which the writer itself checkpoints with RESTART.
@@ -158,7 +155,7 @@ public final class Database implements AutoCloseable {
             try {
                 hook.run();
             } catch (RuntimeException e) {
-                LOG.log(Level.SEVERE, "after_commit hook failed", e);
+                Log.error("after_commit hook failed", e);
                 if (first == null) first = e;
             }
         }
@@ -170,7 +167,7 @@ public final class Database implements AutoCloseable {
         try {
             borrowed.close();
         } catch (SQLException e) {
-            LOG.log(Level.WARNING, "returning a connection to its pool failed", e);
+            Log.warn("returning a connection to its pool failed", e);
         }
     }
 
@@ -232,7 +229,7 @@ public final class Database implements AutoCloseable {
             try {
                 checkpointer.execute("PRAGMA wal_checkpoint(PASSIVE)");
             } catch (DbException e) {
-                LOG.warning("WAL checkpoint failed: " + e.getMessage());
+                Log.warn("WAL checkpoint failed: " + e.getMessage());
             } finally {
                 checkpointRunning.unlock();
             }

@@ -14,7 +14,6 @@ import campfire.web.ResponseCache;
 import campfire.sessions.SessionLookup;
 import io.agroal.api.AgroalDataSource;
 import io.quarkus.agroal.DataSource;
-import io.quarkus.logging.Log;
 import io.vertx.core.Vertx;
 import jakarta.enterprise.inject.Disposes;
 import jakarta.enterprise.inject.Produces;
@@ -106,13 +105,10 @@ public class Infrastructure {
     @ApplicationScoped
     WebPush webPush(Config config, Database db, Network net) {
         var push = new WebPush(config.vapidPublicKey().orElse(null), config.vapidPrivateKey().orElse(null), config.vapidSubject(), net);
-        push.setInvalidSubscriptionHandler(id -> {
-            Log.infof("Destroying push subscription: %d", id);
-            db.write(tx -> {
-                PushSubscription.delete(tx, id);
-                return null;
-            });
-        });
+        push.setInvalidSubscriptionHandler(id -> db.write(tx -> {
+            PushSubscription.delete(tx, id);
+            return null;
+        }));
         return push;
     }
 

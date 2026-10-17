@@ -1,6 +1,7 @@
 package campfire.cable;
 
 import campfire.rails.Json;
+import io.quarkus.logging.Log;
 import io.vertx.core.http.ServerWebSocket;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -10,8 +11,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /// `ActionCable::Connection::Base` and `Connection::Subscriptions`: one virtual thread per socket.
 ///
@@ -22,8 +21,6 @@ import java.util.logging.Logger;
 /// commands that arrive while the connection is authenticating wait their turn (Rails'
 /// `MessageBuffer`). Pings skip the queue: they're written straight to the socket.
 final class Connection {
-    private static final Logger LOG = Logger.getLogger(Connection.class.getName());
-
     /// The most subscriptions one connection may hold, and the longest identifier it may subscribe
     /// with (Rails has no bounds; a page subscribes to six channels with identifiers of a few
     /// hundred bytes).
@@ -78,8 +75,8 @@ final class Connection {
             if (incoming.incrementAndGet() >= INCOMING_CAPACITY && paused.compareAndSet(false, true)) ws.pause();
             events.add(new Text(text));
         });
-        ws.binaryMessageHandler(buffer -> LOG.severe("Couldn't handle non-string message: Array"));
-        ws.exceptionHandler(e -> LOG.log(Level.FINE, "cable socket error", e));
+        ws.binaryMessageHandler(buffer -> Log.error("Couldn't handle non-string message: Array"));
+        ws.exceptionHandler(e -> Log.debug("cable socket error", e));
         ws.closeHandler(v -> events.add(Closed.INSTANCE));
         Thread.ofVirtual().name("cable-connection").start(this::run);
     }
@@ -109,7 +106,7 @@ final class Connection {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         } catch (RuntimeException e) {
-            LOG.log(Level.SEVERE, "cable connection failed", e);
+            Log.error("cable connection failed", e);
             ws.close((short) 1011);
         } finally {
             open = false;
@@ -153,7 +150,7 @@ final class Connection {
 
     /// `respond_to_invalid_request` for an unauthorized connection: don't reconnect, and close.
     private void rejectUnauthorized() {
-        LOG.severe("An unauthorized connection attempt was rejected");
+        Log.error("An unauthorized connection attempt was rejected");
         close(Protocol.UNAUTHORIZED, false);
     }
 
@@ -190,7 +187,7 @@ final class Connection {
     /// connection is already handling.
     void disconnect(boolean reconnect) {
         if (closing) return;
-        LOG.info("Removing connection (user " + user.id() + ")");
+        Log.info("Removing connection (user " + user.id() + ")");
         events.add(new Close(Protocol.REMOTE, reconnect));
     }
 
@@ -200,14 +197,14 @@ final class Connection {
     /// otherwise ignored; the connection stays open.
     private void dispatch(String text) {
         if (!(Json.parseOrNull(text) instanceof Map<?, ?> data)) {
-            LOG.severe("Could not execute command from (" + text + ")");
+            Log.error("Could not execute command from (" + text + ")");
             return;
         }
         switch (data.get("command") instanceof String command ? command : "") {
             case "subscribe" -> add(data);
             case "unsubscribe" -> remove(data);
             case "message" -> performAction(data);
-            default -> LOG.severe("Received unrecognized command in " + text);
+            default -> Log.error("Received unrecognized command in " + text);
         }
     }
 
@@ -215,23 +212,23 @@ final class Connection {
     @SuppressWarnings("unchecked")
     private void add(Map<?, ?> data) {
         if (!(data.get("identifier") instanceof String identifier)) {
-            LOG.severe("Could not execute command: missing identifier");
+            Log.error("Could not execute command: missing identifier");
             return;
         }
         if (!(Json.parseOrNull(identifier) instanceof Map<?, ?> params)) {
-            LOG.severe("Could not execute command: invalid identifier " + identifier);
+            Log.error("Could not execute command: invalid identifier " + identifier);
             return;
         }
         if (subscriptions.containsKey(identifier)) return;
         if (subscriptions.size() >= MAX_SUBSCRIPTIONS || identifier.length() > MAX_IDENTIFIER_BYTES) {
-            LOG.severe("Could not execute command: subscription limit reached (" + subscriptions.size() + ")");
+            Log.error("Could not execute command: subscription limit reached (" + subscriptions.size() + ")");
             return;
         }
         String requested = params.get("channel") instanceof String channel ? channel : "";
         String className = requested.startsWith("::") ? requested.substring(2) : requested;
         Supplier<Channel> factory = cable.channel(className);
         if (factory == null) {
-            LOG.severe("Subscription class not found: " + Json.encode(requested));
+            Log.error("Subscription class not found: " + Json.encode(requested));
             return;
         }
         var sub = new Subscription(cable, this, className, identifier, (Map<String, Object>) params, user);
@@ -246,7 +243,7 @@ final class Connection {
         try {
             entry.channel().subscribed(sub);
         } catch (Exception e) {
-            LOG.log(Level.SEVERE, "Could not execute command from " + sub.identifier() + ": " + e.getMessage(), e);
+            Log.error("Could not execute command from " + sub.identifier() + ": " + e.getMessage(), e);
             return;
         }
         if (sub.rejected()) {
@@ -260,7 +257,7 @@ final class Connection {
     /// `Subscriptions#remove`: no reply either way.
     private void remove(Map<?, ?> data) {
         Entry entry = find(data);
-        if (entry == null) LOG.severe("Unable to find subscription with identifier: " + data.get("identifier"));
+        if (entry == null) Log.error("Unable to find subscription with identifier: " + data.get("identifier"));
         else removeSubscription(entry);
     }
 
@@ -272,7 +269,7 @@ final class Connection {
         try {
             entry.channel().unsubscribed(sub);
         } catch (Exception e) {
-            LOG.log(Level.SEVERE, "Could not execute command from " + sub.identifier() + ": " + e.getMessage(), e);
+            Log.error("Could not execute command from " + sub.identifier() + ": " + e.getMessage(), e);
         }
         sub.stopAllStreams();
     }
@@ -282,11 +279,11 @@ final class Connection {
     private void performAction(Map<?, ?> data) {
         Entry entry = find(data);
         if (entry == null) {
-            LOG.severe("Unable to find subscription with identifier: " + data.get("identifier"));
+            Log.error("Unable to find subscription with identifier: " + data.get("identifier"));
             return;
         }
         if (!(data.get("data") instanceof String encoded) || !(Json.parseOrNull(encoded) instanceof Map<?, ?> payload)) {
-            LOG.severe("Could not execute command: invalid data");
+            Log.error("Could not execute command: invalid data");
             return;
         }
         String action;
@@ -294,16 +291,16 @@ final class Connection {
             case null -> action = "receive";
             case String s -> action = s.isBlank() ? "receive" : s;
             default -> {
-                LOG.severe("Could not execute command: invalid action");
+                Log.error("Could not execute command: invalid action");
                 return;
             }
         }
         try {
             if (!entry.channel().perform(action, (Map<String, Object>) payload, entry.sub())) {
-                LOG.severe("Unable to process " + entry.sub().className() + "#" + action);
+                Log.error("Unable to process " + entry.sub().className() + "#" + action);
             }
         } catch (Exception e) {
-            LOG.log(Level.SEVERE, "Could not execute command from " + entry.sub().identifier() + ": " + e.getMessage(), e);
+            Log.error("Could not execute command from " + entry.sub().identifier() + ": " + e.getMessage(), e);
         }
     }
 

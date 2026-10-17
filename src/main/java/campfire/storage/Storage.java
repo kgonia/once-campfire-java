@@ -16,6 +16,7 @@ import campfire.storage.VariantRecord;
 import campfire.rails.Json;
 import campfire.rails.MessageVerifier;
 import campfire.rails.Secrets;
+import io.quarkus.logging.Log;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -42,8 +43,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 import java.util.function.Supplier;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 /// Active Storage for Campfire over the Rails schema and disk layout: uploads
@@ -55,8 +54,6 @@ import java.util.stream.Stream;
 /// requests for the same variant or preview share one run; across processes the first row saved
 /// wins and the loser's file is deleted.
 public final class Storage implements AutoCloseable {
-    private static final Logger LOG = Logger.getLogger(Storage.class.getName());
-
     public static final String SERVICE_NAME = "local";
     /// `ActiveStorage.service_urls_expire_in`.
     public static final Duration SERVICE_URLS_EXPIRE_IN = Duration.ofMinutes(5);
@@ -454,10 +451,10 @@ public final class Storage implements AutoCloseable {
         try {
             return variant(blob, variationFor(blob, transformations));
         } catch (StorageException.Unavailable e) {
-            LOG.fine(e::getMessage);
+            Log.debug(e.getMessage());
             return null;
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "variant of blob " + blob.id() + " failed", e);
+            Log.warn("variant of blob " + blob.id() + " failed", e);
             return null;
         }
     }
@@ -555,9 +552,9 @@ public final class Storage implements AutoCloseable {
                 processedRepresentation(analyzedBlob, Variation.THUMB);
             }
         } catch (StorageException.Unavailable e) {
-            LOG.fine(e::getMessage);
+            Log.debug(e.getMessage());
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "processing attachment blob " + blob.id() + " failed", e);
+            Log.warn("processing attachment blob " + blob.id() + " failed", e);
         }
     }
 
@@ -621,7 +618,7 @@ public final class Storage implements AutoCloseable {
             try (Stream<Path> walk = Files.walk(dir)) {
                 for (Path p : walk.sorted(Comparator.reverseOrder()).toList()) Files.deleteIfExists(p);
             } catch (IOException e) {
-                LOG.fine(() -> "can't clean " + dir + ": " + e.getMessage());
+                Log.debugf("can't clean %s: %s", dir, e.getMessage());
             }
         }
     }
@@ -673,11 +670,11 @@ public final class Storage implements AutoCloseable {
                 try {
                     work.run();
                 } catch (RuntimeException e) {
-                    LOG.log(Level.WARNING, what + " failed", e);
+                    Log.warn(what + " failed", e);
                 }
             });
         } catch (java.util.concurrent.RejectedExecutionException e) {
-            LOG.warning("storage is shut down; dropped: " + what);
+            Log.warn("storage is shut down; dropped: " + what);
         }
     }
 }

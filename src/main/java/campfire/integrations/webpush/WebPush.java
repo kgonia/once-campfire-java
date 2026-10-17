@@ -7,6 +7,7 @@ import campfire.integrations.net.PinnedHttp.Header;
 import campfire.integrations.net.PinnedHttp.HttpException;
 import campfire.integrations.net.Url;
 import campfire.rails.Json;
+import io.quarkus.logging.Log;
 import java.net.InetAddress;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -22,8 +23,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.LongConsumer;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /// Web Push delivery: `WebPush::Notification` and `WebPush::Pool` (reference/lib/web_push), the
 /// web-push 3.1.0 gem request they make (with the `WebPush::PersistentRequest` patch in
@@ -37,8 +36,6 @@ import java.util.logging.Logger;
 /// titles are cut to 256 bytes and bodies to 3 KB (with an ellipsis) so the message fits a push
 /// record; deliveries time out after 10 seconds per connect/read and 30 overall.
 public final class WebPush implements AutoCloseable {
-    private static final Logger LOG = Logger.getLogger(WebPush.class.getName());
-
     /// `WebPush::Notification#vapid_identification`'s default subject.
     public static final String DEFAULT_SUBJECT = "mailto:support@37signals.com";
 
@@ -135,7 +132,7 @@ public final class WebPush implements AutoCloseable {
         try {
             parsed = Vapid.of(subject == null || subject.isBlank() ? DEFAULT_SUBJECT : subject, publicKey, privateKey);
         } catch (Vapid.VapidException e) {
-            LOG.warning("Web Push is off: " + e.getMessage());
+            Log.warn("Web Push is off: " + e.getMessage());
         }
         this.vapid = parsed;
     }
@@ -275,15 +272,15 @@ public final class WebPush implements AutoCloseable {
     public void deliverLater(Subscription subscription, String title, String body, String path, long badge, String iconPath) {
         if (vapid == null) return;
         if (shutDown.get()) {
-            LOG.warning("WebPush::Pool is shut down, dropping a notification");
+            Log.warn("WebPush::Pool is shut down, dropping a notification");
             return;
         }
         if (!slots.tryAcquire()) {
-            if (dropped.getAndIncrement() == 0) LOG.severe("WebPush::Pool is full, dropping notifications");
+            if (dropped.getAndIncrement() == 0) Log.error("WebPush::Pool is full, dropping notifications");
             return;
         }
         long wasDropped = dropped.getAndSet(0);
-        if (wasDropped > 0) LOG.severe("WebPush::Pool dropped " + wasDropped + " notifications while it was full");
+        if (wasDropped > 0) Log.error("WebPush::Pool dropped " + wasDropped + " notifications while it was full");
         String message = encodedMessage(title, body, path, badge, iconPath);
         try {
             deliveries.execute(() -> {
@@ -297,7 +294,7 @@ public final class WebPush implements AutoCloseable {
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 } catch (RuntimeException | Error e) {
-                    LOG.log(Level.SEVERE, "Error in WebPush::Pool.deliver: " + e.getClass().getName() + " " + e.getMessage(), e);
+                    Log.error("Error in WebPush::Pool.deliver: " + e.getClass().getName() + " " + e.getMessage(), e);
                 } finally {
                     slots.release();
                 }
@@ -317,7 +314,7 @@ public final class WebPush implements AutoCloseable {
             if (e.invalidatesSubscription()) {
                 invalidateSubscriptionLater(subscription.id());
             } else {
-                LOG.severe("Error in WebPush::Pool.deliver: " + e.kind + " " + e.getMessage());
+                Log.error("Error in WebPush::Pool.deliver: " + e.kind + " " + e.getMessage());
             }
         }
     }
@@ -327,11 +324,11 @@ public final class WebPush implements AutoCloseable {
         if (handler == null) return;
         try {
             invalidations.execute(() -> {
-                LOG.info("Destroying push subscription: " + id);
+                Log.info("Destroying push subscription: " + id);
                 try {
                     handler.accept(id);
                 } catch (RuntimeException e) {
-                    LOG.log(Level.SEVERE, "Error in WebPush::Pool.invalid_subscription_handler: " + e.getClass().getName() + " " + e.getMessage(), e);
+                    Log.error("Error in WebPush::Pool.invalid_subscription_handler: " + e.getClass().getName() + " " + e.getMessage(), e);
                 }
             });
         } catch (RejectedExecutionException e) {

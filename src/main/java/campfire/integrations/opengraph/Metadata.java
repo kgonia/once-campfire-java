@@ -4,11 +4,11 @@ import campfire.integrations.net.Network;
 import campfire.integrations.net.Url;
 import campfire.rails.Json;
 import campfire.richtext.Html;
+import io.quarkus.logging.Log;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.logging.Logger;
 import org.jsoup.nodes.DataNode;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
@@ -17,8 +17,6 @@ import org.jsoup.nodes.TextNode;
 /// `Opengraph::Metadata` and its `Fetching` concern (reference/app/models/opengraph/metadata.rb,
 /// reference/app/models/opengraph/metadata/fetching.rb).
 final class Metadata {
-    private static final Logger LOG = Logger.getLogger(Metadata.class.getName());
-
     private static final List<String> TWITTER_HOSTS = List.of("twitter.com", "www.twitter.com", "x.com", "www.x.com");
     private static final String FX_TWITTER_HOST = "fxtwitter.com";
     private static final List<String> ALLOWED_IMAGE_CONTENT_TYPES = List.of("image/jpeg", "image/png", "image/gif", "image/webp");
@@ -95,7 +93,7 @@ final class Metadata {
     private static String validImageContentType(Network net, String image) {
         if (image == null || Document.isBlank(image)) return null;
         if (Url.parseOrNull(image) == null) {
-            LOG.warning("Failed to fetch image content type: " + image + " (not a URL)");
+            Log.warn("Failed to fetch image content type: " + image + " (not a URL)");
             return null;
         }
         String contentType = new Location(net, image).fetchContentType();

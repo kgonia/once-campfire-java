@@ -6,6 +6,7 @@ import campfire.db.Times;
 import campfire.sessions.Session;
 import campfire.rails.HttpFormats;
 import campfire.rails.Secrets;
+import io.quarkus.logging.Log;
 import io.vertx.core.http.Cookie;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
@@ -21,8 +22,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /// `ActionCable.server`: the `/cable` endpoint speaking `actioncable-v1-json`, Campfire's
 /// channels, the in-process pub/sub that replaces Redis, the heartbeat and remote disconnects.
@@ -32,8 +31,6 @@ import java.util.logging.Logger;
 /// connection runs on a virtual thread of its own (see {@link Connection}), so channel callbacks
 /// may use the database; nothing here blocks the event loop.
 public final class Cable implements Broadcasts.PubSub, AutoCloseable {
-    private static final Logger LOG = Logger.getLogger(Cable.class.getName());
-
     /// The subprotocols the endpoint speaks, in Action Cable's order.
     public static final List<String> PROTOCOLS = Protocol.PROTOCOLS;
 
@@ -111,7 +108,7 @@ public final class Cable implements Broadcasts.PubSub, AutoCloseable {
         Cookie cookie = request.getCookie(SESSION_TOKEN);
         String sessionToken = cookie == null ? null : HttpFormats.unescape(cookie.getValue());
         request.toWebSocket().onSuccess(ws -> new Connection(this, ws, sessionToken).start()).onFailure(e -> {
-            LOG.log(Level.FINE, "cable handshake failed", e);
+            Log.debug("cable handshake failed", e);
             if (!rc.response().headWritten()) pageNotFound(rc);
         });
     }
@@ -123,7 +120,7 @@ public final class Cable implements Broadcasts.PubSub, AutoCloseable {
         String host = campfire.web.Front.authority(request);
         String scheme = assumeSsl || request.isSSL() ? "https://" : "http://";
         if (origin != null && origin.equals(scheme + (host == null ? "" : host))) return true;
-        LOG.severe("Request origin not allowed: " + origin);
+        Log.error("Request origin not allowed: " + origin);
         return false;
     }
 
@@ -144,7 +141,7 @@ public final class Cable implements Broadcasts.PubSub, AutoCloseable {
             Session.WithUser found = sessions.apply(token);
             return found == null || found.user() == null ? null : new Subscription.User(found.user().id(), found.user().name());
         } catch (RuntimeException e) {
-            LOG.log(Level.SEVERE, "Could not look up the cable session", e);
+            Log.error("Could not look up the cable session", e);
             return null;
         }
     }
@@ -177,7 +174,7 @@ public final class Cable implements Broadcasts.PubSub, AutoCloseable {
 
     /// {@link #broadcast}, returning how many subscriptions (in this process) received it.
     public int deliver(String stream, String json) {
-        if (LOG.isLoggable(Level.FINE)) LOG.fine("[ActionCable] Broadcasting to " + stream + ": " + json);
+        Log.debugf("[ActionCable] Broadcasting to %s: %s", stream, json);
         return hub.broadcast(stream, json);
     }
 
@@ -238,7 +235,7 @@ public final class Cable implements Broadcasts.PubSub, AutoCloseable {
             String ping = Protocol.ping(System.currentTimeMillis() / 1000);
             for (Connection connection : connections) connection.beat(ping);
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "cable heartbeat failed", e);
+            Log.warn("cable heartbeat failed", e);
         }
     }
 }

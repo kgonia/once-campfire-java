@@ -1,6 +1,7 @@
 package campfire.integrations.opengraph;
 
 import campfire.integrations.net.Network;
+import io.quarkus.logging.Log;
 import java.time.Duration;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -9,7 +10,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.logging.Logger;
 
 /// Link unfurling: `UnfurlLinksController#create` (reference/app/controllers/unfurl_links_controller.rb)
 /// over `Opengraph::Metadata`, `Location`, `Fetch` and `Document` (reference/app/models/opengraph).
@@ -21,8 +21,6 @@ import java.util.logging.Logger;
 /// runs out of time unfurls nothing. The endpoint is open to any signed-in user and fetches
 /// pages they choose.
 public final class Opengraph {
-    private static final Logger LOG = Logger.getLogger(Opengraph.class.getName());
-
     private Opengraph() {}
 
     /// The most one unfurl may take, redirects and the image check included.
@@ -85,7 +83,7 @@ public final class Opengraph {
     }
 
     private static Unfurl giveUp(String url, Duration limit) {
-        LOG.warning("Gave up unfurling " + url + " after " + limit);
+        Log.warn("Gave up unfurling " + url + " after " + limit);
         return new Unfurl.NoContent();
     }
 }

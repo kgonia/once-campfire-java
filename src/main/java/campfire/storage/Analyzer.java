@@ -1,12 +1,12 @@
 package campfire.storage;
 
 import campfire.rails.Json;
+import io.quarkus.logging.Log;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
 
 /// The Active Storage analyzers Campfire runs, in `config.active_storage.analyzers` order:
 /// `ImageAnalyzer::Vips`, `VideoAnalyzer`, `AudioAnalyzer` (ImageMagick never accepts with the
@@ -14,8 +14,6 @@ import java.util.logging.Logger;
 /// order; the caller merges it with `analyzed: true`.
 public final class Analyzer {
     private Analyzer() {}
-
-    private static final Logger LOG = Logger.getLogger(Analyzer.class.getName());
 
     /// How long ffprobe may read a file before it's killed (Rails sets no limit).
     public static final Duration FFPROBE_TIMEOUT = Duration.ofSeconds(30);
@@ -43,7 +41,7 @@ public final class Analyzer {
         if (!Tools.VIPSHEADER.available()) return metadata;
         var result = Tools.VIPSHEADER.run(List.of("-a", file.toString()), VIPSHEADER_TIMEOUT, null, Tools.BLOCK_UNTRUSTED);
         if (result.exitCode() != 0) {
-            LOG.fine(() -> "Skipping image analysis due to a Vips error: " + result.stderr());
+            Log.debugf("Skipping image analysis due to a Vips error: %s", result.stderr());
             return metadata;
         }
         Long width = null;
@@ -84,7 +82,7 @@ public final class Analyzer {
             result = Tools.FFPROBE.run(List.of("-print_format", "json", "-show_streams", "-show_format", "-v", "error", file.toString()),
                 FFPROBE_TIMEOUT, null, Map.of());
         } catch (StorageException.Unavailable e) {
-            LOG.info("Skipping video analysis because FFmpeg isn't installed");
+            Log.info("Skipping video analysis because FFmpeg isn't installed");
             return Map.of();
         }
         try {
