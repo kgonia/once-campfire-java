@@ -133,7 +133,7 @@ public class ActiveStorageResource {
         if (response == null) {
             ByteRange range = ByteRange.parse(request.header("range"), size);
             response = range == null ? Response.ok(file) : range.satisfiable() ? partial(file, range, size) : unsatisfiable(size);
-            response.header("Last-Modified", CurrentRequest.httpDate(modified))
+            response.header("Last-Modified", HttpCache.httpDate(modified))
                 .header("Content-Type", key.contentType() == null ? ContentTypes.BINARY : key.contentType())
                 .header("Content-Disposition", key.disposition() == null ? "attachment" : key.disposition());
         }
@@ -193,14 +193,14 @@ public class ActiveStorageResource {
                 .header("Content-Disposition", disposition(blob, request.params().string("disposition")));
             if (acceptRanges) response.header("Accept-Ranges", "bytes");
         } else {
-            response.header("Last-Modified", CurrentRequest.httpDate(FOREVER_LAST_MODIFIED)).header("Date", now());
+            response.header("Last-Modified", HttpCache.httpDate(FOREVER_LAST_MODIFIED)).header("Date", now());
         }
         return response.header("Cache-Control", "max-age=" + HUNDRED_YEARS + ", public, immutable").build();
     }
 
     /// Validators as strings: small bodies go to the front cache, which copies headers by `toString`.
     private static Response.ResponseBuilder validators(Response.ResponseBuilder response, String etag) {
-        return response.header("ETag", etag).header("Last-Modified", CurrentRequest.httpDate(FOREVER_LAST_MODIFIED)).header("Date", now());
+        return response.header("ETag", etag).header("Last-Modified", HttpCache.httpDate(FOREVER_LAST_MODIFIED)).header("Date", now());
     }
 
     /// `Request#evaluatePreconditions`: the 304 (or 412) to send instead, or null to send the file.
