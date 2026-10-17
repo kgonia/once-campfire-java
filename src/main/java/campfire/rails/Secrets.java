@@ -77,17 +77,12 @@ public final class Secrets {
         Object read(String message, String purpose, Instant now);
     }
 
-    /// Purpose `cookie.<name>` first, then none (pre-5.2 values).
     private static Object readCookie(Reader reader, String name, String raw, Instant now) {
         if (raw == null || raw.isEmpty()) return null;
         try {
             return reader.read(raw, "cookie." + name, now);
-        } catch (MessageException first) {
-            try {
-                return reader.read(raw, null, now);
-            } catch (MessageException second) {
-                return null;
-            }
+        } catch (MessageException e) {
+            return null;
         }
     }
 
@@ -167,24 +162,11 @@ public final class Secrets {
         try {
             data = sgids.verify(sgid, purpose, now);
         } catch (MessageException e) {
-            data = legacySelfValidated(sgid, purpose, now);
+            return null;
         }
         if (!(data instanceof String uri)) return null;
         GlobalId gid = GlobalId.parse(uri);
         return gid != null ? gid : GlobalId.fromParam(uri);
-    }
-
-    /// globalid < 1.0 signed `{"gid":..,"purpose":..,"expires_at":..}` without a Rails envelope.
-    private Object legacySelfValidated(String sgid, String purpose, Instant now) {
-        if (!(sgids.verified(sgid, null, now) instanceof java.util.Map<?, ?> metadata)) return null;
-        if (metadata.get("expires_at") instanceof String expires) {
-            try {
-                if (now.isAfter(Instant.parse(expires))) return null;
-            } catch (RuntimeException e) {
-                return null;
-            }
-        }
-        return Messages.rubyToS(metadata.get("purpose")).equals(purpose) ? metadata.get("gid") : null;
     }
 
     // -- Turbo stream names ------------------------------------------------------------------

@@ -6,6 +6,7 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 
 /// `ActiveSupport::Messages::Metadata` and `SerializerWithFallback`: how a value, its purpose and
@@ -133,21 +134,10 @@ public final class Messages {
         } else if (exp != null) {
             throw new MessageException(MessageException.Kind.INVALID_MESSAGE);
         }
-        if (!rubyToS(rails.get("pur")).equals(purpose == null ? "" : purpose)) {
+        if (!Objects.toString(rails.get("pur"), "").equals(purpose == null ? "" : purpose)) {
             throw new MessageException(MessageException.Kind.PURPOSE_MISMATCH);
         }
         return rails;
-    }
-
-    /// `Object#to_s` for the JSON values a purpose could hold.
-    static String rubyToS(Object value) {
-        return switch (value) {
-            case null -> "";
-            case String s -> s;
-            case Map<?, ?> m -> "\0" + Json.generate(m);
-            case Iterable<?> l -> "\0" + Json.generate(l);
-            default -> value.toString();
-        };
     }
 
     private static boolean startsWith(byte[] bytes, byte[] prefix) {
