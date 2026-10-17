@@ -2,7 +2,6 @@ package campfire.storage;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -159,18 +158,76 @@ class StorageVectorsTest {
         assertNull(Disk.decodeVerifiedToken(VERIFIER, token, Instant.parse("2026-09-26T12:45:14.841Z")), "expired");
     }
 
+    /// What Rails (Marcel 1.1.0) stored for the same uploads.
     @Test
-    void marcelIdentification() throws IOException {
+    void contentTypeIdentification() throws IOException {
         for (var sample : section("marcel")) {
             byte[] data = sample.get("fixture") instanceof String name ? Files.readAllBytes(FIXTURES.resolve(name))
                 : HexFormat.of().parseHex((String) sample.get("data_hex"));
-            byte[] head = java.util.Arrays.copyOf(data, Math.min(data.length, Marcel.magicPrefixLength()));
-            assertEquals(sample.get("content_type"), Marcel.identify(head, (String) sample.get("name"), (String) sample.get("declared_type")),
+            byte[] head = java.util.Arrays.copyOf(data, Math.min(data.length, ContentTypeDetector.magicPrefixLength()));
+            assertEquals(sample.get("content_type"), ContentTypeDetector.identify(head, (String) sample.get("name"), (String) sample.get("declared_type")),
                 sample.get("name") + " declared " + sample.get("declared_type"));
         }
-        assertEquals("application/vnd.java.hprof ", Marcel.byExtension("hprof"));
-        assertEquals("image/jpeg", Marcel.forExtension("jpg"));
-        assertEquals(List.of("jpg", "jpeg", "jpe", "jif", "jfif", "jfi"), Marcel.extensions("image/jpeg"));
+    }
+
+    /// Marcel 1.1.0's types for what Campfire users upload, by name alone.
+    @Test
+    void contentTypesOfCommonUploads() {
+        var expected = new java.util.LinkedHashMap<String, String>();
+        expected.put("png", "image/png");
+        expected.put("jpg", "image/jpeg");
+        expected.put("jpeg", "image/jpeg");
+        expected.put("gif", "image/gif");
+        expected.put("webp", "image/webp");
+        expected.put("heic", "image/heic");
+        expected.put("heif", "image/heif");
+        expected.put("avif", "image/avif");
+        expected.put("tiff", "image/tiff");
+        expected.put("svg", "image/svg+xml");
+        expected.put("mp4", "video/mp4");
+        expected.put("m4v", "video/mp4");
+        expected.put("mov", "video/quicktime");
+        expected.put("webm", "video/webm");
+        expected.put("mkv", "video/x-matroska");
+        expected.put("mp3", "audio/mpeg");
+        expected.put("m4a", "audio/mp4");
+        expected.put("aac", "audio/aac");
+        expected.put("ogg", "audio/ogg");
+        expected.put("opus", "audio/opus");
+        expected.put("wav", "audio/x-wav");
+        expected.put("flac", "audio/flac");
+        expected.put("pdf", "application/pdf");
+        expected.put("txt", "text/plain");
+        expected.put("md", "text/markdown");
+        expected.put("csv", "text/csv");
+        expected.put("json", "application/json");
+        expected.put("zip", "application/zip");
+        expected.put("gz", "application/gzip");
+        expected.put("docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+        expected.put("xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        expected.put("pptx", "application/vnd.openxmlformats-officedocument.presentationml.presentation");
+        expected.put("doc", "application/msword");
+        expected.put("xls", "application/vnd.ms-excel");
+        expected.put("key", "application/vnd.apple.keynote");
+        expected.put("pages", "application/vnd.apple.pages");
+        expected.put("numbers", "application/vnd.apple.numbers");
+        var wrong = new ArrayList<String>();
+        expected.forEach((ext, type) -> {
+            String actual = ContentTypeDetector.identify(new byte[0], "upload." + ext, null);
+            if (!type.equals(actual)) wrong.add(ext + ": " + actual + " instead of " + type);
+        });
+        assertEquals(List.of(), wrong);
+
+        // By content alone, where Marcel's names differ from Tika's.
+        assertEquals("audio/x-wav", ContentTypeDetector.identify(ascii("RIFF\0\0\0\0WAVEfmt "), "noext", null));
+        assertEquals("audio/flac", ContentTypeDetector.identify(ascii("fLaC\0\0\0\""), "noext", null));
+        assertEquals("audio/ogg", ContentTypeDetector.identify(ascii("OggS" + "\0".repeat(24) + "\u0001vorbis"), "noext", null));
+        assertEquals("audio/mp4", ContentTypeDetector.identify(ascii("\0\0\0 ftypM4A \0\0\0\0"), "noext", null));
+        assertEquals("video/mp4", ContentTypeDetector.identify(ascii("\0\0\0 ftypM4V \0\0\0\0"), "noext", null));
+    }
+
+    private static byte[] ascii(String s) {
+        return s.getBytes(java.nio.charset.StandardCharsets.ISO_8859_1);
     }
 
     @Test
@@ -262,7 +319,7 @@ class StorageVectorsTest {
         assertNull(ContentTypes.forcedDisposition("image/png"));
         assertEquals("attachment", ContentTypes.forcedDisposition(null));
         assertFalse(ContentTypes.isVariable("image/bmp"));
-        assertNotNull(Marcel.byExtension(".PNG"));
+        assertEquals("image/png", ContentTypeDetector.byExtension(".PNG"));
     }
 
     /// `Rack::Utils.get_byte_ranges(header, size)` in the reference (rack 3.2.6); null is "everything".

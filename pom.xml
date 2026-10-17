@@ -66,6 +66,12 @@
       <artifactId>jooq</artifactId>
       <version>${jooq.version}</version>
     </dependency>
+    <!-- Upload content types: Active Storage's Marcel is built on Tika's type database. -->
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-core</artifactId>
+      <version>3.3.1</version>
+    </dependency>
     <dependency>
       <groupId>org.jspecify</groupId>
       <artifactId>jspecify</artifactId>

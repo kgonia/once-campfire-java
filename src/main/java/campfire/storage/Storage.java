@@ -182,14 +182,18 @@ public final class Storage implements AutoCloseable {
         return transformations.defaultTo(Map.of("format", defaultVariantFormat(blob)));
     }
 
+    /// The format a web image's variants keep when its filename doesn't name one: Marcel's first
+    /// extension for the type. It goes into the variation, so the variation digest Rails stored
+    /// depends on it; a constant keeps it from moving with the type database.
+    private static final Map<String, String> WEB_IMAGE_FORMATS = Map.of("image/png", "png", "image/jpeg", "jpg", "image/gif", "gif", "image/webp", "webp");
+
     /// `default_variant_format`: web images keep their format, everything else becomes PNG.
     static String defaultVariantFormat(Blob blob) {
         if (!ContentTypes.isWebImage(blob.contentType())) return "png";
-        // `Representable#format`: the extension when Marcel agrees it names the content type.
+        // The extension wins when it names the content type (a `.jpeg` file keeps "jpeg").
         String extension = new Filename(blob.filename()).extension();
-        if (!extension.isEmpty() && Marcel.forExtension(extension).equals(blob.contentType())) return extension;
-        List<String> extensions = Marcel.extensions(blob.contentType());
-        return extensions.isEmpty() ? "png" : extensions.getFirst();
+        if (!extension.isEmpty() && blob.contentType().equals(ContentTypeDetector.byExtension(extension))) return extension;
+        return WEB_IMAGE_FORMATS.get(blob.contentType());
     }
 
     // -- Paths -------------------------------------------------------------------------------------
@@ -342,7 +346,7 @@ public final class Storage implements AutoCloseable {
         String key = generateKey();
         Path path = disk.pathFor(key);
         MessageDigest md5 = Disk.md5();
-        int prefix = Marcel.magicPrefixLength();
+        int prefix = ContentTypeDetector.magicPrefixLength();
         var head = new ByteArrayOutputStream(Math.min(prefix, 64 * 1024));
         long size = 0;
         try {
@@ -361,7 +365,7 @@ public final class Storage implements AutoCloseable {
             disk.delete(key);
             throw new UncheckedIOException(e);
         }
-        String contentType = Marcel.identify(head.toByteArray(), new Filename(filename).sanitized(), declaredContentType);
+        String contentType = ContentTypeDetector.identify(head.toByteArray(), new Filename(filename).sanitized(), declaredContentType);
         var metadata = new LinkedHashMap<String, Object>();
         metadata.put("identified", true);
         return new Staged(disk, key, filename, contentType, metadata, size, campfire.rails.Base64s.strictEncode(md5.digest()));

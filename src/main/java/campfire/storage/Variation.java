@@ -79,7 +79,7 @@ public final class Variation {
         }
     }
 
-    /// `transformations.fetch(:format, :png)`, validated against Marcel's extension table.
+    /// `transformations.fetch(:format, :png)`, which must be a known file extension.
     public String format() {
         Object format = transformations.getOrDefault("format", new Sym("png"));
         String name = switch (format) {
@@ -87,13 +87,12 @@ public final class Variation {
             case String s -> s;
             default -> throw new StorageException("invalid variant format (" + format + ")");
         };
-        if (Marcel.byExtension(name) == null) throw new StorageException("invalid variant format (" + name + ")");
+        if (ContentTypeDetector.byExtension(name) == null) throw new StorageException("invalid variant format (" + name + ")");
         return name;
     }
 
-    /// `Marcel::MimeType.for(extension: format)`.
     public String contentType() {
-        return Marcel.forExtension(format());
+        return java.util.Objects.requireNonNull(ContentTypeDetector.byExtension(format()));
     }
 
     /// The transformations as JSON, the way the verifier serializes them (symbols become strings).
