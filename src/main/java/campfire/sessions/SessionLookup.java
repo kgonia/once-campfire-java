@@ -1,19 +1,18 @@
 package campfire.sessions;
 
 import campfire.db.Database;
-import java.util.concurrent.ConcurrentHashMap;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import org.jspecify.annotations.Nullable;
 
 /// `Session.find_by(token:)` with its user, remembered until the next commit. Any commit (here or
 /// in another process) changes SQLite's data version and empties the memory, so a revoked
 /// session or a changed user is never served from it.
 public final class SessionLookup {
-    private static final int MAX_ENTRIES = 10_000;
-
     private record Entry(long version, Session.WithUser found) {}
 
     private final Database db;
-    private final ConcurrentHashMap<String, Entry> entries = new ConcurrentHashMap<>();
+    private final Cache<String, Entry> entries = Caffeine.newBuilder().maximumSize(10_000).build();
 
     public SessionLookup(Database db) {
         this.db = db;
@@ -26,7 +25,7 @@ public final class SessionLookup {
 
     /// The remembered answer, if it's still current; null means look it up.
     public Session.@Nullable WithUser cached(String token, long version) {
-        Entry entry = entries.get(token);
+        Entry entry = entries.getIfPresent(token);
         return entry != null && entry.version() == version ? entry.found() : null;
     }
 
@@ -35,16 +34,12 @@ public final class SessionLookup {
         Session.WithUser cached = cached(token, version);
         if (cached != null) return cached;
         Session.WithUser found = db.read(conn -> Session.findByToken(conn, token));
-        if (found != null) {
-            if (entries.size() >= MAX_ENTRIES) entries.clear();
-            entries.put(token, new Entry(version, found));
-        } else {
-            entries.remove(token);
-        }
+        if (found != null) entries.put(token, new Entry(version, found));
+        else entries.invalidate(token);
         return found;
     }
 
     public void forget(String token) {
-        entries.remove(token);
+        entries.invalidate(token);
     }
 }

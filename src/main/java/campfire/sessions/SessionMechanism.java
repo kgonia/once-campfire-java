@@ -2,6 +2,8 @@ package campfire.sessions;
 
 import campfire.rails.Secrets;
 import campfire.web.Cookies;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import io.quarkus.security.AuthenticationFailedException;
 import io.quarkus.security.identity.IdentityProviderManager;
 import io.quarkus.security.identity.SecurityIdentity;
@@ -14,6 +16,7 @@ import io.smallrye.mutiny.Uni;
 import io.vertx.ext.web.RoutingContext;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.time.Instant;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -30,6 +33,10 @@ public class SessionMechanism implements HttpAuthenticationMechanism {
 
     @Inject
     Secrets secrets;
+
+    /// Verified `session_token` values by raw cookie: a valid signature stays valid, and the
+    /// cookie is permanent, expiring in twenty years.
+    private final Cache<String, String> verified = Caffeine.newBuilder().maximumSize(10_000).build();
 
     /// A verified `session_token` cookie's value.
     public static final class SessionToken extends BaseAuthenticationRequest {
@@ -50,10 +57,19 @@ public class SessionMechanism implements HttpAuthenticationMechanism {
 
     @Override
     public Uni<SecurityIdentity> authenticate(RoutingContext context, IdentityProviderManager identities) {
-        String token = Cookies.verify(secrets, Cookies.SESSION_TOKEN, Cookies.incoming(context.request(), Cookies.SESSION_TOKEN));
+        String token = verify(Cookies.incoming(context.request(), Cookies.SESSION_TOKEN));
         Uni<SecurityIdentity> session = token == null ? Uni.createFrom().nullItem() : attempt(identities, new SessionToken(token), context);
         String botKey = botKey(context.normalizedPath());
         return botKey == null ? session : session.onItem().ifNull().switchTo(() -> attempt(identities, new BotKey(botKey), context));
+    }
+
+    private @Nullable String verify(@Nullable String raw) {
+        if (raw == null) return null;
+        String token = verified.getIfPresent(raw);
+        if (token != null) return token;
+        token = secrets.verifySignedCookie(Cookies.SESSION_TOKEN, raw, Instant.now());
+        if (token != null) verified.put(raw, token);
+        return token;
     }
 
     private static @Nullable String botKey(String path) {

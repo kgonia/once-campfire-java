@@ -14,7 +14,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import org.jspecify.annotations.Nullable;
 
 /// The request's cookies, and the ones the response sets. Values are written escaped and read
@@ -51,28 +50,6 @@ public class Cookies {
     public static @Nullable String incoming(HttpServerRequest request, String name) {
         Cookie cookie = request.getCookie(HttpFormats.escape(name));
         return cookie == null ? null : HttpFormats.unescape(cookie.getValue());
-    }
-
-    /// Verified values are remembered process-wide: a valid signature stays valid, and permanent
-    /// cookies don't expire for twenty years.
-    private static final ConcurrentHashMap<String, String> VERIFIED = new ConcurrentHashMap<>();
-
-    /// The value of a cookie signed with the app's secret, or null when missing or forged.
-    public @Nullable String signed(String name) {
-        return verify(secrets, name, get(name));
-    }
-
-    public static @Nullable String verify(Secrets secrets, String name, @Nullable String raw) {
-        if (raw == null) return null;
-        String key = name + "=" + raw;
-        String cached = VERIFIED.get(key);
-        if (cached != null) return cached;
-        String value = secrets.verifySignedCookie(name, raw, Instant.now());
-        if (value != null) {
-            if (VERIFIED.size() > 10_000) VERIFIED.clear();
-            VERIFIED.put(key, value);
-        }
-        return value;
     }
 
     /// `secure` over HTTPS; `sameSite` null is Rails' default, `lax`. A later call for the same name
