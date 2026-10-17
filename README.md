@@ -145,8 +145,9 @@ tools/parity/up.sh                                         # Rust on :4100 (camp
 python tools/parity/parity.py [--gzip] [--host campfire.test] [--ua chrome-win] [--only /rooms]
 ```
 
-`python tools/parity/writes.py` checks writes the same way: on freshly started servers it submits 38 browser
-writes to both, in order (messages, boosts, rooms, involvement, profile, account, bots, the bot API, push
+`python tools/parity/writes.py` checks writes the same way: on freshly started servers it submits 39 browser
+writes to both, in order (messages, boosts, rooms, involvement, profile, account, bots, the bot API with text and
+an attachment, push
 subscriptions, searches, bans, joining, signing out and in). It compares statuses, redirects, cookie names, Turbo
 Stream and JSON bodies, and above all each write's database effect: rows added, removed or changed per table,
 with times and random tokens compared only as changed or not. It reads both databases with `docker cp`, from the
@@ -162,6 +163,11 @@ At the time of writing, every case matches except for timing:
 
 The verification harness's benchmark preflight returns identical body hashes for Rust, the JVM build and the
 native build.
+
+`python tools/outbound/outbound.py BASE VAPID_PUBLIC_KEY` covers what neither compares: the outbound HTTP client.
+On a fresh install it has a bot webhook answer with text and another with a PNG, and sends a Web Push through
+Mozilla's push service to a subscription it registered there, then decrypts what arrives. See its header for
+what it needs.
 
 ## Benchmarks
 

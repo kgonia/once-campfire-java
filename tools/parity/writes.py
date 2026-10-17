@@ -238,6 +238,8 @@ def cases():
         dict(name='bot key reset', path=lambda s: f'/account/bots/{s.find("users", name="Parity Bot")}/key', accept='text/html',
              form=[('_method', 'put')]),
         dict(name='bot API message', path=f'/rooms/{wc}/{L["bot_keys.bender"]}/messages', accept='*/*', raw='Parity bot says hello'),
+        dict(name='bot API attachment', path=f'/rooms/{wc}/{L["bot_keys.bender"]}/messages', accept='*/*', settle=4,
+             files=[('attachment', *image)]),
         dict(name='bot destroy', path=lambda s: f'/account/bots/{s.find("users", name="Parity Bot")}', accept='text/html',
              form=[('_method', 'delete')]),
         dict(name='push subscription create', path='/users/me/push_subscriptions', accept='*/*',
