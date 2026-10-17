@@ -38,21 +38,15 @@ Access rules are annotations (`@Access.Public`, `@GuestOnly`, `@BotsAllowed`, `@
 
 ### Templates
 
-The templates are [jte](https://jte.gg) in `src/main/jte`, compiled ahead of time with `trimControlStructures` off,
-so output is exactly the template text. Rails' Erubi removes a line that holds only a `<% %>` tag. To get the same
-result, a control tag (`@if`, `@else`, `@endfor`, `!{…}`) goes at the end of the previous line instead of on a line
-of its own:
+The templates are [jte](https://jte.gg) in `src/main/jte`, compiled ahead of time in jte's HTML mode with
+`trimControlStructures` on, so control structures sit on lines of their own. They're plain HTML: no Rails tag
+helpers, and jte's smart attributes drop an attribute whose value is `null` or `false` (`value="${room.name()}"`,
+`checked="${selected}"`). Markup more than one page shares is a partial: the Rails helpers that render it
+(`link_back`, `translation_button`, `avatar_tag`, …) are in `helpers/` and next to the views that use them.
 
-```
-      <div class="quick-boosts">@for(var reaction : BoostView.QUICK_REACTIONS)
-          <form …>
-</button></form>@endfor
-
-        <a …>
-```
-
-These are the same positions the Rust port's askama `{%-` tags take. Partials end with as many newlines as their
-Rust counterpart renders, and pages end at their layout call.
+Templates render straight into `view.HtmlOut`, which escapes for text and quoted attributes alike, and static text
+is precompiled to bytes (`binaryStaticContent`). Messages and sidebar rooms are rendered once per version into the
+fragment cache and written into pages as bytes.
 
 ## Idiomatic approach and exceptions
 
