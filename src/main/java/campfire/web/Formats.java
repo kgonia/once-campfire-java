@@ -100,7 +100,7 @@ public final class Formats {
     /// The 406 Rails' exception pages answer: the status and reason in the request's format for
     /// JSON, XML and YAML, an empty page otherwise.
     static Response notAcceptable(CurrentRequest request) {
-        request.markExceptionResponse();
+        request.discardChanges();
         List<String> formats = of(request);
         String format = formats.isEmpty() ? "html" : formats.getFirst();
         String body = switch (format) {

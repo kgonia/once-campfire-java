@@ -50,10 +50,9 @@ public class ErrorPages {
         return page(500);
     }
 
-    /// JSON requests get the status as JSON instead of the page. Rendered as Rails renders its
-    /// public error pages: outside the controller, so with none of the page headers or cookies.
+    /// JSON requests get the status as JSON instead of the page.
     private Response page(int status) {
-        request.markExceptionResponse();
+        request.discardChanges();
         if (request.wantsJson()) {
             String error = switch (status) {
                 case 400 -> "Bad Request";

@@ -17,13 +17,13 @@ import org.jspecify.annotations.Nullable;
 
 /// The proxy's shared cache of public responses (Thruster's `CacheHandler`). GET and HEAD responses
 /// whose `Cache-Control` says `public` with a positive `s-max-age` (sic) or `max-age`, and not
-/// `no-cache`, are kept until they expire and served again, with `X-Cache: hit`, to any request
+/// `no-cache`, are kept until they expire and served again to any request
 /// with the same method, path, query, host and values of the headers the response `Vary`s on.
 ///
 /// Entries are keyed the way Thruster keys them: by the request alone first, and only when the
 /// entry found there varies on a header this request disagrees about, by the request plus those
 /// headers. An entry's size counts its key and headers, so many long URIs can't hold more memory
-/// than `cacheSize`.
+/// than `CAPACITY`.
 @NullMarked
 final class FrontCache {
     /// Longer URIs aren't cached at all; the app's cacheable URLs (assets, avatars, QR codes) are
@@ -63,15 +63,15 @@ final class FrontCache {
 
     record Missed(Miss miss) implements Lookup {}
 
-    private final long maxItemSize;
-    private final long capacity;
+    static final long CAPACITY = 64L << 20;
+    /// Larger responses aren't kept, and files up to this size are read whole to be kept.
+    static final long MAX_ITEM_SIZE = 1L << 20;
+
     private final Cache<String, Stored> entries;
 
-    FrontCache(long capacity, long maxItemSize) {
-        this.capacity = capacity;
-        this.maxItemSize = maxItemSize;
+    FrontCache() {
         this.entries = Caffeine.newBuilder()
-            .maximumWeight(Math.max(0, capacity))
+            .maximumWeight(CAPACITY)
             .weigher((String key, Stored stored) -> (int) Math.min(Integer.MAX_VALUE, stored.size(key)))
             .expireAfter(new Expiry<String, Stored>() {
                 @Override
@@ -140,7 +140,7 @@ final class FrontCache {
         miss.variant().varyOn(first(headers, "vary"));
         var stored = new Stored(status, List.copyOf(headers), body, miss.variant().headers(), lifetime);
         long size = stored.size(miss.key());
-        if (size > maxItemSize || size > capacity) return;
+        if (size > MAX_ITEM_SIZE) return;
         entries.put(miss.key(), stored);
     }
 

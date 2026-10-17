@@ -79,7 +79,6 @@ public class ActiveStorageResource {
     @GET
     @Path("blobs/proxy/{signed_id}/{filename: .+}")
     public Response blobProxy(@PathParam("signed_id") String signedId, @Context Request http) {
-        request.markDownload();
         Blob blob = storage.blob(signedId).orElse(null);
         if (blob == null) return Responses.head(404);
         long size = Math.max(0, blob.byteSize());
@@ -109,7 +108,6 @@ public class ActiveStorageResource {
     @Path("representations/proxy/{signed_blob_id}/{variation_key}/{filename: .+}")
     public Response representationProxy(@PathParam("signed_blob_id") String signedBlobId, @PathParam("variation_key") String variationKey,
                                         @Context Request http) {
-        request.markDownload();
         Blob blob = storage.blob(signedBlobId).orElse(null);
         if (blob == null) return Responses.head(404);
         return storage.representation(blob, variationKey).map(image -> stream(http, image, false)).orElseGet(() -> Responses.head(404));
@@ -230,7 +228,6 @@ public class ActiveStorageResource {
 
     /// What Rails' exception pages answer: `public/<status>.html`, or nothing when there's none.
     private Response exceptionPage(int status) {
-        request.markExceptionResponse();
         var page = assets.file("/" + status + ".html");
         return Response.status(status).entity(page == null ? new byte[0] : page.body()).header("Content-Type", "text/html; charset=UTF-8").build();
     }

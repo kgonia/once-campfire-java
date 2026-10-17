@@ -40,7 +40,6 @@ public class UnfurlLinkResource {
 
     /// Rails' exception page for a missing parameter: there's no `public/400.html`, so it's empty.
     private Response parameterMissing() {
-        request.markExceptionResponse();
         return Response.status(400).entity(new byte[0]).header("Content-Type", "text/html; charset=UTF-8").build();
     }
 }

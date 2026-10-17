@@ -18,7 +18,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jspecify.annotations.NullMarked;
@@ -26,10 +25,8 @@ import org.jspecify.annotations.Nullable;
 
 /// Vert.x handlers in front of the REST resources, outermost first:
 ///
-/// - the proxy layer the Rails image runs behind (Thruster): the request size limit, the
-///   `X-Forwarded-*` request headers, the shared cache of public responses
-///   ({@link FrontCache}, answering `X-Cache: hit`, `miss` or `bypass`), the `Vary` its
-///   compression adds, and the headers a bodiless status can't carry;
+/// - the `X-Forwarded-*` request headers and the shared cache of public responses
+///   ({@link FrontCache}), answered on the event loop;
 /// - the cable WebSocket;
 /// - static files straight from memory on the event loop;
 /// - request bodies (form fields and uploads, read once for everything after), and the `_method`
@@ -40,10 +37,8 @@ public class Front {
     /// Static files carry the time the app started as their Last-Modified: they're compiled
     /// into it, so they can't have changed since.
     private static final String LAST_MODIFIED = CurrentRequest.httpDate(Instant.now());
-    /// What this request did at the cache: a {@link FrontCache.Miss} or {@link #BYPASS}.
+    /// Where a public response to this request would be cached: a {@link FrontCache.Miss}.
     static final String CACHE_STATE = "campfire.front.cache";
-    private static final String BYPASS = "bypass";
-    private static final String FINISHED = "campfire.front.finished";
 
     @Inject
     Config config;
@@ -52,9 +47,7 @@ public class Front {
     @Inject
     Cable cable;
 
-    private final FrontConfig front = FrontConfig.fromEnv();
-    private final FrontCache cache = new FrontCache(front.cacheSize(), front.maxCacheItemSize());
-    private final FrontCompression compression = new FrontCompression(front.jitter(), front.compressionDisabledOnAuth());
+    private final FrontCache cache = new FrontCache();
     /// Gzipped `public/` files that weren't precompressed, by path.
     private final Map<String, byte[]> gzipped = new ConcurrentHashMap<>();
 
@@ -78,32 +71,12 @@ public class Front {
         });
     }
 
-    FrontConfig config() {
-        return front;
-    }
-
-    FrontCompression compression() {
-        return compression;
-    }
-
     private void proxy(RoutingContext rc) {
         HttpServerRequest request = rc.request();
-        HttpServerResponse response = rc.response();
-        boolean cacheable = FrontCache.cacheable(request);
-        rc.addHeadersEndHandler(v -> finishHeaders(rc, cacheable));
-        if (tooLarge(request)) {
-            response.setStatusCode(413).end();
-            return;
-        }
-        if (!cacheable) {
-            rc.put(CACHE_STATE, BYPASS);
-            // Vert.x writes a WebSocket handshake without the headers-end callbacks, so what they
-            // would add goes on now (the handshake takes the response's headers).
-            if ("websocket".equalsIgnoreCase(request.getHeader("upgrade"))) finishHeaders(rc, false);
-        } else {
+        if (FrontCache.cacheable(request)) {
             switch (cache.lookup(request)) {
                 case FrontCache.Hit(FrontCache.Stored stored) -> {
-                    serveHit(request, response, stored);
+                    serveHit(request, rc.response(), stored);
                     return;
                 }
                 case FrontCache.Missed(FrontCache.Miss miss) -> rc.put(CACHE_STATE, miss);
@@ -119,17 +92,6 @@ public class Front {
         var authority = request.authority();
         if (authority == null) return null;
         return authority.port() < 0 ? authority.host() : authority.host() + ":" + authority.port();
-    }
-
-    /// An empty 413 for a declared body over the limit (0 is none), before the app sees it.
-    private boolean tooLarge(HttpServerRequest request) {
-        if (front.maxRequestBody() <= 0) return false;
-        String length = request.getHeader("content-length");
-        try {
-            return length != null && Long.parseLong(length.strip()) > front.maxRequestBody();
-        } catch (NumberFormatException e) {
-            return false;
-        }
     }
 
     /// The headers a reverse proxy adds: the client's address appended to `X-Forwarded-For`, and
@@ -148,63 +110,12 @@ public class Front {
         headers.set("X-Forwarded-Proto", incomingProto != null && !incomingProto.isEmpty() ? incomingProto : "http");
     }
 
-    private void serveHit(HttpServerRequest request, HttpServerResponse response, FrontCache.Stored stored) {
+    private static void serveHit(HttpServerRequest request, HttpServerResponse response, FrontCache.Stored stored) {
         boolean notModified = FrontCache.notModified(stored, request);
         response.setStatusCode(notModified ? 304 : stored.status());
         for (FrontCache.Header h : stored.headers()) response.headers().add(h.name(), h.value());
-        response.headers().set("x-cache", "hit");
         if (notModified) response.end();
         else response.end(Buffer.buffer(stored.body()));
-    }
-
-    /// Last touches as the headers go out: what the cache did, the compression's `Vary`, and no
-    /// length or type on statuses that have no body.
-    private void finishHeaders(RoutingContext rc, boolean cacheable) {
-        if (rc.get(FINISHED) != null) return;
-        rc.put(FINISHED, true);
-        HttpServerResponse response = rc.response();
-        MultiMap headers = response.headers();
-        boolean bypassed = !cacheable;
-        if (!headers.contains("x-cache")) headers.set("x-cache", bypassed ? BYPASS : "miss");
-        if (front.compression()) FrontCompression.addVary(headers, bypassed);
-        int status = response.getStatusCode();
-        if (status == 304) {
-            headers.remove("content-type");
-            headers.remove("content-length");
-            headers.remove("transfer-encoding");
-        } else if (status < 200 || status == 204) {
-            headers.remove("content-length");
-            headers.remove("transfer-encoding");
-        }
-        lowercaseNames(headers);
-    }
-
-    /// Rack 3 (and so Rails and the Rust port) sends every header name in lower case. The map
-    /// ignores case, so a name is renamed by taking all its values out and putting them back;
-    /// renamed headers move to the end, and the order of headers isn't part of the contract.
-    private static void lowercaseNames(MultiMap headers) {
-        List<String> mixedCase = null;
-        for (Map.Entry<String, String> header : headers) {
-            String name = header.getKey();
-            if (hasUpperCase(name) && (mixedCase == null || !mixedCase.contains(name))) {
-                if (mixedCase == null) mixedCase = new ArrayList<>(4);
-                mixedCase.add(name);
-            }
-        }
-        if (mixedCase == null) return;
-        for (String name : mixedCase) {
-            List<String> values = headers.getAll(name);
-            headers.remove(name);
-            headers.add(name.toLowerCase(Locale.ROOT), values);
-        }
-    }
-
-    private static boolean hasUpperCase(String name) {
-        for (int i = 0; i < name.length(); i++) {
-            char c = name.charAt(i);
-            if (c >= 'A' && c <= 'Z') return true;
-        }
-        return false;
     }
 
     /// Offers a response the app produced to the cache: kept when it's public, and then without
@@ -216,7 +127,7 @@ public class Front {
             var kept = new ArrayList<FrontCache.Header>();
             for (FrontCache.Header h : headers) {
                 String name = h.name();
-                if (!name.equalsIgnoreCase("set-cookie") && !name.equalsIgnoreCase("content-length") && !name.equalsIgnoreCase("x-cache")) kept.add(h);
+                if (!name.equalsIgnoreCase("set-cookie") && !name.equalsIgnoreCase("content-length")) kept.add(h);
             }
             cache.store(miss, status, kept, rc.request().method() == HttpMethod.HEAD ? new byte[0] : body, lifetime);
         }
@@ -228,8 +139,8 @@ public class Front {
         return null;
     }
 
-    /// `public/` and the digested assets. Like everything else they're gzipped for a client that
-    /// takes it, from the precompressed copy where there is one.
+    /// `public/` and the digested assets, text gzipped for a client that takes it, from the
+    /// precompressed copy where there is one.
     private boolean serveStatic(RoutingContext rc) {
         HttpServerRequest request = rc.request();
         HttpMethod method = request.method();
@@ -251,31 +162,22 @@ public class Front {
             response.setStatusCode(304).end();
             return true;
         }
-        String encoding = ContentEncoding.negotiate(request.getHeader("accept-encoding"));
-        if (encoding == null) {
-            notAcceptable(request, response);
-            return true;
-        }
         var headers = new ArrayList<FrontCache.Header>();
         headers.add(new FrontCache.Header("Last-Modified", LAST_MODIFIED));
         headers.add(new FrontCache.Header("Content-Type", file.contentType()));
         headers.add(new FrontCache.Header("Cache-Control", "public, max-age=2592000"));
-        headers.add(new FrontCache.Header("Vary", "Accept-Encoding"));
         byte[] body = file.body();
-        if (encoding.equals("gzip") && body.length > 0) {
-            headers.add(new FrontCache.Header("Content-Encoding", "gzip"));
-            Assets.StaticFile f = file;
-            body = f.gzip() != null ? f.gzip() : gzipped.computeIfAbsent(served,
-                k -> Gzip.compress(f.body(), ContentEncoding.mtime(LAST_MODIFIED), null));
+        if (Gzip.compressible(file.contentType()) && body.length > 0) {
+            headers.add(new FrontCache.Header("Vary", "Accept-Encoding"));
+            if (Gzip.accepted(request.getHeader("accept-encoding"))) {
+                headers.add(new FrontCache.Header("Content-Encoding", "gzip"));
+                Assets.StaticFile f = file;
+                body = f.gzip() != null ? f.gzip() : gzipped.computeIfAbsent(served, k -> Gzip.compress(f.body()));
+            }
         }
         offer(rc, 200, headers, body);
         for (FrontCache.Header h : headers) response.headers().add(h.name(), h.value());
         response.end(Buffer.buffer(body));
         return true;
-    }
-
-    /// The plain-text 406 for a client that takes neither gzip nor identity.
-    static void notAcceptable(HttpServerRequest request, HttpServerResponse response) {
-        response.setStatusCode(406).putHeader("Content-Type", "text/plain").end(Buffer.buffer(ContentEncoding.notAcceptable(request.uri())));
     }
 }

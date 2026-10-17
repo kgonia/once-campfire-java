@@ -4,8 +4,7 @@ import io.vertx.ext.web.RoutingContext;
 import org.jspecify.annotations.Nullable;
 
 /// What the stages serving one request tell each other: the format from the path, the access
-/// filter's data version, the response cache's ticket, and how the finisher should treat the
-/// response. It lives on the Vert.x `RoutingContext`, which every stage reaches without going
+/// filter's data version and the response cache's ticket. It lives on the Vert.x `RoutingContext`, which every stage reaches without going
 /// through a request-scoped CDI proxy: Quarkus REST passes it to filter methods that ask for it.
 public final class RequestState {
     private static final String KEY = "campfire.request.state";
@@ -18,15 +17,6 @@ public final class RequestState {
     ResponseCache.@Nullable Ticket cacheTicket;
     /// The gzipped body that came with a cache hit, so it isn't compressed again.
     byte @Nullable [] cachedGzip;
-    /// File downloads skip the page security headers and the content ETag, as Rails' streamed
-    /// responses do.
-    boolean download;
-    /// Served by one of Rails' own controllers (Active Storage, Turbo Native) rather than the
-    /// app's: none of the app's checks or version headers apply.
-    boolean framework;
-    /// One of Rails' exception pages, which bypass the controller: no session commit, cookies,
-    /// default or version headers, ETag or Cache-Control.
-    boolean exceptionResponse;
 
     private RequestState() {}
 

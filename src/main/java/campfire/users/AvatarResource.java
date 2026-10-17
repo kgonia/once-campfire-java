@@ -44,7 +44,6 @@ public class AvatarResource {
     /// A forged token is a 404 without a page.
     @GET
     public Response show(@PathParam("user_id") String token) {
-        request.markDownload();
         User user = users.fromAvatarToken(token);
         if (user == null) return Responses.head(404);
         String etag = HttpCache.weakEtag(request, HttpCache.cacheKeyWithVersion("users", user.id(), user.updatedAt()),
@@ -69,7 +68,6 @@ public class AvatarResource {
 
     @DELETE
     public Response destroy() {
-        request.markDownload();
         users.deleteAvatar(request.user().id());
         return Responses.redirect(request.url(Paths.USER_PROFILE));
     }

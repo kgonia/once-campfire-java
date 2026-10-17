@@ -29,7 +29,7 @@ Packages are organized by feature. Inside a feature:
 | `storage` | the Active Storage HTTP surface, analysis and variants (libvips, ffmpeg) |
 | `cable` | the Action Cable server and channels |
 | `richtext`, `rails`, `useragent`, `integrations` | Action Text HTML, Rails-compatible crypto and serialization, browser detection, OpenGraph/QR/Web Push clients |
-| `web` | request context, access filter, the Thruster-like front layer (cache, compression), error pages |
+| `web` | request context, access filter, the front layer (public cache, static files), gzip, error pages |
 | `view` | the templates' helpers, the fragment cache and page digests |
 
 Access rules are annotations (`@Access.Public`, `@GuestOnly`, `@BotsAllowed`, `@NoForgeryProtection`) checked by
@@ -76,9 +76,8 @@ byte for byte, or a measured performance loss. Each deviation is listed below wi
 | The `data_version` observer and the WAL checkpointer, on connections of their own | pooled connections | `PRAGMA data_version` only means something asked of the same connection every time. |
 | The full-text index (`message_search_index`) in plain SQL: its writes are strings, and searches name it with `table(name(...))` and a `MATCH` template | generated classes | It's an FTS5 virtual table, which the code generator doesn't read. |
 | jOOQ classes generated from `schema.sql` loaded into SQLite at build time (`src/build/jooq`) | running migrations, e.g. Flyway, then generating | Rails owns the migrations. `schema.sql` is exactly what `db:prepare` creates. |
-| The front layer's own cache and gzip (`web.Front`, `ContentEncoding`) | Quarkus/Vert.x HTTP compression | Speed: a page is gzipped once and served compressed from the caches, where Vert.x would recompress every response on the event loop (69 µs for a 9 KB page, against about 105 µs of CPU for a whole cached room page). Also Rack's and Thruster's gzip headers and `Vary` merging, for byte parity. |
+| One gzip step in `web.ResponseFinisher`, with pooled `Deflater`s (`web.Gzip`) | Quarkus/Vert.x HTTP compression | Speed: a page is gzipped once and served compressed from the caches, where Vert.x would recompress every response on the event loop (69 µs for a 9 KB page, against about 105 µs of CPU for a whole cached room page). |
 | Its own JSON writer (`rails.Json`) | Jackson | Historical: it matched Rails byte for byte (`<` escapes, Ruby number formats) for parity with the Rust port, which is no longer a goal. Being replaced. |
-| Header names lowercased, request ids, `X-Runtime` | framework defaults | Rack 3 and Rails behaviour that the Rust port reproduces. |
 
 What the datasources need for SQLite (in `application.properties`):
 - `db-kind=other` with the SQLite driver.
@@ -187,10 +186,12 @@ None of these show up in the parity suite or the harness:
 - For clients that prefer zstd, Rust's proxy layer zstd-compresses bodies the app left unencoded. Java leaves them
   uncompressed. This only affects bodies the app's own gzip skipped.
 - Rust's proxy sniffs a `Content-Type` for responses that lack one. Java doesn't; no app response lacks one.
-- A chunked request body over `MAX_REQUEST_BODY` isn't stopped by the proxy layer's 413. The app's own body limit
-  still applies.
-- Header order on the wire can differ. Names are lowercase, as in Rust and Rack 3.
-- Thruster's per-request log line isn't reproduced.
+- Header order and the case of header names on HTTP/1.1 can differ.
+- Thruster's per-request log line and its `X-Cache` header aren't reproduced.
+- Only text, JSON, JavaScript, XML and SVG are gzipped. A client that refuses identity encoding gets an
+  uncompressed body, not a 406.
+- Error pages carry the security and version headers. Rails renders them outside the controller, without
+  them. As in Rails they leave the session and cookies untouched.
 
 Deliberate:
 

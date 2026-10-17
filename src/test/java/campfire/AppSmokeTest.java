@@ -9,6 +9,7 @@ import io.quarkus.test.common.http.TestHTTPResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.QuarkusTestProfile;
 import io.quarkus.test.junit.TestProfile;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.CookieManager;
 import java.net.URI;
@@ -23,6 +24,7 @@ import java.util.Base64;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.zip.GZIPInputStream;
 import org.junit.jupiter.api.Test;
 
 /// The whole app on a fresh install, through Vert.x, every filter and the finisher: unit tests
@@ -68,6 +70,18 @@ class AppSmokeTest {
             "message[client_message_id]", UUID.randomUUID().toString()));
         assertEquals(200, posted.statusCode(), posted.body());
         assertTrue(get(room).body().contains("Hello from the smoke test"));
+
+        var gzipped = http.send(HttpRequest.newBuilder(base.resolve(room)).header("Accept-Encoding", "gzip").build(),
+            HttpResponse.BodyHandlers.ofByteArray());
+        assertEquals("gzip", gzipped.headers().firstValue("content-encoding").orElse(null));
+        assertTrue(gzipped.headers().firstValue("vary").orElse("").contains("Accept-Encoding"));
+        String unzipped = new String(new GZIPInputStream(new ByteArrayInputStream(gzipped.body())).readAllBytes(), StandardCharsets.UTF_8);
+        assertTrue(unzipped.contains("Hello from the smoke test"));
+
+        String etag = gzipped.headers().firstValue("etag").orElseThrow();
+        var revalidated = http.send(HttpRequest.newBuilder(base.resolve(room)).header("If-None-Match", etag).build(),
+            HttpResponse.BodyHandlers.discarding());
+        assertEquals(304, revalidated.statusCode());
 
         blobsServeRangesAndConditionalGets();
     }

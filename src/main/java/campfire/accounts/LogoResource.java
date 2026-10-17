@@ -38,7 +38,6 @@ public class LogoResource {
     @GET
     @Access.Public
     public Response show() {
-        request.markDownload();
         Account account = app.account().account();
         String etag = account == null ? null
             : HttpCache.weakEtag(request, HttpCache.cacheKeyWithVersion("accounts", account.id(), account.updatedAt()), null);
@@ -59,7 +58,6 @@ public class LogoResource {
 
     @DELETE
     public Response destroy() {
-        request.markDownload();
         if (!request.user().canAdminister()) throw new Halt(Responses.head(403));
         accounts.deleteLogo(accounts.account());
         return Responses.redirect(request.url(Paths.editAccount()));

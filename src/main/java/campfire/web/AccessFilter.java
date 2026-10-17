@@ -60,10 +60,7 @@ public class AccessFilter {
         request.addPathParams(pathParams);
         if (request.malformedBody()) return Response.status(400).entity(new byte[0]).header("Content-Type", "text/html; charset=UTF-8").build();
         RequestState state = RequestState.of(routing);
-        if (has(resource, Access.Framework.class)) {
-            state.framework = true;
-            return null;
-        }
+        if (has(resource, Access.Framework.class)) return null;
         state.dataVersionAtStart = db.dataVersion();
 
         boolean isPublic = has(resource, Access.Public.class);

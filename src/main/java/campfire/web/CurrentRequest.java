@@ -285,16 +285,6 @@ public class CurrentRequest {
         return header("turbo-frame") != null;
     }
 
-    /// See {@link RequestState#download}.
-    public void markDownload() {
-        state().download = true;
-    }
-
-    /// See {@link RequestState#exceptionResponse}.
-    public void markExceptionResponse() {
-        state().exceptionResponse = true;
-    }
-
     // -- Who is signed in -----------------------------------------------------------------------------
 
     /// The signed-in user (or bot). Only for resources behind sign-in, which is all but the
@@ -457,6 +447,14 @@ public class CurrentRequest {
     public Flash flash() {
         if (flash == null) flash = new Flash(railsSession().get("flash"));
         return flash;
+    }
+
+    /// Leaves the session and cookies as the request brought them. Rails renders an error page
+    /// after the action raised, and the session middleware then writes nothing.
+    void discardChanges() {
+        flash = null;
+        railsSessionDirty = false;
+        setCookies.clear();
     }
 
     /// Re-encrypts the session cookie when it changed, and deletes it once nothing but the

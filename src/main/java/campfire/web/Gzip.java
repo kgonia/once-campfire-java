@@ -7,46 +7,74 @@ import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.zip.CRC32;
 import java.util.zip.Deflater;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-/// Gzip members as zlib writes them at its default level (6): the header carries `mtime` (epoch
-/// seconds, 0 for none), the Unix OS code and, when given, a comment (the proxy's BREACH padding).
-/// Deflaters are pooled; virtual threads make thread-locals a poor fit.
+/// Response compression. `GZIPOutputStream` brings a new `Deflater` (and its native tables) per
+/// stream; these are pooled instead, since virtual threads make thread-locals a poor fit.
 @NullMarked
 public final class Gzip {
     private Gzip() {}
 
     private static final ConcurrentLinkedQueue<Deflater> POOL = new ConcurrentLinkedQueue<>();
-    private static final int OS_UNIX = 3;
-    private static final int FLAG_COMMENT = 0x10;
+    /// No mtime, Unix: the 10-byte header zlib writes.
+    private static final byte[] HEADER = {0x1f, (byte) 0x8b, 8, 0, 0, 0, 0, 0, 0, 3};
 
-    public static byte[] compress(byte[] body) {
-        return compress(body, 0, null);
+    /// Whether `Accept-Encoding` takes gzip: named (or `*`) without `q=0`.
+    public static boolean accepted(@Nullable String acceptEncoding) {
+        if (acceptEncoding == null) return false;
+        Boolean wildcard = null;
+        for (String part : acceptEncoding.split(",")) {
+            String[] pieces = part.split(";");
+            String coding = pieces[0].strip().toLowerCase(Locale.ROOT);
+            boolean allowed = true;
+            for (int i = 1; i < pieces.length; i++) {
+                String parameter = pieces[i].strip();
+                if (parameter.startsWith("q=")) allowed = !zero(parameter.substring(2));
+            }
+            if (coding.equals("gzip") || coding.equals("x-gzip")) return allowed;
+            if (coding.equals("*")) wildcard = allowed;
+        }
+        return wildcard != null && wildcard;
     }
 
-    public static byte[] compress(byte[] body, long mtime, @Nullable String comment) {
-        if (mtime != 0 || comment != null || body.length > SMALL_BODY) return deflate(body, mtime, comment);
+    private static boolean zero(String quality) {
+        try {
+            return Double.parseDouble(quality.strip()) == 0;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
+    /// Text compresses; images, audio, video and archives already are.
+    public static boolean compressible(@Nullable String contentType) {
+        if (contentType == null) return false;
+        String type = contentType.toLowerCase(Locale.ROOT);
+        return type.startsWith("text/") || type.contains("json") || type.contains("javascript") || type.contains("xml") || type.startsWith("image/svg");
+    }
+
+    public static byte[] compress(byte[] body) {
+        if (body.length > SMALL_BODY) return deflate(body);
         byte[] gzip = SMALL.getIfPresent(ByteBuffer.wrap(body));
         if (gzip == null) {
-            gzip = deflate(body, 0, null);
+            gzip = deflate(body);
             SMALL.put(ByteBuffer.wrap(body.clone()), gzip);
         }
         return gzip;
     }
 
-    /// Small bodies repeat (health checks, redirects, empty bodies), and for them resetting the
+    /// Small bodies repeat (health checks, short Turbo Streams), and for them resetting the
     /// deflater's tables costs more than compressing. Callers never modify what they get back.
     private static final int SMALL_BODY = 1024;
     private static final Cache<ByteBuffer, byte[]> SMALL = Caffeine.newBuilder().maximumSize(512).build();
 
-    private static byte[] deflate(byte[] body, long mtime, @Nullable String comment) {
+    private static byte[] deflate(byte[] body) {
         var out = new ByteArrayOutputStream(Math.max(64, body.length / 4));
-        try (var gzip = stream(out, mtime, comment)) {
+        try (var gzip = stream(out)) {
             gzip.write(body);
         } catch (IOException e) {
             throw new IllegalStateException(e);
@@ -55,14 +83,8 @@ public final class Gzip {
     }
 
     /// Compresses what's written to it into `out`; closing it writes the trailer and closes `out`.
-    public static OutputStream stream(OutputStream out, long mtime, @Nullable String comment) throws IOException {
-        int flags = comment == null ? 0 : FLAG_COMMENT;
-        out.write(new byte[] {0x1f, (byte) 0x8b, 8, (byte) flags, (byte) mtime, (byte) (mtime >> 8), (byte) (mtime >> 16), (byte) (mtime >> 24),
-            0, OS_UNIX});
-        if (comment != null) {
-            out.write(comment.getBytes(StandardCharsets.ISO_8859_1));
-            out.write(0);
-        }
+    public static OutputStream stream(OutputStream out) throws IOException {
+        out.write(HEADER);
         return new Member(out);
     }
 
