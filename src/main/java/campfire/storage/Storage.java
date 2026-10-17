@@ -1,7 +1,6 @@
 package campfire.storage;
 
 import static campfire.db.schema.Tables.ACTIVE_STORAGE_BLOBS;
-import static org.jooq.impl.DSL.asterisk;
 import static org.jooq.impl.DSL.param;
 import static org.jooq.impl.DSL.select;
 
@@ -15,7 +14,6 @@ import campfire.storage.Attachment;
 import campfire.storage.Blob;
 import campfire.storage.VariantRecord;
 import campfire.rails.Json;
-import campfire.rails.Messages;
 import campfire.rails.MessageVerifier;
 import campfire.rails.Secrets;
 import java.io.ByteArrayOutputStream;
@@ -141,20 +139,6 @@ public final class Storage implements AutoCloseable {
         return db.read(conn -> Attachment.findBlobFor(conn, recordType, recordId, name));
     }
 
-    /// `ActiveStorage::Blob.find_signed(signed_id)`, or null.
-    public Blob findSigned(String signedId) {
-        Long id = Urls.verifySignedBlobId(verifier, signedId, Instant.now());
-        return id == null ? null : find(id);
-    }
-
-    public static boolean isImage(Blob blob) {
-        return blob.contentType() != null && blob.contentType().startsWith("image");
-    }
-
-    public static boolean isVideo(Blob blob) {
-        return blob.contentType() != null && blob.contentType().startsWith("video");
-    }
-
     /// `variable?`
     public boolean variable(Blob blob) {
         return ContentTypes.isVariable(blob.contentType());
@@ -222,7 +206,7 @@ public final class Storage implements AutoCloseable {
     /// (`preview(format: :webp, resize_to_limit: [1200, 800])`) or `representation(:thumb)`; null
     /// when the attachment is shown as a file link.
     public String thumbPath(Blob blob) {
-        if (isVideo(blob)) return previewable(blob) ? previewPath(blob, Variation.VIDEO_POSTER) : null;
+        if (blob.isVideo()) return previewable(blob) ? previewPath(blob, Variation.VIDEO_POSTER) : null;
         return variable(blob) ? variantPath(blob, Variation.THUMB) : null;
     }
 
@@ -246,10 +230,6 @@ public final class Storage implements AutoCloseable {
         /// `width / height.to_f`.
         public String aspectRatio() {
             return rubyFloat(width.doubleValue() / height.doubleValue());
-        }
-
-        public String widthText() {
-            return width instanceof Double d ? rubyFloat(d) : width.toString();
         }
     }
 
@@ -333,7 +313,7 @@ public final class Storage implements AutoCloseable {
 
     /// The file half of `Blob.create_and_upload!(io:, filename:, content_type:)` as attaching an
     /// upload does: a new key, the file copied into place and checksummed, the content type
-    /// identified with Marcel, metadata `{"identified":true}`.
+    /// identified as Rails would, metadata `{"identified":true}`.
     public Staged stage(Path source, String filename, String declaredContentType) {
         try (InputStream in = Files.newInputStream(source)) {
             return stage(in, filename, declaredContentType);
@@ -569,7 +549,7 @@ public final class Storage implements AutoCloseable {
         try {
             Blob analyzedBlob = analyze(blob);
             if (analyzedBlob == null) return;
-            if (isVideo(analyzedBlob)) {
+            if (analyzedBlob.isVideo()) {
                 if (previewable(analyzedBlob)) processedPreview(analyzedBlob, Variation.VIDEO_PREVIEW);
             } else if (representable(analyzedBlob)) {
                 processedRepresentation(analyzedBlob, Variation.THUMB);
@@ -602,44 +582,13 @@ public final class Storage implements AutoCloseable {
         });
         if (purged == null) return false;
         disk.delete(purged.key());
-        if (isImage(purged)) disk.deleteLegacyVariants(purged.key());
+        if (purged.isImage()) disk.deleteLegacyVariants(purged.key());
         for (long dependent : dependents) purge(dependent);
         return true;
     }
 
     public void purgeLater(long blobId) {
         runLater("purge blob " + blobId, () -> purge(blobId));
-    }
-
-
-    /// `*` rather than the generated columns: `as_json` has every column the database holds.
-    private static final String BLOB_AS_JSON = Sql.render(select(asterisk()).from(ACTIVE_STORAGE_BLOBS)
-        .where(ACTIVE_STORAGE_BLOBS.ID.eq(param(ACTIVE_STORAGE_BLOBS.ID))));
-
-    /// `blob.as_json`: every column in table order, times as ISO 8601 with milliseconds.
-    static Map<String, Object> asJson(Conn conn, long id) {
-        return conn.one(BLOB_AS_JSON, rs -> {
-            var json = new LinkedHashMap<String, Object>();
-            var meta = rs.getMetaData();
-            for (int i = 1; i <= meta.getColumnCount(); i++) {
-                String column = meta.getColumnName(i);
-                Object value = switch (column) {
-                    case "id", "byte_size" -> rs.getLong(i);
-                    case "created_at" -> {
-                        Instant t = Times.parseDb(rs.getString(i));
-                        yield t == null ? rs.getString(i) : Messages.iso8601Millis(t);
-                    }
-                    case "metadata" -> {
-                        String text = rs.getString(i);
-                        Object parsed = text == null ? null : Json.parseOrNull(text);
-                        yield parsed instanceof Map<?, ?> ? parsed : new LinkedHashMap<>();
-                    }
-                    default -> rs.getString(i);
-                };
-                json.put(column, value);
-            }
-            return json;
-        }, id);
     }
 
     // -- Plumbing ----------------------------------------------------------------------------------

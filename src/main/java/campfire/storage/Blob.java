@@ -14,6 +14,7 @@ import campfire.db.Conn;
 import campfire.db.Database.Tx;
 import campfire.db.Sql;
 import campfire.rails.Json;
+import campfire.rails.Messages;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
@@ -55,8 +56,28 @@ public record Blob(long id, String key, String filename, String contentType, Str
         return metadataMap().get(name) instanceof Number n ? n : null;
     }
 
+    /// `blob.as_json`: the columns in `schema.rb`'s order, `created_at` with milliseconds. (A
+    /// database built by Campfire's migrations orders them differently; clients read by name.)
+    public Map<String, Object> asJson() {
+        var json = new LinkedHashMap<String, Object>();
+        json.put("id", id);
+        json.put("byte_size", byteSize);
+        json.put("checksum", checksum);
+        json.put("content_type", contentType);
+        json.put("created_at", Messages.iso8601Millis(createdAt));
+        json.put("filename", filename);
+        json.put("key", key);
+        json.put("metadata", metadataMap());
+        json.put("service_name", serviceName);
+        return json;
+    }
+
+    public boolean isImage() {
+        return contentType != null && contentType.startsWith("image");
+    }
+
     public boolean isVideo() {
-        return contentType != null && contentType.startsWith("video/");
+        return contentType != null && contentType.startsWith("video");
     }
 
     private static final String FIND = Sql.render(select(COLUMNS).from(ACTIVE_STORAGE_BLOBS)

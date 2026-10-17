@@ -85,14 +85,10 @@ class StoragePipelineTest {
             assertEquals(dir.resolve("files").resolve(key.substring(0, 2)).resolve(key.substring(2, 4)).resolve(key), storage.pathFor(blob));
             assertTrue(Files.exists(storage.pathFor(blob)));
 
-            if (Storage.isVideo(blob)) assumeFfprobe();
+            if (blob.isVideo() ? !Tools.FFPROBE.available() : blob.isImage() && !Tools.VIPSHEADER.available()) continue;
             Blob analyzed = storage.analyze(blob);
             assertEquals(expected.get("metadata"), analyzed.metadata(), fixture);
         }
-    }
-
-    void assumeFfprobe() {
-        assumeTrue(Tools.FFPROBE.available(), "ffprobe is not installed");
     }
 
     @Test
@@ -175,6 +171,7 @@ class StoragePipelineTest {
     @Test
     void videoPreviewsMatchTheReference() throws IOException {
         assumeTrue(Tools.FFMPEG.available(), "ffmpeg is not installed");
+        assumeTrue(Tools.VIPSHEADER.available(), "libvips (vipsheader) is not installed");
         var m = section("messages").get(3);
         Blob video = upload("alpha-centuri.mov", "alpha-centuri.mov", "video/quicktime");
         assertTrue(storage.previewable(video));
@@ -198,7 +195,8 @@ class StoragePipelineTest {
         Blob blob = upload("moon.jpg", "moon.jpg", "image/jpeg");
         storage.processAttachment(blob);
         Blob after = storage.find(blob.id());
-        assertEquals("{\"identified\":true,\"width\":640,\"height\":640,\"analyzed\":true}", after.metadata());
+        assertEquals(Tools.VIPSHEADER.available() ? "{\"identified\":true,\"width\":640,\"height\":640,\"analyzed\":true}"
+            : "{\"identified\":true,\"analyzed\":true}", after.metadata());
         long variants = db.read(conn -> conn.count("SELECT COUNT(*) FROM active_storage_variant_records"));
         assertEquals(Tools.VIPS.available() ? 1 : 0, variants);
     }
@@ -295,7 +293,7 @@ class StoragePipelineTest {
         assertTrue(url.startsWith("https://campfire.test/rails/active_storage/disk/"), url);
         Disk.Token token = service.uploadToken(url.substring(url.lastIndexOf('/') + 1)).orElseThrow();
         assertEquals(data.length, token.contentLength());
-        Blob blob = storage.findSigned((String) json.get("signed_id"));
+        Blob blob = service.blob((String) json.get("signed_id")).orElseThrow();
         assertEquals("hello.txt", blob.filename());
 
         var tampered = data.clone();
@@ -308,6 +306,7 @@ class StoragePipelineTest {
 
     @Test
     void metadataKeepsRubysKeyOrderOnReanalysis() {
+        assumeTrue(Tools.VIPSHEADER.available(), "libvips (vipsheader) is not installed");
         Blob blob = upload("moon.jpg", "moon.jpg", null);
         db.write(tx -> {
             Blob.updateMetadata(tx, blob.id(), "{\"identified\":true,\"height\":1,\"custom\":\"x\"}");

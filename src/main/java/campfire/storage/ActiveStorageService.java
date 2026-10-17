@@ -12,7 +12,6 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
@@ -92,11 +91,9 @@ public class ActiveStorageService {
                                            String checksum) {
         String key = storage.generateKey();
         Instant now = Times.now();
-        Map<String, Object> json = db.write(tx -> {
-            long id = Blob.create(tx, key, filename, contentType, Json.encode(metadata), byteSize, checksum, now);
-            return Storage.asJson(tx, id);
-        });
-        json.put("signed_id", Urls.signedBlobId(storage.verifier(), (long) Objects.requireNonNull(json.get("id"))));
+        Blob blob = db.write(tx -> Blob.find(tx, Blob.create(tx, key, filename, contentType, Json.encode(metadata), byteSize, checksum, now)));
+        Map<String, Object> json = blob.asJson();
+        json.put("signed_id", Urls.signedBlobId(storage.verifier(), blob.id()));
         var headers = new LinkedHashMap<String, @Nullable Object>();
         headers.put("Content-Type", contentType);
         var directUpload = new LinkedHashMap<String, Object>();

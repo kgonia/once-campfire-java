@@ -6,7 +6,6 @@ import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.logging.Logger;
 
 /// The Active Storage analyzers Campfire runs, in `config.active_storage.analyzers` order:
@@ -22,9 +21,7 @@ public final class Analyzer {
     public static final Duration FFPROBE_TIMEOUT = Duration.ofSeconds(30);
     static final Duration VIPSHEADER_TIMEOUT = Duration.ofSeconds(30);
 
-    /// Ruby's `/Right-top|Left-bottom|Top-right|Bottom-left/` on libexif's Orientation names:
-    /// EXIF 6, 8, 2 and 4 (`ImageAnalyzer::Vips#rotated_image?`).
-    private static final Set<Integer> SWAPPED_ORIENTATIONS = Set.of(2, 4, 6, 8);
+    /// `ImageAnalyzer::Vips#rotated_image?` on libexif's Orientation names.
     private static final List<String> SWAPPED_NAMES = List.of("Right-top", "Left-bottom", "Top-right", "Bottom-left");
 
     /// `analyzer.metadata` for a local file of the given content type.
@@ -39,40 +36,34 @@ public final class Analyzer {
     // -- Images ------------------------------------------------------------------------------
 
     /// `ImageAnalyzer::Vips#metadata`: dimensions, swapped for orientations that "rotate". Files
-    /// libvips can't read (bmp, ico, psd: their loaders are blocked) yield `{}`.
+    /// libvips can't read (bmp, ico, psd: their loaders are blocked) yield `{}`, as does every
+    /// image without libvips (Rails without ruby-vips).
     static Map<String, Object> image(Path file) {
         var metadata = new LinkedHashMap<String, Object>();
-        if (Tools.VIPSHEADER.available()) {
-            var result = Tools.VIPSHEADER.run(List.of("-a", file.toString()), VIPSHEADER_TIMEOUT, null, Tools.BLOCK_UNTRUSTED);
-            if (result.exitCode() != 0) {
-                LOG.fine(() -> "Skipping image analysis due to a Vips error: " + result.stderr());
-                return metadata;
-            }
-            Long width = null;
-            Long height = null;
-            boolean rotated = false;
-            for (String line : result.stdoutText().split("\n")) {
-                int colon = line.indexOf(": ");
-                if (colon < 0) continue;
-                String name = line.substring(0, colon).strip();
-                String value = line.substring(colon + 2).strip();
-                switch (name) {
-                    case "width" -> width = parseLong(value);
-                    case "height" -> height = parseLong(value);
-                    case "exif-ifd0-Orientation" -> rotated = SWAPPED_NAMES.stream().anyMatch(value::contains);
-                    default -> {}
-                }
-            }
-            if (width == null || height == null) return metadata;
-            metadata.put("width", rotated ? height : width);
-            metadata.put("height", rotated ? width : height);
+        if (!Tools.VIPSHEADER.available()) return metadata;
+        var result = Tools.VIPSHEADER.run(List.of("-a", file.toString()), VIPSHEADER_TIMEOUT, null, Tools.BLOCK_UNTRUSTED);
+        if (result.exitCode() != 0) {
+            LOG.fine(() -> "Skipping image analysis due to a Vips error: " + result.stderr());
             return metadata;
         }
-        var header = ImageHeaders.read(file);
-        if (header == null) return metadata;
-        boolean rotated = SWAPPED_ORIENTATIONS.contains(header.orientation());
-        metadata.put("width", (long) (rotated ? header.height() : header.width()));
-        metadata.put("height", (long) (rotated ? header.width() : header.height()));
+        Long width = null;
+        Long height = null;
+        boolean rotated = false;
+        for (String line : result.stdoutText().split("\n")) {
+            int colon = line.indexOf(": ");
+            if (colon < 0) continue;
+            String name = line.substring(0, colon).strip();
+            String value = line.substring(colon + 2).strip();
+            switch (name) {
+                case "width" -> width = parseLong(value);
+                case "height" -> height = parseLong(value);
+                case "exif-ifd0-Orientation" -> rotated = SWAPPED_NAMES.stream().anyMatch(value::contains);
+                default -> {}
+            }
+        }
+        if (width == null || height == null) return metadata;
+        metadata.put("width", rotated ? height : width);
+        metadata.put("height", rotated ? width : height);
         return metadata;
     }
 

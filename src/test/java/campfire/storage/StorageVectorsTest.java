@@ -305,7 +305,6 @@ class StorageVectorsTest {
         assertEquals("1.7777777777777777", blackHole.aspectRatio());
         var video = Storage.previewDimensions(blob(map(messages.get(3).get("blob"))));
         assertEquals("160.0", video.halfWidthCss());
-        assertEquals("320.0", video.widthText());
         assertNull(Storage.previewDimensions(blob(map(messages.get(4).get("blob")))));
         assertEquals("1.0e+16", Storage.rubyFloat(1e16));
         assertEquals("0.0001", Storage.rubyFloat(1e-4));
