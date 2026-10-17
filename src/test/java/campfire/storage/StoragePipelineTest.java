@@ -38,13 +38,15 @@ import org.junit.jupiter.api.io.TempDir;
 class StoragePipelineTest {
     @TempDir
     Path dir;
+    TestDatabase database;
     Database db;
     Storage storage;
     ActiveStorageService service;
 
     @BeforeEach
     void setUp() {
-        db = TestDatabase.open(dir.resolve("db.sqlite3"));
+        database = TestDatabase.open(dir.resolve("db.sqlite3"));
+        db = database.db();
         storage = new Storage(dir.resolve("files"), VERIFIER, db, 16L * 1024 * 1024);
         service = new ActiveStorageService();
         service.storage = storage;
@@ -54,7 +56,7 @@ class StoragePipelineTest {
     @AfterEach
     void tearDown() {
         storage.close();
-        db.close();
+        database.close();
     }
 
     Blob upload(String fixture, String filename, String declared) {

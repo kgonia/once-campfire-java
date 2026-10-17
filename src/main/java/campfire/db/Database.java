@@ -236,19 +236,19 @@ public final class Database implements AutoCloseable {
         }
     }
 
+    /// Closes the observer and checkpointer. The pools belong to whoever made them (Quarkus, for
+    /// the app), and closing them closes their connections' statements.
     @Override
     public void close() {
         checkpointThread.interrupt();
-        writeLock.lock();
+        checkpointRunning.lock();
+        observerLock.lock();
         try {
-            readers.values().forEach(Conn::close);
-            writers.values().forEach(Conn::close);
-            readerPool.close();
-            writerPool.close();
             observer.close();
             checkpointer.close();
         } finally {
-            writeLock.unlock();
+            observerLock.unlock();
+            checkpointRunning.unlock();
         }
     }
 }

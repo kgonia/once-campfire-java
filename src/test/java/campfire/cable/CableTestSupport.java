@@ -43,6 +43,7 @@ final class CableTestSupport implements AutoCloseable {
     static final String END = "END";
 
     final Path dir;
+    private final TestDatabase database;
     final Database db;
     final Secrets secrets = new Secrets(SECRET_KEY_BASE);
     final Cable cable;
@@ -68,7 +69,8 @@ final class CableTestSupport implements AutoCloseable {
 
     private CableTestSupport(boolean assumeSsl) throws Exception {
         dir = Files.createTempDirectory("cable-test");
-        db = TestDatabase.open(dir.resolve("test.sqlite3"));
+        database = TestDatabase.open(dir.resolve("test.sqlite3"));
+        db = database.db();
         loadFixtures();
         cable = new Cable(db, secrets, token -> db.read(conn -> Session.findByToken(conn, token)), assumeSsl);
         broadcasts = new Broadcasts(cable);
@@ -197,7 +199,7 @@ final class CableTestSupport implements AutoCloseable {
         Times.freeze(null);
         cable.close();
         vertx.close().toCompletionStage().toCompletableFuture().get(10, TimeUnit.SECONDS);
-        db.close();
+        database.close();
         try (var paths = Files.walk(dir)) {
             paths.sorted(Comparator.reverseOrder()).forEach(p -> p.toFile().delete());
         }

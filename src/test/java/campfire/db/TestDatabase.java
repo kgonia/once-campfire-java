@@ -6,13 +6,21 @@ import java.nio.file.Path;
 import java.sql.SQLException;
 import org.sqlite.JDBC;
 
-/// A {@link Database} on `file` with the pools `application.properties` configures for the app.
-public final class TestDatabase {
-    private TestDatabase() {}
-
-    public static Database open(Path file) {
+/// A {@link Database} on a file with the pools `application.properties` configures for the app;
+/// closing it closes the pools too, which Quarkus does for the app's.
+public record TestDatabase(Database db, AgroalDataSource writer, AgroalDataSource readers) implements AutoCloseable {
+    public static TestDatabase open(Path file) {
         String url = "jdbc:sqlite:" + file.toAbsolutePath() + "?busy_timeout=5000&foreign_keys=true&journal_mode=WAL&synchronous=NORMAL";
-        return new Database(file, pool(url, 1, "PRAGMA wal_autocheckpoint=0"), pool(url, 2, "PRAGMA query_only = true"));
+        var writer = pool(url, 1, "PRAGMA wal_autocheckpoint=0");
+        var readers = pool(url, 2, "PRAGMA query_only = true");
+        return new TestDatabase(new Database(file, writer, readers), writer, readers);
+    }
+
+    @Override
+    public void close() {
+        db.close();
+        readers.close();
+        writer.close();
     }
 
     private static AgroalDataSource pool(String url, int size, String initialSql) {
