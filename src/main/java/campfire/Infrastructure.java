@@ -5,7 +5,9 @@ import campfire.cable.Broadcasts;
 import campfire.cable.Cable;
 import campfire.db.Database;
 import campfire.integrations.net.Network;
+import campfire.integrations.opengraph.Opengraph;
 import campfire.integrations.webpush.WebPush;
+import campfire.messages.Message;
 import campfire.push.PushSubscription;
 import campfire.rails.Secrets;
 import campfire.rails.SecureRandoms;
@@ -43,7 +45,7 @@ public class Infrastructure {
     @ApplicationScoped
     Secrets secrets(Config config) {
         String secret = config.secretKeyBase().filter(s -> !s.isBlank()).orElseGet(() ->
-            System.getenv("SECRET_KEY_BASE_DUMMY") != null ? SecureRandoms.hex(64) : storedSecret(config.storage()));
+            config.secretKeyBaseDummy().isPresent() ? SecureRandoms.hex(64) : storedSecret(config.storage()));
         return new Secrets(secret);
     }
 
@@ -69,7 +71,7 @@ public class Infrastructure {
     @Produces
     @ApplicationScoped
     Storage storage(Config config, Secrets secrets, Database db) {
-        return new Storage(config, secrets, db);
+        return new Storage(config, secrets, db, Message::touchAttached);
     }
 
     void close(@Disposes Storage storage) {
@@ -99,17 +101,26 @@ public class Infrastructure {
         net.http().close();
     }
 
+    @Produces
+    @ApplicationScoped
+    Opengraph opengraph(Network net) {
+        return new Opengraph(net);
+    }
+
+    void close(@Disposes Opengraph opengraph) {
+        opengraph.close();
+    }
+
     /// Disabled (sends nothing) without both VAPID keys. Subscriptions the push service reports as
     /// gone are deleted.
     @Produces
     @ApplicationScoped
     WebPush webPush(Config config, Database db, Network net) {
-        var push = new WebPush(config.vapidPublicKey().orElse(null), config.vapidPrivateKey().orElse(null), config.vapidSubject(), net);
-        push.setInvalidSubscriptionHandler(id -> db.write(tx -> {
-            PushSubscription.delete(tx, id);
-            return null;
-        }));
-        return push;
+        return new WebPush(config.vapidPublicKey().orElse(null), config.vapidPrivateKey().orElse(null), config.vapidSubject(), net,
+            id -> db.write(tx -> {
+                PushSubscription.delete(tx, id);
+                return null;
+            }));
     }
 
     void close(@Disposes WebPush push) {

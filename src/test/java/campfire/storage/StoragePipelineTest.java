@@ -203,6 +203,22 @@ class StoragePipelineTest {
         assertEquals(Tools.VIPS.available() ? 1 : 0, variants);
     }
 
+    /// Analysis touches the records the blob is attached to through the toucher Storage was built with.
+    @Test
+    void analysisTouchesAttachedRecords() {
+        var touched = new ArrayList<String>();
+        try (var touching = new Storage(dir.resolve("files"), VERIFIER, db, 1 << 20, (tx, type, id) -> touched.add(type + " " + id))) {
+            Blob blob = touching.createAndUpload(new ByteArrayInputStream("notes".getBytes(StandardCharsets.UTF_8)), "notes.txt",
+                "text/plain");
+            db.write(tx -> {
+                Attachment.create(tx, "Message", 7, "attachment", blob.id(), campfire.db.Times.now());
+                return null;
+            });
+            touching.analyze(blob);
+        }
+        assertEquals(List.of("Message 7"), touched);
+    }
+
     @Test
     void purgeRemovesRowsFilesAndDependents() throws IOException {
         Blob blob = upload("moon.jpg", "moon.jpg", null);

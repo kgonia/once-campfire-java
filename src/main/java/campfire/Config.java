@@ -20,6 +20,9 @@ public interface Config {
     /// Unset means a secret generated once and kept in storage (see `Infrastructure`).
     Optional<String> secretKeyBase();
 
+    /// Set (to anything) for asset builds, which get a throwaway secret instead.
+    Optional<String> secretKeyBaseDummy();
+
     /// Without it every request is treated as HTTPS (`assume_ssl`): secure cookies, HSTS, https URLs.
     @WithDefault("false")
     boolean disableSsl();

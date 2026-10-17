@@ -64,7 +64,7 @@ public final class Users {
         .set(USERS.UPDATED_AT, param(USERS.UPDATED_AT)).where(USERS.ID.eq(param(USERS.ID))));
 
     /// `BCrypt::Engine.cost` in production.
-    public static volatile int bcryptCost = 12;
+    private static final int BCRYPT_COST = 12;
 
     private static final BCrypt.Hasher HASHER = BCrypt.with(BCrypt.Version.VERSION_2A, LongPasswordStrategies.truncate(BCrypt.Version.VERSION_2A));
     private static final BCrypt.Verifyer VERIFYER = BCrypt.verifyer(BCrypt.Version.VERSION_2A, LongPasswordStrategies.truncate(BCrypt.Version.VERSION_2A));
@@ -72,7 +72,7 @@ public final class Users {
     private static final String DUMMY_DIGEST = "$2a$12$kDVPfUd.VKsV9HzG8RHRFu0fyaW7gije1Krza2.A0J5S8XEcOQT4S";
 
     public static String digest(String password) {
-        return HASHER.hashToString(bcryptCost, password.toCharArray());
+        return HASHER.hashToString(BCRYPT_COST, password.toCharArray());
     }
 
     public static boolean passwordMatches(String password, String digest) {

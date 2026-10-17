@@ -31,6 +31,7 @@ import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.function.LongConsumer;
 import java.util.stream.Collectors;
 import javax.crypto.Cipher;
 import javax.crypto.spec.GCMParameterSpec;
@@ -240,7 +241,11 @@ class WebPushTest {
         }
 
         WebPush webPush() {
-            return new WebPush(VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, null, net);
+            return webPush(id -> {});
+        }
+
+        WebPush webPush(LongConsumer invalidSubscriptionHandler) {
+            return new WebPush(VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, null, net, invalidSubscriptionHandler);
         }
 
         @Override
@@ -368,29 +373,27 @@ class WebPushTest {
 
     @Test
     void thePoolInvalidatesExpiredSubscriptionsOnly() throws Exception {
-        try (var gone = PushService.start(410, "Gone"); var push = gone.webPush()) {
-            var invalidated = new CopyOnWriteArrayList<Long>();
-            var latch = new CountDownLatch(2);
-            push.setInvalidSubscriptionHandler(id -> {
-                invalidated.add(id);
-                latch.countDown();
-            });
+        var invalidated = new CopyOnWriteArrayList<Long>();
+        var latch = new CountDownLatch(2);
+        try (var gone = PushService.start(410, "Gone"); var push = gone.webPush(id -> {
+            invalidated.add(id);
+            latch.countDown();
+        })) {
             var receiver = new Receiver();
             push.deliverLater(receiver.subscription(7, ENDPOINT), "t", "b", "/", 1, "/");
             push.deliverLater(receiver.subscription(8, "https://fcm.googleapis.com/fcm/send/123"), "t", "b", "/", 1, "/");
             assertTrue(latch.await(10, TimeUnit.SECONDS));
             assertEquals(Set.of(7L, 8L), Set.copyOf(invalidated));
         }
-        try (var unavailable = PushService.start(503, "Service Unavailable"); var push = unavailable.webPush()) {
-            var invalidated = new CopyOnWriteArrayList<Long>();
-            push.setInvalidSubscriptionHandler(invalidated::add);
+        var notInvalidated = new CopyOnWriteArrayList<Long>();
+        try (var unavailable = PushService.start(503, "Service Unavailable"); var push = unavailable.webPush(notInvalidated::add)) {
             push.deliverLater(new Receiver().subscription(9, ENDPOINT), "t", "b", "/", 1, "/");
             long until = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
             while (push.pending() > 0 && System.nanoTime() < until) Thread.sleep(10);
             assertEquals(0, push.pending());
             assertEquals(1, unavailable.server().received.size());
             push.shutdown();
-            assertTrue(invalidated.isEmpty());
+            assertTrue(notInvalidated.isEmpty());
         }
     }
 

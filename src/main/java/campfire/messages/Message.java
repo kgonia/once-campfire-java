@@ -274,6 +274,15 @@ public record Message(long id, long roomId, long creatorId, String clientMessage
         return touch(tx, message, plainText);
     }
 
+    /// `touch_attachment_records` for a blob that changed, as analysing an upload does: a message
+    /// is touched and, through it, its room, which both feed cache keys and the clients' refresh
+    /// checks. Nothing else Campfire attaches files to is touched.
+    public static void touchAttached(Tx tx, String recordType, long recordId) {
+        if (!recordType.equals(RECORD_TYPE)) return;
+        var message = find(tx, recordId);
+        if (message != null) touch(tx, message, null);
+    }
+
     /// `message.touch` (a boost or body change), reindexing with `plainText` when given.
     public static Message touch(Tx tx, Message message, String plainText) {
         Instant now = Times.now();

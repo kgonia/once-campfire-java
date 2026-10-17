@@ -72,8 +72,9 @@ public class MessagePusher {
         });
     }
 
+    /// Waits for deliveries in flight.
     @PreDestroy
     void close() {
-        jobs.shutdown();
+        jobs.close();
     }
 }

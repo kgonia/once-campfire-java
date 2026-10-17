@@ -48,8 +48,10 @@ public final class Cable implements Broadcasts.PubSub, AutoCloseable {
     /// Each user's connections from authentication on, which is when Rails subscribes a connection
     /// to its internal channel.
     private final ConcurrentHashMap<Long, Set<Connection>> byUser = new ConcurrentHashMap<>();
-    private final Object heartbeatLock = new Object();
-    private ScheduledExecutorService heartbeat;
+    /// The server-wide heartbeat (Rails' `setup_heartbeat_timer`), so every connection pings in
+    /// step with one frame.
+    private final ScheduledExecutorService heartbeat =
+        Executors.newSingleThreadScheduledExecutor(Thread.ofPlatform().name("cable-heartbeat").daemon().factory());
 
     public Cable(App app) {
         this(app.db(), app.secrets(), app.sessions()::find, !app.config().disableSsl());
@@ -62,6 +64,7 @@ public final class Cable implements Broadcasts.PubSub, AutoCloseable {
         this.sessions = sessions;
         this.assumeSsl = assumeSsl;
         Channels.register(this);
+        heartbeat.scheduleAtFixedRate(this::beat, Protocol.BEAT_INTERVAL, Protocol.BEAT_INTERVAL, TimeUnit.SECONDS);
     }
 
     /// Lets the HTTP server negotiate Action Cable's subprotocols (keeping any already set).
@@ -100,7 +103,6 @@ public final class Cable implements Broadcasts.PubSub, AutoCloseable {
     /// complete (wrong method, `Connection` or version, no key) with its own 400.
     public void upgrade(RoutingContext rc) {
         HttpServerRequest request = rc.request();
-        startHeartbeat();
         if (!"websocket".equalsIgnoreCase(request.getHeader("upgrade")) || !sameOrigin(request)) {
             pageNotFound(rc);
             return;
@@ -212,23 +214,10 @@ public final class Cable implements Broadcasts.PubSub, AutoCloseable {
     @Override
     public void close() {
         restart();
-        synchronized (heartbeatLock) {
-            if (heartbeat != null) heartbeat.shutdownNow();
-            heartbeat = null;
-        }
+        heartbeat.shutdownNow();
     }
 
     // -- Heartbeat --------------------------------------------------------------------------------------
-
-    /// The server-wide heartbeat, started on the first request like Rails' `setup_heartbeat_timer`,
-    /// so every connection pings in step with one frame.
-    private void startHeartbeat() {
-        synchronized (heartbeatLock) {
-            if (heartbeat != null) return;
-            heartbeat = Executors.newSingleThreadScheduledExecutor(Thread.ofPlatform().name("cable-heartbeat").daemon().factory());
-            heartbeat.scheduleAtFixedRate(this::beat, Protocol.BEAT_INTERVAL, Protocol.BEAT_INTERVAL, TimeUnit.SECONDS);
-        }
-    }
 
     private void beat() {
         try {

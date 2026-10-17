@@ -20,16 +20,20 @@ import java.util.concurrent.TimeoutException;
 /// read 5, at most 16 run at once (more wait their turn, within their deadline), and one that
 /// runs out of time unfurls nothing. The endpoint is open to any signed-in user and fetches
 /// pages they choose.
-public final class Opengraph {
-    private Opengraph() {}
+public final class Opengraph implements AutoCloseable {
 
     /// The most one unfurl may take, redirects and the image check included.
     public static final Duration UNFURL_DEADLINE = Duration.ofSeconds(10);
 
     /// Unfurls in flight at once.
     static final int MAX_CONCURRENT_UNFURLS = 16;
-    private static final Semaphore SLOTS = new Semaphore(MAX_CONCURRENT_UNFURLS, true);
-    private static final ExecutorService WORKERS = Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("unfurl-", 0).factory());
+    private final Semaphore slots = new Semaphore(MAX_CONCURRENT_UNFURLS, true);
+    private final ExecutorService workers = Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("unfurl-", 0).factory());
+    private final Network net;
+
+    public Opengraph(Network net) {
+        this.net = net;
+    }
 
     /// What `UnfurlLinksController#create` responds with.
     public sealed interface Unfurl {
@@ -42,23 +46,23 @@ public final class Opengraph {
 
     /// The action after `params.require(:url)` (a missing or blank `url` is the controller's
     /// 400). Blocks for at most {@link #UNFURL_DEADLINE}.
-    public static Unfurl unfurl(Network net, String url) {
-        return unfurl(net, url, UNFURL_DEADLINE);
+    public Unfurl unfurl(String url) {
+        return unfurl(url, UNFURL_DEADLINE);
     }
 
     /// The worker is interrupted at the deadline, which ends the fetch it's waiting on. A bug in
     /// the unfurl is thrown, for a 500.
-    static Unfurl unfurl(Network net, String url, Duration limit) {
+    Unfurl unfurl(String url, Duration limit) {
         long deadline = System.nanoTime() + limit.toNanos();
-        Future<Unfurl> task = WORKERS.submit(() -> {
-            if (!SLOTS.tryAcquire(deadline - System.nanoTime(), TimeUnit.NANOSECONDS)) return new Unfurl.NoContent();
+        Future<Unfurl> task = workers.submit(() -> {
+            if (!slots.tryAcquire(deadline - System.nanoTime(), TimeUnit.NANOSECONDS)) return new Unfurl.NoContent();
             try {
                 Metadata opengraph = Metadata.fromUrl(net, url);
                 boolean valid = opengraph.validate();
                 if (expired(deadline)) return new Unfurl.NoContent();
                 return valid ? new Unfurl.Json(opengraph.toJson()) : new Unfurl.NoContent();
             } finally {
-                SLOTS.release();
+                slots.release();
             }
         });
         try {
@@ -76,6 +80,12 @@ public final class Opengraph {
         } catch (ExecutionException e) {
             throw new IllegalStateException("Error unfurling " + url, e.getCause());
         }
+    }
+
+    /// Waits for unfurls in flight, which their deadline bounds.
+    @Override
+    public void close() {
+        workers.close();
     }
 
     private static boolean expired(long deadline) {

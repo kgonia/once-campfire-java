@@ -112,8 +112,9 @@ public class WebhookService {
         return View.detached(app, account.account(), account.hasLogo(), "http://example.org");
     }
 
+    /// Waits for deliveries in flight.
     @PreDestroy
     void close() {
-        jobs.shutdown();
+        jobs.close();
     }
 }

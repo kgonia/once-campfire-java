@@ -1,17 +1,9 @@
 package campfire;
 
-import static campfire.db.schema.Tables.MESSAGES;
-import static org.jooq.impl.DSL.param;
-import static org.jooq.impl.DSL.update;
-
 import campfire.assets.Assets;
 import campfire.db.Database;
-import campfire.db.Sql;
-import campfire.db.Times;
 import campfire.accounts.Account;
 import campfire.storage.Attachment;
-import campfire.messages.Message;
-import campfire.rooms.Room;
 import campfire.rails.Secrets;
 import campfire.storage.Storage;
 import campfire.sessions.SessionLookup;
@@ -21,9 +13,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 /// The services views and presenters reach through one handle; resources inject what they use.
 @ApplicationScoped
 public class App {
-    private static final String TOUCH_MESSAGE = Sql.render(update(MESSAGES).set(MESSAGES.UPDATED_AT, param(MESSAGES.UPDATED_AT))
-        .where(MESSAGES.ID.eq(param(MESSAGES.ID))));
-
     private final Config config;
     private final Secrets secrets;
     private final Database db;
@@ -46,15 +35,6 @@ public class App {
         this.assets = assets;
         this.storage = storage;
         this.sessions = sessions;
-        // Analysing an upload changes its blob, which touches the message it's attached to and,
-        // through the message, its room; both feed cache keys and the clients' refresh checks.
-        storage.onTouch((tx, recordType, recordId) -> {
-            if (!recordType.equals(Message.RECORD_TYPE)) return;
-            var message = Message.find(tx, recordId);
-            if (message == null) return;
-            tx.update(TOUCH_MESSAGE, Times.now(), recordId);
-            Room.touch(tx, message.roomId());
-        });
     }
 
     public Config config() {

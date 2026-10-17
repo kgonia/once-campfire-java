@@ -105,7 +105,7 @@ class OpengraphTest {
                 int before = server.received.size();
 
                 var response = new LinkedHashMap<String, Object>();
-                switch (Opengraph.unfurl(net, (String) testCase.get("url"))) {
+                switch (new Opengraph(net).unfurl((String) testCase.get("url"))) {
                     case Opengraph.Unfurl.Json json -> {
                         response.put("status", 200L);
                         response.put("body", json.body());
@@ -201,14 +201,14 @@ class OpengraphTest {
             var resolver = new FakeResolver().set("www.example.com", "93.184.216.34").set("example.com", "93.184.216.35");
             var route = new MappingRoute(Set.copyOf(TestSupport.ips("93.184.216.34", "93.184.216.35")), server.port());
             var net = TestSupport.network(resolver, route);
-            var json = assertInstanceOf(Opengraph.Unfurl.Json.class, Opengraph.unfurl(net, "https://www.example.com"));
+            var json = assertInstanceOf(Opengraph.Unfurl.Json.class, new Opengraph(net).unfurl("https://www.example.com"));
             assertEquals("{\"title\":\"Hey!\",\"url\":\"https://example.com\",\"image\":\"https://example.com/image.png\",\"description\":\"desc..\"}", json.body());
             assertEquals(List.of("93.184.216.34:443", "93.184.216.35:443"),
                 route.dialed.stream().map(a -> a.getAddress().getHostAddress() + ":" + a.getPort()).toList());
 
             // A certificate that doesn't verify is a failed fetch.
             var untrusted = TestSupport.network(resolver, route, TestSupport.untrustingTls());
-            assertInstanceOf(Opengraph.Unfurl.NoContent.class, Opengraph.unfurl(untrusted, "https://www.example.com"));
+            assertInstanceOf(Opengraph.Unfurl.NoContent.class, new Opengraph(untrusted).unfurl("https://www.example.com"));
         }
     }
 
@@ -230,9 +230,9 @@ class OpengraphTest {
                 .body(concat(gzipped, TestSupport.gzipBomb(2))));
         try (var server = FakeServer.start(routes)) {
             var net = networkTo(server.port(), "93.184.216.34");
-            assertInstanceOf(Opengraph.Unfurl.Json.class, Opengraph.unfurl(net, "http://www.example.com/small"));
+            assertInstanceOf(Opengraph.Unfurl.Json.class, new Opengraph(net).unfurl("http://www.example.com/small"));
             long started = System.nanoTime();
-            assertInstanceOf(Opengraph.Unfurl.NoContent.class, Opengraph.unfurl(net, "http://www.example.com/"));
+            assertInstanceOf(Opengraph.Unfurl.NoContent.class, new Opengraph(net).unfurl("http://www.example.com/"));
             assertTrue(System.nanoTime() - started < Duration.ofSeconds(3).toNanos());
         }
     }
@@ -245,7 +245,7 @@ class OpengraphTest {
             long started = System.nanoTime();
             var deadline = Duration.ofMillis(500);
             assertInstanceOf(Opengraph.Unfurl.NoContent.class,
-                Opengraph.unfurl(networkTo(listener.getLocalPort(), "93.184.216.34"), "http://www.example.com/", deadline));
+                new Opengraph(networkTo(listener.getLocalPort(), "93.184.216.34")).unfurl("http://www.example.com/", deadline));
             assertTrue(System.nanoTime() - started < deadline.multipliedBy(2).toNanos());
         }
     }

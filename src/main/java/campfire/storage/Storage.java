@@ -81,21 +81,23 @@ public final class Storage implements AutoCloseable {
     private final ConcurrentHashMap<String, CompletableFuture<Object>> inFlight = new ConcurrentHashMap<>();
     private final ExecutorService later = Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("campfire-storage-", 0).factory());
     private final SecureRandom random = new SecureRandom();
-    private volatile RecordToucher toucher = (tx, type, id) -> {};
+    private final RecordToucher toucher;
 
-    public Storage(Config config, Secrets secrets, Database db) {
-        this(config.filesPath(), secrets.appVerifier("ActiveStorage"), db, config.maxRequestBody());
+    public Storage(Config config, Secrets secrets, Database db, RecordToucher toucher) {
+        this(config.filesPath(), secrets.appVerifier("ActiveStorage"), db, config.maxRequestBody(), toucher);
+    }
+
+    /// Touches nothing when a blob changes.
+    public Storage(Path filesRoot, MessageVerifier verifier, Database db, long maxDirectUploadBytes) {
+        this(filesRoot, verifier, db, maxDirectUploadBytes, (tx, type, id) -> {});
     }
 
     /// `verifier` is `ActiveStorage.verifier` (`Rails.application.message_verifier("ActiveStorage")`).
-    public Storage(Path filesRoot, MessageVerifier verifier, Database db, long maxDirectUploadBytes) {
+    public Storage(Path filesRoot, MessageVerifier verifier, Database db, long maxDirectUploadBytes, RecordToucher toucher) {
         this.disk = new Disk(filesRoot, SERVICE_NAME);
         this.verifier = verifier;
         this.db = db;
         this.maxDirectUploadBytes = maxDirectUploadBytes;
-    }
-
-    public void onTouch(RecordToucher toucher) {
         this.toucher = toucher;
     }
 
@@ -120,9 +122,10 @@ public final class Storage implements AutoCloseable {
         return disk.pathFor(blob.key());
     }
 
+    /// Waits for the analyses and variants still running.
     @Override
     public void close() {
-        later.shutdown();
+        later.close();
     }
 
     // -- Lookups and predicates ------------------------------------------------------------------

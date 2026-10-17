@@ -122,12 +122,19 @@ public final class WebPush implements AutoCloseable {
     private final ExecutorService deliveries = Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("web-push-", 0).factory());
     /// `invalidation_pool`: one worker, so invalidations run in order.
     private final ExecutorService invalidations = Executors.newSingleThreadExecutor(Thread.ofVirtual().name("web-push-invalidation").factory());
-    private volatile LongConsumer invalidSubscriptionHandler;
+    private final LongConsumer invalidSubscriptionHandler;
 
     /// Missing or invalid keys log a warning and leave push off ({@link #enabled()} is false);
-    /// nothing is delivered.
+    /// nothing is delivered. Subscriptions the push service reports gone are kept.
     public WebPush(String publicKey, String privateKey, String subject, Network net) {
+        this(publicKey, privateKey, subject, net, id -> {});
+    }
+
+    /// `invalidSubscriptionHandler` is `Push::Subscription.find_by(id:)&.destroy`, run on the
+    /// pool's own (single) worker, so it may block.
+    public WebPush(String publicKey, String privateKey, String subject, Network net, LongConsumer invalidSubscriptionHandler) {
         this.net = net;
+        this.invalidSubscriptionHandler = invalidSubscriptionHandler;
         Vapid parsed = null;
         try {
             parsed = Vapid.of(subject == null || subject.isBlank() ? DEFAULT_SUBJECT : subject, publicKey, privateKey);
@@ -140,12 +147,6 @@ public final class WebPush implements AutoCloseable {
     /// Whether the VAPID key pair is usable.
     public boolean enabled() {
         return vapid != null;
-    }
-
-    /// `Push::Subscription.find_by(id:)&.destroy`, run on the pool's own (single) worker, so it
-    /// may block.
-    public void setInvalidSubscriptionHandler(LongConsumer handler) {
-        this.invalidSubscriptionHandler = handler;
     }
 
     // --- Messages ---------------------------------------------------------------------------
@@ -254,7 +255,7 @@ public final class WebPush implements AutoCloseable {
 
     /// `WebPush::Pool#queue` for one subscription: delivered on the pool, at most 50 at once and
     /// 10,000 waiting (more are dropped, like `Concurrent::RejectedExecutionError`, and logged).
-    /// Invalid subscriptions go to the {@link #setInvalidSubscriptionHandler handler}.
+    /// Invalid subscriptions go to the constructor's handler.
     public void deliverLater(Subscription subscription, String title, String body, String path, long badge, String iconPath) {
         if (vapid == null) return;
         if (shutDown.get()) {
@@ -306,13 +307,11 @@ public final class WebPush implements AutoCloseable {
     }
 
     private void invalidateSubscriptionLater(long id) {
-        LongConsumer handler = invalidSubscriptionHandler;
-        if (handler == null) return;
         try {
             invalidations.execute(() -> {
                 Log.info("Destroying push subscription: " + id);
                 try {
-                    handler.accept(id);
+                    invalidSubscriptionHandler.accept(id);
                 } catch (RuntimeException e) {
                     Log.error("Error in WebPush::Pool.invalid_subscription_handler: " + e.getClass().getName() + " " + e.getMessage(), e);
                 }
