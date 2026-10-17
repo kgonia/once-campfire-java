@@ -5,6 +5,7 @@ Prints one line per route (OK / DIFF) and, for diffs, the differing headers and 
 of a unified body diff. Bodies are compared after replacing the port.
 """
 import argparse, os, base64, difflib, gzip, http.client, json, re, sqlite3, subprocess
+import markup
 
 # Working files (the apps' data copies, cookie.txt, the last differing pair) live in PARITY_WORK.
 ROOT = os.environ.get('PARITY_WORK', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'work'))
@@ -79,6 +80,10 @@ def same_json(a, b):
         return json.loads(a) == json.loads(b)
     except ValueError:
         return False
+
+
+def same_markup(a, b):
+    return markup.looks_like_markup(a) and markup.tokens(a) == markup.tokens(b)
 
 
 def routes():
@@ -171,9 +176,10 @@ def main():
         label = ('anon ' if not cookie else '') + ('frame ' if extra else '') + path
         hr, hj = norm_headers(rs[1]), norm_headers(js[1])
         br, bj = norm_body(rs[2]), norm_body(js[2])
-        same_body = a.headers_only or br == bj or same_json(br, bj)
+        same_body = a.headers_only or br == bj or same_json(br, bj) or same_markup(br, bj)
         if same_body and br != bj:
-            # Rust escapes <, > and & in JSON as Rails does; Java doesn't. The ETag hashes those bytes.
+            # Rust escapes <, > and & in JSON as Rails does, and spells HTML as ERB does; Java doesn't.
+            # The ETag hashes those bytes.
             hr, hj = [h for h in hr if not h.startswith('etag:')], [h for h in hj if not h.startswith('etag:')]
         if rs[0] == js[0] and hr == hj and same_body:
             ok += 1
@@ -185,6 +191,8 @@ def main():
             if not line.startswith(('---', '+++', '@@')):
                 print('   H ' + line[:220])
         if not same_body:
+            if markup.looks_like_markup(br):
+                br, bj = '\n'.join(markup.tokens(br)) + '\n', '\n'.join(markup.tokens(bj)) + '\n'
             open(ROOT + '/rust.txt', 'w', encoding='utf-8', newline='').write(br)
             open(ROOT + '/java.txt', 'w', encoding='utf-8', newline='').write(bj)
             out = subprocess.run(['diff', '-U1', ROOT + '/rust.txt', ROOT + '/java.txt'], capture_output=True, text=True,

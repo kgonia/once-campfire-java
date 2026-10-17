@@ -16,6 +16,7 @@ The databases are read from inside the containers (`docker cp`), so it works whe
 data in a bind mount or a volume. Container names come from RUST_CONTAINER / JAVA_CONTAINER.
 """
 import argparse, difflib, http.client, json, os, re, shutil, sqlite3, subprocess, tempfile, time, urllib.parse, uuid, zlib, struct
+import markup
 
 ROOT = os.environ.get('PARITY_WORK', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'work'))
 L = json.load(open(os.path.join(os.environ['CAMPFIRE_SEED'], 'labels.json'), encoding='utf-8'))
@@ -168,6 +169,8 @@ def norm_body(ctype, data):
     s = re.sub(r'(signed[-_]stream[-_]name|sgid|signed_id)(=|":\s*)"[^"]*"', r'\1\2"<signed>"', s)
     s = re.sub(r'/rails/active_storage/(blobs|representations)/(redirect/|proxy/)?[A-Za-z0-9=_-]+(--[0-9a-f]+)?', r'/rails/active_storage/\1/<signed>', s)
     s = re.sub(r'/session/transfers/[A-Za-z0-9=_-]+(--[0-9a-f]+)?', '/session/transfers/<signed>', s)
+    if 'json' not in ctype and markup.looks_like_markup(s):
+        return markup.tokens(s)
     return [line.strip() for line in re.sub(r'>\s*<', '>\n<', s).splitlines() if line.strip()]
 
 

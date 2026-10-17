@@ -160,10 +160,12 @@ containers named by `RUST_CONTAINER` and `JAVA_CONTAINER` (default `cf-rust-pari
 Sign a session cookie for `parity.py` with `SignCookie.java` (see its header). The script writes it to
 `tools/parity/work/cookie.txt`.
 
-At the time of writing, every case matches except for timing:
+HTML and Turbo Stream bodies are compared as markup (`tools/parity/markup.py`): tags with sorted, decoded
+attributes and collapsed whitespace, so ERB's and jte's spellings of the same element agree. JSON bodies are
+compared by value. Where only the spelling differs, the ETag over those bytes is ignored too.
 
-- Cookie `expires` values that land in different seconds.
-- Session-transfer tokens, which embed a millisecond expiry, on the user and profile pages.
+At the time of writing, every case matches except the message edit form. There Java closes the delete `<form>`
+that Rails' template leaves open; the browser closes it at the same point, so the DOM is the same.
 
 The verification harness's benchmark preflight returns identical body hashes for Rust, the JVM build and the
 native build.
