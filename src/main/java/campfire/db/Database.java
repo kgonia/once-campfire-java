@@ -31,7 +31,9 @@ import org.sqlite.JDBC;
 public final class Database implements AutoCloseable {
     /// Commits between background PASSIVE checkpoints (SQLite's auto-checkpoint is 1,000 pages).
     private static final int CHECKPOINT_EVERY_COMMITS = 64;
-    /// WAL size at which the writer itself checkpoints with RESTART.
+    /// WAL file size at which the writer itself checkpoints, with TRUNCATE: under steady writes the
+    /// background PASSIVE checkpoints never catch up with the end of the WAL, so it can't wrap. RESTART
+    /// would wrap it but leave the file this size, and every later check would checkpoint again.
     private static final long WAL_LIMIT_BYTES = 40L * 1024 * 1024;
 
     @FunctionalInterface
@@ -206,7 +208,7 @@ public final class Database implements AutoCloseable {
             if (Files.size(Path.of(path + "-wal")) >= WAL_LIMIT_BYTES) {
                 checkpointRunning.lock();
                 try {
-                    writer.execute("PRAGMA wal_checkpoint(RESTART)");
+                    writer.execute("PRAGMA wal_checkpoint(TRUNCATE)");
                 } finally {
                     checkpointRunning.unlock();
                 }
