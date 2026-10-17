@@ -1,14 +1,10 @@
 package campfire.rails;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.UncheckedIOException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
+import java.text.Normalizer;
+import java.util.regex.Pattern;
 
 /// Rack's cookie value escaping and `ActionDispatch::Http::ContentDisposition.format`.
 public final class HttpFormats {
@@ -50,31 +46,15 @@ public final class HttpFormats {
         return out.toString();
     }
 
-    private static final Map<Integer, String> APPROXIMATIONS = loadApproximations();
+    private static final Pattern MARKS = Pattern.compile("\\p{M}+");
 
-    private static Map<Integer, String> loadApproximations() {
-        var map = new HashMap<Integer, String>();
-        try (var in = HttpFormats.class.getResourceAsStream("/campfire/rails/approximations.tsv");
-             var reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                if (line.startsWith("#") || line.isEmpty()) continue;
-                int tab = line.indexOf('\t');
-                map.put(line.codePointAt(0), line.substring(tab + 1));
-            }
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-        return map;
-    }
-
-    /// `I18n.transliterate` with the default approximations, and `?` for anything else non-ASCII.
-    public static String transliterate(String s) {
-        var out = new StringBuilder(s.length());
-        s.codePoints().forEach(c -> {
-            if (c < 128) out.appendCodePoint(c);
-            else out.append(APPROXIMATIONS.getOrDefault(c, "?"));
-        });
+    /// The ASCII `filename` fallback: accents dropped (`é` is `e`), `?` for any other non-ASCII
+    /// character. Rails uses `I18n.transliterate`, which also spells out `ß`, `æ` and the like;
+    /// clients read the exact name from `filename*`.
+    static String transliterate(String s) {
+        String decomposed = MARKS.matcher(Normalizer.normalize(s, Normalizer.Form.NFD)).replaceAll("");
+        var out = new StringBuilder(decomposed.length());
+        decomposed.codePoints().forEach(c -> out.append(c < 128 ? (char) c : '?'));
         return out.toString();
     }
 }
