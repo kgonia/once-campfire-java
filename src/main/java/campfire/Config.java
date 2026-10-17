@@ -24,8 +24,9 @@ public interface Config {
     Optional<String> secretKeyBaseDummy();
 
     /// Without it every request is treated as HTTPS (`assume_ssl`): secure cookies, HSTS, https URLs.
-    @WithDefault("false")
-    boolean disableSsl();
+    /// Read as Rails reads `ENV["DISABLE_SSL"].blank?`: any non-blank value, `false` included, turns it on.
+    @WithName("disable-ssl")
+    Optional<String> disableSslSetting();
 
     Optional<String> vapidPublicKey();
 
@@ -47,6 +48,10 @@ public interface Config {
     /// Largest accepted request body, uploads included.
     @WithDefault("16777216")
     long maxRequestBody();
+
+    default boolean disableSsl() {
+        return disableSslSetting().filter(value -> !value.isBlank()).isPresent();
+    }
 
     default Path storage() {
         return Path.of(storageRoot());
