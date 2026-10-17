@@ -30,8 +30,6 @@ import org.jspecify.annotations.Nullable;
 /// by `ResponseFinisher` after the resource returns.
 @RequestScoped
 public class CurrentRequest {
-    public static final String SESSION_COOKIE = "_campfire_session";
-    public static final String SESSION_TOKEN_COOKIE = "session_token";
 
     @Inject
     App app;
@@ -39,11 +37,13 @@ public class CurrentRequest {
     RoutingContext routing;
     @Inject
     RequestOrigin origin;
+    @Inject
+    Cookies cookies;
+    @Inject
+    RailsSession railsSession;
 
-    /// What the Vert.x request says, read on first use; `cookies` also reflects the cookies set
-    /// while serving the request.
-    private record Facts(String method, String path, @Nullable String query, @Nullable String peerAddress, Params params,
-                         Map<String, String> cookies, @Nullable Map<String, Object> jsonBody) {}
+    /// What the Vert.x request says, read on first use.
+    private record Facts(String method, String path, @Nullable String query, Params params, @Nullable Map<String, Object> jsonBody) {}
 
     private @Nullable Facts facts;
     /// Every header keyed in lower case, copied only for {@link #headers()}; single headers are read
@@ -51,15 +51,11 @@ public class CurrentRequest {
     private @Nullable Map<String, List<String>> headers;
     /// The body claimed to be JSON but isn't; the request is a 400 before anything else.
     private boolean malformedBody;
-    private final List<String> setCookies = new ArrayList<>();
 
     private @Nullable User user;
     private @Nullable Session session;
     private boolean authenticatedByBot;
 
-    private @Nullable Map<String, Object> railsSession;
-    private boolean railsSessionDirty;
-    private @Nullable Flash flash;
 
     /// The method is the overridden one when a form sent `_method` (the router re-routes those).
     private Facts facts() {
@@ -78,9 +74,7 @@ public class CurrentRequest {
         String contentType = http.getHeader("content-type");
         Map<String, Object> jsonBody = contentType == null ? null : jsonBody(contentType);
         if (jsonBody != null) jsonBody.forEach(params::putValue);
-        var address = http.remoteAddress();
-        facts = new Facts(method, Objects.requireNonNullElse(http.path(), "/"), http.query(), address == null ? null : address.hostAddress(), params,
-            parseCookies(http.getHeader("cookie")), jsonBody);
+        facts = new Facts(method, Objects.requireNonNullElse(http.path(), "/"), http.query(), params, jsonBody);
         return facts;
     }
 
@@ -272,208 +266,46 @@ public class CurrentRequest {
         this.user = null;
     }
 
-    // -- Cookies -----------------------------------------------------------------------------------
-
-    /// Rack 3's cookie header parsing: split on `; `, names kept raw, values unescaped (raw when the
-    /// escape is malformed), quotes left alone; the first of a repeated name wins.
-    static Map<String, String> parseCookies(@Nullable String header) {
-        var cookies = new LinkedHashMap<String, String>();
-        if (header == null) return cookies;
-        int start = 0;
-        while (start < header.length()) {
-            int semicolon = header.indexOf(';', start);
-            int end = semicolon < 0 ? header.length() : semicolon;
-            String part = header.substring(start, end);
-            start = end + 1;
-            while (semicolon >= 0 && start < header.length() && header.charAt(start) == ' ') start++;
-            if (part.isEmpty()) continue;
-            int eq = part.indexOf('=');
-            String name = eq < 0 ? part : part.substring(0, eq);
-            if (!cookies.containsKey(name)) cookies.put(name, eq < 0 ? "" : HttpFormats.unescape(part.substring(eq + 1)));
-        }
-        return cookies;
-    }
+    // -- Cookies and the Rails session ---------------------------------------------------------------
 
     public @Nullable String cookie(String name) {
-        return facts().cookies().get(name);
+        return cookies.get(name);
     }
 
-    /// Verified values are remembered process-wide: a valid signature stays valid, and permanent
-    /// cookies don't expire for twenty years.
-    private static final ConcurrentHashMap<String, String> VERIFIED = new ConcurrentHashMap<>();
-
-    /// The value of a cookie signed with the app's secret, or null when missing or forged.
     public @Nullable String signedCookie(String name) {
-        String raw = cookie(name);
-        if (raw == null) return null;
-        String key = name + "=" + raw;
-        String cached = VERIFIED.get(key);
-        if (cached != null) return cached;
-        String value = app.secrets().verifySignedCookie(name, raw, Instant.now());
-        if (value != null) {
-            if (VERIFIED.size() > 10_000) VERIFIED.clear();
-            VERIFIED.put(key, value);
-        }
-        return value;
+        return cookies.signed(name);
     }
 
-    private static final DateTimeFormatter HTTP_DATE = DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss 'GMT'", Locale.US)
-        .withZone(ZoneOffset.UTC);
-
-    /// RFC 7231 dates with a two-digit day, as Rack writes them (`RFC_1123_DATE_TIME` doesn't pad).
-    public static String httpDate(Instant time) {
-        return HTTP_DATE.format(time);
-    }
-
-    /// Queues a `Set-Cookie` in Rack's format; a later call for the same name replaces it.
-    /// `sameSite` null is Rails' default, `lax`.
-    public void setCookie(String name, String value, @Nullable Instant expires, boolean httpOnly, @Nullable String sameSite) {
-        var out = new StringBuilder(HttpFormats.escape(name)).append('=').append(HttpFormats.escape(value)).append("; path=/");
-        if (expires != null) out.append("; expires=").append(httpDate(expires));
-        if (ssl()) out.append("; secure");
-        if (httpOnly) out.append("; httponly");
-        out.append("; samesite=").append(sameSite == null ? "lax" : sameSite);
-        setCookies.removeIf(c -> c.startsWith(HttpFormats.escape(name) + "="));
-        setCookies.add(out.toString());
-        facts().cookies().put(name, value);
-    }
-
-    /// Signed, httponly and `SameSite=Lax`, expiring in twenty years.
     public void setSignedPermanentCookie(String name, String value) {
-        Instant expires = Secrets.permanentExpiresAt(Instant.now());
-        setCookie(name, app.secrets().signCookie(name, value, expires), expires, true, "lax");
+        cookies.setSignedPermanent(name, value);
     }
 
     public void setPermanentCookie(String name, String value) {
-        setCookie(name, value, Secrets.permanentExpiresAt(Instant.now()), false, null);
+        cookies.setPermanent(name, value);
     }
 
-    /// Only for cookies the request came with: deleting an absent cookie sends nothing.
     public void deleteCookie(String name) {
-        Map<String, String> cookies = facts().cookies();
-        if (cookies.get(name) == null && !cookies.containsKey(name)) return;
-        setCookies.removeIf(c -> c.startsWith(HttpFormats.escape(name) + "="));
-        setCookies.add(HttpFormats.escape(name) + "=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT; samesite=lax");
-        cookies.remove(name);
-    }
-
-    List<String> setCookies() {
-        return setCookies;
-    }
-
-    // -- Rails session and flash -------------------------------------------------------------------
-
-    /// The `_campfire_session` cookie's contents, decrypted on first use; empty when missing or
-    /// tampered with.
-    @SuppressWarnings("unchecked")
-    private Map<String, Object> railsSession() {
-        if (railsSession == null) {
-            Object decrypted = app.secrets().decryptCookie(SESSION_COOKIE, cookie(SESSION_COOKIE), Instant.now());
-            railsSession = decrypted instanceof Map<?, ?> m ? new LinkedHashMap<>((Map<String, Object>) m) : new LinkedHashMap<>();
-        }
-        return railsSession;
+        cookies.delete(name);
     }
 
     public @Nullable Object sessionValue(String key) {
-        return railsSession().get(key);
+        return railsSession.get(key);
     }
 
     public void setSessionValue(String key, @Nullable Object value) {
-        if (Objects.equals(railsSession().get(key), value)) return;
-        if (value == null) railsSession().remove(key);
-        else railsSession().put(key, value);
-        railsSessionDirty = true;
+        railsSession.set(key, value);
     }
 
-    /// Starts an empty session, flash included (sign-in and sign-out do this against fixation).
     public void resetSession() {
-        railsSession = new LinkedHashMap<>();
-        railsSessionDirty = true;
-        flash = null;
+        railsSession.reset();
     }
 
-    public Flash flash() {
-        if (flash == null) flash = new Flash(railsSession().get("flash"));
-        return flash;
+    public RailsSession.Flash flash() {
+        return railsSession.flash();
     }
 
-    /// Leaves the session and cookies as the request brought them. Rails renders an error page
-    /// after the action raised, and the session middleware then writes nothing.
     void discardChanges() {
-        flash = null;
-        railsSessionDirty = false;
-        setCookies.clear();
-    }
-
-    /// Re-encrypts the session cookie when it changed, and deletes it once nothing but the
-    /// session id is left in it. Called once, after the resource has run.
-    void commitSession() {
-        if (flash != null) {
-            Object value = flash.toSessionValue();
-            if (value == null) {
-                if (railsSession().containsKey("flash")) setSessionValue("flash", null);
-            } else {
-                setSessionValue("flash", value);
-            }
-        }
-        if (!railsSessionDirty) return;
-        Map<String, Object> railsSession = railsSession();
-        var values = new LinkedHashMap<>(railsSession);
-        values.remove("session_id");
-        // Rails keeps its CSRF token here; the app checks Fetch Metadata instead and never reads it.
-        values.remove("_csrf_token");
-        if (values.isEmpty()) {
-            deleteCookie(SESSION_COOKIE);
-        } else {
-            Instant expires = Secrets.permanentExpiresAt(Instant.now());
-            if (!railsSession.containsKey("session_id")) railsSession.put("session_id", SecureRandoms.hex(16));
-            setCookie(SESSION_COOKIE, app.secrets().encryptCookie(SESSION_COOKIE, railsSession, expires), expires, true, "lax");
-        }
-    }
-
-    /// Messages for the next page: values that came with the request are shown now and then
-    /// dropped; `set` values go to the next request; `now` values only to this one.
-    public static final class Flash {
-        private final Map<String, String> incoming = new LinkedHashMap<>();
-        private final Map<String, String> next = new LinkedHashMap<>();
-        private final Map<String, String> now = new LinkedHashMap<>();
-
-        @SuppressWarnings("unchecked")
-        Flash(@Nullable Object sessionValue) {
-            if (sessionValue instanceof Map<?, ?> m && m.get("flashes") instanceof Map<?, ?> flashes) {
-                var discard = m.get("discard") instanceof List<?> l ? l : List.of();
-                for (var entry : ((Map<String, Object>) flashes).entrySet()) {
-                    if (!discard.contains(entry.getKey()) && entry.getValue() != null) incoming.put(entry.getKey(), entry.getValue().toString());
-                }
-            }
-        }
-
-        public boolean isEmpty() {
-            return incoming.isEmpty() && next.isEmpty() && now.isEmpty();
-        }
-
-        public @Nullable String get(String key) {
-            if (now.containsKey(key)) return now.get(key);
-            if (next.containsKey(key)) return next.get(key);
-            return incoming.get(key);
-        }
-
-        public void set(String key, String value) {
-            next.put(key, value);
-        }
-
-        public void now(String key, String value) {
-            now.put(key, value);
-        }
-
-        /// The session's `flash` entry in Rails' shape, or null when nothing carries over.
-        @Nullable Object toSessionValue() {
-            if (next.isEmpty()) return null;
-            var value = new LinkedHashMap<String, Object>();
-            value.put("discard", List.of());
-            value.put("flashes", new LinkedHashMap<>(next));
-            return value;
-        }
+        railsSession.discardChanges();
     }
 
     // -- Params ------------------------------------------------------------------------------------

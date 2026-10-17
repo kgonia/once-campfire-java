@@ -35,7 +35,7 @@ import org.jspecify.annotations.Nullable;
 public class Front {
     /// Static files carry the time the app started as their Last-Modified: they're compiled
     /// into it, so they can't have changed since.
-    private static final String LAST_MODIFIED = CurrentRequest.httpDate(Instant.now());
+    private static final String LAST_MODIFIED = HttpCache.httpDate(Instant.now());
     private static final Duration STATIC_LIFETIME = Duration.ofDays(30);
     private static final String STATIC_CACHE_CONTROL = "public, max-age=" + STATIC_LIFETIME.toSeconds();
     /// The URI a public response to this GET would be cached under.

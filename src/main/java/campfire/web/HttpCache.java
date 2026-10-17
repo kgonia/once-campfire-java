@@ -17,6 +17,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.Locale;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -28,6 +29,14 @@ public final class HttpCache {
     private HttpCache() {}
 
     private static final DateTimeFormatter MICROSECONDS = DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSSSSS").withZone(ZoneOffset.UTC);
+
+    private static final DateTimeFormatter HTTP_DATE = DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss 'GMT'", Locale.US)
+        .withZone(ZoneOffset.UTC);
+
+    /// RFC 9110 dates with a two-digit day, as Rack writes them (`RFC_1123_DATE_TIME` doesn't pad).
+    public static String httpDate(Instant time) {
+        return HTTP_DATE.format(time);
+    }
 
     /// A record's cache version: `users/1-20240601120000000000` (updated_at to the microsecond).
     public static String cacheKeyWithVersion(String table, long id, Instant updatedAt) {
@@ -79,7 +88,7 @@ public final class HttpCache {
                                                      @Nullable Long staleWhileRevalidate) {
         var value = new StringBuilder("max-age=").append(seconds).append(isPublic ? ", public" : ", private");
         if (staleWhileRevalidate != null) value.append(", stale-while-revalidate=").append(staleWhileRevalidate);
-        return response.header("Cache-Control", value.toString()).header("Date", CurrentRequest.httpDate(Instant.now()));
+        return response.header("Cache-Control", value.toString()).header("Date", HttpCache.httpDate(Instant.now()));
     }
 
     /// A file shown inline under its own name. Read whole: these are avatars and icons.

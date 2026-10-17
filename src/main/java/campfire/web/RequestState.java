@@ -17,6 +17,10 @@ public final class RequestState {
     ResponseCache.@Nullable Ticket cacheTicket;
     /// The gzipped body that came with a cache hit, so it isn't compressed again.
     byte @Nullable [] cachedGzip;
+    /// The request's cookie jar and Rails session, once something used them: most requests
+    /// don't, and then the finisher has nothing to write.
+    @Nullable Cookies cookies;
+    @Nullable RailsSession session;
 
     private RequestState() {}
 

@@ -9,6 +9,7 @@ import campfire.web.Access;
 import campfire.web.AccessFilter;
 import campfire.web.CurrentRequest;
 import campfire.web.Formats;
+import campfire.web.HttpCache;
 import campfire.web.Responses;
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import jakarta.inject.Inject;
@@ -301,7 +302,7 @@ public class ActiveStorageResource {
     }
 
     private static String now() {
-        return CurrentRequest.httpDate(Instant.now());
+        return HttpCache.httpDate(Instant.now());
     }
 
     private static Response withHeader(Response response, String name, String value) {

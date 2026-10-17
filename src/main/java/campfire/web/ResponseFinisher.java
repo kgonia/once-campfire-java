@@ -49,8 +49,7 @@ public class ResponseFinisher {
         CurrentRequest request = ClientProxy.unwrap(current);
         RequestState state = RequestState.of(routing);
         MultivaluedMap<String, Object> headers = response.getHeaders();
-        request.commitSession();
-        for (String cookie : request.setCookies()) headers.add("Set-Cookie", cookie);
+        if (state.session != null) state.session.commit();
         headers.putSingle("X-Version", app.config().appVersion());
         app.config().gitRevision().filter(r -> !r.isEmpty()).ifPresent(r -> headers.putSingle("X-Rev", r));
         if (request.ssl()) headers.putSingle("Strict-Transport-Security", "max-age=63072000; includeSubDomains");
@@ -64,6 +63,7 @@ public class ResponseFinisher {
                 response.setStatus(304);
                 response.setEntity(null);
                 headers.remove("Content-Type");
+                writeCookies(state, routing);
                 return;
             }
             if (state.cacheTicket != null) {
@@ -74,7 +74,12 @@ public class ResponseFinisher {
         }
         byte[] plain = response.getEntity() instanceof byte[] body ? body : null;
         byte[] gzip = encode(response, gzipAccepted, state);
-        offer(response, routing, plain, gzip);
+        offer(response, routing, state, plain, gzip);
+        writeCookies(state, routing);
+    }
+
+    private static void writeCookies(RequestState state, RoutingContext routing) {
+        if (state.cookies != null) state.cookies.writeTo(routing.response());
     }
 
     /// Appends the stylesheet preloads to any `Link` the page set itself.
@@ -143,13 +148,14 @@ public class ResponseFinisher {
 
     /// A public response goes out without cookies, as it may be served to anyone, and a whole one
     /// is offered to the public cache, plain and gzipped.
-    private void offer(ContainerResponseContext response, RoutingContext routing, byte @Nullable [] plain, byte @Nullable [] gzip) {
+    private void offer(ContainerResponseContext response, RoutingContext routing, RequestState state, byte @Nullable [] plain,
+                       byte @Nullable [] gzip) {
         String vary = header(response, "Vary");
         Duration lifetime = FrontCache.lifetime(response.getStatus(), header(response, "Cache-Control"), vary);
         if (lifetime == null) return;
-        MultivaluedMap<String, Object> responseHeaders = response.getHeaders();
-        responseHeaders.remove("Set-Cookie");
+        if (state.cookies != null) state.cookies.discard();
         if (plain == null) return;
+        MultivaluedMap<String, Object> responseHeaders = response.getHeaders();
         var headers = new ArrayList<FrontCache.Header>();
         responseHeaders.forEach((name, values) -> {
             if (gzip != null && name.equalsIgnoreCase("Content-Encoding") || name.equalsIgnoreCase("Content-Length")) return;

@@ -4,6 +4,7 @@ import campfire.cable.Cable;
 import campfire.db.Database;
 import campfire.db.Times;
 import campfire.users.User;
+import campfire.web.Cookies;
 import campfire.web.CurrentRequest;
 import campfire.web.Paths;
 import io.quarkus.logging.Log;
@@ -27,7 +28,7 @@ public class Authentication {
     /// recorded at most hourly (see `Session.needsResume`), and the cookie is re-signed then too,
     /// which keeps its twenty-year expiry rolling.
     public boolean resume(CurrentRequest request) {
-        String token = request.signedCookie(CurrentRequest.SESSION_TOKEN_COOKIE);
+        String token = request.signedCookie(Cookies.SESSION_TOKEN);
         if (token == null) return false;
         Session.WithUser found = sessions.find(token, dataVersion(request));
         if (found == null) return false;
@@ -40,7 +41,7 @@ public class Authentication {
                 return null;
             });
             sessions.forget(token);
-            request.setSignedPermanentCookie(CurrentRequest.SESSION_TOKEN_COOKIE, session.token());
+            request.setSignedPermanentCookie(Cookies.SESSION_TOKEN, session.token());
         }
         request.signIn(session, found.user());
         return true;
@@ -49,7 +50,7 @@ public class Authentication {
     /// Whether the session cookie names a live session, without resuming it (what Active Storage's
     /// upload endpoints ask).
     public boolean hasSession(CurrentRequest request) {
-        String token = request.signedCookie(CurrentRequest.SESSION_TOKEN_COOKIE);
+        String token = request.signedCookie(Cookies.SESSION_TOKEN);
         return token != null && sessions.find(token, dataVersion(request)) != null;
     }
 
@@ -75,7 +76,7 @@ public class Authentication {
         String userAgent = request.userAgent();
         String ip = request.remoteIp();
         Session session = db.write(tx -> Session.start(tx, user.id(), userAgent, ip));
-        request.setSignedPermanentCookie(CurrentRequest.SESSION_TOKEN_COOKIE, session.token());
+        request.setSignedPermanentCookie(Cookies.SESSION_TOKEN, session.token());
         request.signIn(session, user);
         return session;
     }
@@ -93,7 +94,7 @@ public class Authentication {
             sessions.forget(session.token());
         }
         request.resetSession();
-        request.deleteCookie(CurrentRequest.SESSION_TOKEN_COOKIE);
+        request.deleteCookie(Cookies.SESSION_TOKEN);
         request.signOut();
         if (user != null) {
             try {
