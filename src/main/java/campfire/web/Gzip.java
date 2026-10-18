@@ -63,7 +63,7 @@ public final class Gzip {
     public static byte[] compress(byte[] body) {
         List<PageDigest.Handed> handed = PageDigest.handed(body);
         for (PageDigest.Handed h : handed) {
-            if (h.fragment().utf8().length >= SPLICE_MIN) return spliced(body, handed);
+            if (h.fragment().isEveryPage()) return spliced(body, handed);
         }
         if (body.length > SMALL_BODY) return deflate(body);
         byte[] gzip = SMALL.getIfPresent(ByteBuffer.wrap(body));
@@ -79,11 +79,9 @@ public final class Gzip {
     private static final int SMALL_BODY = 1024;
     private static final Cache<ByteBuffer, byte[]> SMALL = Caffeine.newBuilder().maximumSize(512).build();
 
-    /// Fragments at least this big are compressed once, on their own, and their compressed bytes
-    /// copied into each response that has them, as the Rust port does (`kit::deflater::splice`):
-    /// the importmap alone is 15 KB, more than half of an uncached page. Smaller ones, messages
-    /// among them, compress better along with the rest of the page.
-    static final int SPLICE_MIN = 4096;
+    /// {@link Safe#everyPage} fragments, compressed once on their own, are copied into each response
+    /// already compressed, as the Rust port does (`kit::deflater::splice`): the importmap alone is
+    /// 15 KB, more than half of an uncached page.
     private static final Cache<Safe, byte[]> BLOCKS = Caffeine.newBuilder().weakKeys().build();
 
     private static byte[] spliced(byte[] body, List<PageDigest.Handed> handed) {
@@ -92,8 +90,8 @@ public final class Gzip {
         try (var gzip = new Member(out)) {
             int position = 0;
             for (PageDigest.Handed h : handed) {
+                if (!h.fragment().isEveryPage()) continue;
                 byte[] fragment = h.fragment().utf8();
-                if (fragment.length < SPLICE_MIN) continue;
                 gzip.write(body, position, h.offset() - position);
                 gzip.splice(fragment, BLOCKS.get(h.fragment(), f -> block(f.utf8())));
                 position = h.offset() + fragment.length;

@@ -11,6 +11,7 @@ public final class Safe implements Content {
     private final String html;
     private byte[] bytes;
     private byte[] sha256;
+    private boolean everyPage;
 
     private Safe(String html) {
         this.html = html;
@@ -27,6 +28,19 @@ public final class Safe implements Content {
 
     public static Safe bytes(byte[] bytes) {
         return new Safe(bytes);
+    }
+
+    /// Markup that many pages repeat exactly, such as the layout's head tags: gzip compresses it
+    /// once and splices the result into each response (see `Gzip`). Not for a record's fragments:
+    /// alone they compress far worse than next to their neighbours.
+    public static Safe everyPage(byte[] bytes) {
+        var safe = new Safe(bytes);
+        safe.everyPage = true;
+        return safe;
+    }
+
+    public boolean isEveryPage() {
+        return everyPage;
     }
 
     /// The markup as UTF-8.

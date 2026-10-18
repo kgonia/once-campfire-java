@@ -27,7 +27,7 @@ public final class Assets {
             int tab = line.indexOf('\t');
             if (tab > 0) digested.put(line.substring(0, tab), line.substring(tab + 1));
         }
-        importmapTags = Safe.bytes(bytes("/campfire/assets/importmap.html"));
+        importmapTags = Safe.everyPage(bytes("/campfire/assets/importmap.html"));
         var tags = new StringBuilder();
         var links = new java.util.ArrayList<String>();
         for (String logical : read("/campfire/assets/stylesheets.txt").split("\n")) {
@@ -37,7 +37,7 @@ public final class Assets {
             tags.append("<link rel=\"stylesheet\" href=\"").append(path).append("\" data-turbo-track=\"reload\" />");
             links.add("<" + path + ">; rel=preload; as=style; nopush");
         }
-        stylesheetTags = Safe.bytes(tags.toString().getBytes(StandardCharsets.UTF_8));
+        stylesheetTags = Safe.everyPage(tags.toString().getBytes(StandardCharsets.UTF_8));
         var link = new StringBuilder();
         for (String preload : links) {
             // A link that would push the header past Rails' 1,000 bytes is left out; a later,
