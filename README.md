@@ -16,17 +16,22 @@ the load generator ran on four others. The load generator ran 16 concurrent conn
 of three interleaved rounds of the verification harness's `bin/benchmark`, run on October 18, 2026. Each app ran
 with gzip and its default caches. The load generator validates every response and audits every post.
 
-The Java column shows the JVM build on JDK 25. The detailed results also give the AOT and native builds.
+The Java builds are described in the [detailed results](docs/benchmarks.md). The comparison column uses the JVM
+build on JDK 25.
 
-| HTTP workload (requests/sec) | [Rust](https://github.com/basecamp/once-campfire-rust) | Java (JDK 25) | Java vs Rust |
-|---|---:|---:|---:|
-| Room page | 34,635 | 50,880 | 1.47× |
-| Messages page | 32,792 | 53,881 | 1.64× |
-| Sidebar | 40,117 | 91,434 | 2.28× |
-| Search | 40,076 | 86,407 | 2.16× |
-| Post a message | 1,750 | 1,960 | 1.12× |
+| route (requests/sec) | [Rust](https://github.com/basecamp/once-campfire-rust) | JDK 25 | JDK 26 AOT | JDK 28 AOT | JDK 28 AOT, benchmark-trained | native | JDK 25 vs Rust |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| room_show | 34,635 | 50,880 | 48,563 | 50,671 | 51,156 | 28,392 | 1.47× |
+| messages_page | 32,792 | 53,881 | 52,064 | 54,950 | 56,312 | 29,768 | 1.64× |
+| sidebar | 40,117 | 91,434 | 85,430 | 91,939 | 92,972 | 39,757 | 2.28× |
+| search | 40,076 | 86,407 | 81,331 | 84,826 | 86,353 | 38,469 | 2.16× |
+| avatar | 84,857 | 258,501 | 256,112 | 257,846 | 259,946 | 113,674 | 3.05× |
+| static_css | 90,818 | 287,643 | 284,142 | 287,574 | 290,807 | 128,740 | 3.17× |
+| up | 72,267 | 136,529 | 133,446 | 136,862 | 137,735 | 65,271 | 1.89× |
+| post_message | 845 | 1,932 | 1,957 | 1,944 | 1,949 | 1,834 | see below |
 
-In the harness's full run, Rust posts at 845 req/s. The posting row therefore comes from posting measured alone.
+In the full run, Rust's posting drops to 845 req/s. With posting measured alone, Rust posts 1,750 req/s and
+Java 1,960, 12% more.
 
 Each page result is a repeated read of one page by one signed-in user. Both ports serve these pages from a warm
 response cache of the same design, so the rows compare the request path around the cache. The benchmark's routes
