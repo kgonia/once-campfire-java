@@ -20,8 +20,16 @@ public final class FragmentCache {
         .weigher((String key, Safe value) -> key.length() + value.utf8().length + 240)
         .build();
 
+    /// Renders outside the cache, not in `STORE.get(key, ...)`: a message renders its boosts
+    /// through this cache too, and an update made from inside the map's own computation fails with
+    /// "Recursive update" once it shares a bin or resizes. Two misses may both render; the first
+    /// stored wins.
     public static Safe fetch(String key, Supplier<byte[]> render) {
-        return STORE.get(key, k -> Safe.bytes(render.get()));
+        Safe cached = STORE.getIfPresent(key);
+        if (cached != null) return cached;
+        Safe rendered = Safe.bytes(render.get());
+        Safe first = STORE.asMap().putIfAbsent(key, rendered);
+        return first != null ? first : rendered;
     }
 
     /// The cached fragment, or null; lets callers skip building a view model on a hit.
