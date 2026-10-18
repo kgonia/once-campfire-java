@@ -9,6 +9,45 @@ in Rails; responses are not byte-identical to Rails or Rust.
 The code is meant to read as an ordinary Quarkus application, not as a transliteration of Rails or Rust. Rails
 internals are kept only where drop-in compatibility needs them.
 
+## Performance
+
+We measured Java and the Rust port on an AWS c7a.4xlarge with 16 AMD EPYC cores. Each app ran on four cores, and
+the load generator ran on four others. The load generator ran 16 concurrent connections. Each value is the median
+of three interleaved rounds of the verification harness's `bin/benchmark`, run on October 18, 2026. Each app ran
+with gzip and its default caches. The load generator validates every response and audits every post.
+
+The Java column shows the JVM build on JDK 25. The detailed results also give the AOT and native builds.
+
+| HTTP workload (requests/sec) | [Rust](https://github.com/basecamp/once-campfire-rust) | Java (JDK 25) | Java vs Rust |
+|---|---:|---:|---:|
+| Room page | 34,635 | 50,880 | 1.47× |
+| Messages page | 32,792 | 53,881 | 1.64× |
+| Sidebar | 40,117 | 91,434 | 2.28× |
+| Search | 40,076 | 86,407 | 2.16× |
+| Post a message | 1,750 | 1,960 | 1.12× |
+
+In the harness's full run, Rust posts at 845 req/s. The posting row therefore comes from posting measured alone.
+
+Each page result is a repeated read of one page by one signed-in user. Both ports serve these pages from a warm
+response cache of the same design, so the rows compare the request path around the cache. The benchmark's routes
+are the ones this port's tuning measured, and the Rust port could likely gain from the same kind of work.
+
+**Where Java falls behind:**
+
+- **Pages that no cache covers.** Rust is ahead on five of the seven measured, by 10–35%: account settings, room
+  settings, bots, a profile and a new direct room. Java is ahead on room involvement and user autocomplete.
+- **Memory.** Java uses 658 MiB when idle and up to 1.3 GiB under load with the default heap. With
+  `-Xmx256m`, it uses 433 MiB when idle and has a peak of 538 MiB, and the room page loses 6% of its speed. Rust
+  uses 19 MiB when idle and has a peak of 132 MiB.
+- **Startup.** Java answers `/up` 2 s after `docker run`, or 1 s with the AOT image, and is at full speed in about
+  the 5th second. Rust answers in 0.24 s, at full speed.
+- **Posting without the disk.** With the data on tmpfs, Rust posts 6% faster (3,687 against 3,477 req/s). On EBS,
+  `fsync` limits both ports.
+- **Native image.** It starts in 0.34 s, but runs at about half the JVM's speed, which is below Rust on pages.
+
+**[Detailed results](docs/benchmarks.md):** all six builds and eight routes, the uncached pages, warmup curves,
+AOT training on the benchmark itself, posting checks, memory by heap size, and the scripts.
+
 ## Layout
 
 Packages are organized by feature. Inside a feature:
@@ -83,7 +122,7 @@ byte for byte, or a measured performance loss. Each deviation is listed below wi
 | The full-text index (`message_search_index`) in plain SQL: its writes are strings, and searches name it with `table(name(...))` and a `MATCH` template | generated classes | It's an FTS5 virtual table, which the code generator doesn't read. |
 | jOOQ classes generated from `schema.sql` loaded into SQLite at build time (`src/build/jooq`) | running migrations, e.g. Flyway, then generating | Rails owns the migrations. `schema.sql` is exactly what `db:prepare` creates. |
 | One gzip step in `web.ResponseFinisher`, with pooled `Deflater`s (`web.Gzip`) | Quarkus/Vert.x HTTP compression | Speed: a page is gzipped once and served compressed from the caches, where Vert.x would recompress every response on the event loop (69 µs for a 9 KB page, against about 105 µs of CPU for a whole cached room page). |
-| Public responses (static files, avatars, logos, QR codes, Active Storage files) kept by URI in `web.FrontCache`, plain and gzipped, and answered from a Vert.x route on the event loop | a caching proxy in front, or none | Thruster does this in front of Rails. Answering from memory before Quarkus REST is what serves avatars and static files at about 190k req/s. |
+| Public responses (static files, avatars, logos, QR codes, Active Storage files) kept by URI in `web.FrontCache`, plain and gzipped, and answered from a Vert.x route on the event loop | a caching proxy in front, or none | Thruster does this in front of Rails. Answering from memory before Quarkus REST is what serves avatars and static files at 260–290k req/s on the benchmark machine. |
 | The client's address for bans: the last untrusted `X-Forwarded-For` hop (`web.RequestOrigin`) | Quarkus' forwarded remote address | Quarkus takes the first hop, which the client writes. Rails takes the last one a trusted proxy didn't add, and Quarkus 3.40 has no hook to choose. |
 | Response cookies as Vert.x `Cookie`s (`web.Cookies`), the Rails session decrypted and written back by `web.RailsSession` | JAX-RS `NewCookie` | Quarkus REST writes a `NewCookie` with RFC 2109's `Version=1`, and Java's cookie jar then sends it back as `$Version="1"; session_token="…"`. Values stay Rack-escaped and the session stays Rails' encrypted JSON, so a Rails install's cookies keep working. |
 | Rails' nested form fields (`user[name]`, `user_ids[]`) and JSON bodies read into `web.Params`, from Quarkus REST's parsed form (`MultipartFormDataInput`) or the body; flat values are `@RestQuery`/`@RestHeader` parameters | `@RestForm` and `@BeanParam` throughout | The services take Rails' parameter hashes, with Rack's merge of query and form and its type checks (a string where a hash belongs is a 500, an empty hash a 400). Field names stay the frontend's. |
@@ -126,6 +165,7 @@ Images, with the same user, layout, port contract and ONCE backup hooks as the R
 docker build -t once-campfire-java:app .                              # JVM (ZGC)
 docker build -f Dockerfile.native -t once-campfire-java:native .      # GraalVM native image
 docker build -f Dockerfile.aot -t once-campfire-java:aot .            # JDK 26, jlink runtime, AOT cache
+docker build -f Dockerfile.aot --build-arg JDK=28 -t once-campfire-java:aot28 .   # JDK 28 EA, AOT code too
 ```
 
 The AOT image trains its cache during the build on a fresh, empty install, never on production data. It runs on
@@ -171,51 +211,6 @@ native build.
 On a fresh install it has a bot webhook answer with text and another with a PNG, and sends a Web Push through
 Mozilla's push service to a subscription it registered there, then decrypts what arrives. See its header for
 what it needs.
-
-## Benchmarks
-
-`bin/benchmark` from once-campfire-verification:
-
-- 16 clients, 8 s per route, 3 interleaved rounds.
-- Server pinned to 4 vCPUs (`--cpus 8-11`), load generator on 4 others.
-- Intel Core Ultra 9 275HX, Docker Desktop on Windows 11.
-- Every response was contract-validated and every acknowledged write audited.
-
-Median req/s, from one interleaved run (2026-10-17, after a change of the host's power mode, so not comparable
-with earlier tables):
-
-| route | Rust | Java (JVM, JDK 25) | Java (JDK 26 + AOT cache) | Java (JDK 28 EA + AOT code) | Java (native) |
-|---|---:|---:|---:|---:|---:|
-| room_show | 34,700 | 62,300 | 61,100 | 61,200 | 40,400 |
-| messages_page | 32,500 | 62,700 | 62,100 | 63,000 | 40,900 |
-| sidebar | 39,700 | 85,200 | 82,800 | 83,500 | 52,700 |
-| search | 39,600 | 82,600 | 80,200 | 81,200 | 50,400 |
-| post_message | 3,600 | 3,300 | 3,400 | 3,200 | 2,600 |
-| avatar | 153,000 | 230,900 | 226,600 | 228,600 | 156,600 |
-| static_css | 162,900 | 245,400 | 246,700 | 246,000 | 170,800 |
-| up | 87,100 | 115,500 | 112,500 | 112,300 | 74,500 |
-
-Rounds differed by 0–6% (post_message on the native build: 34%). Hyper-V schedules vCPUs onto both P- and E-cores,
-so compare results only from the same interleaved run.
-
-Startup and warmup, from a separate run: milliseconds until `/up` answers after the process starts, then the
-signed-in room page's req/s (gzip, 16 connections) in each of the first seconds.
-
-| image | `/up` after | 1st s | 2nd s | 3rd s | 4th s | 5th s | steady |
-|---|---:|---:|---:|---:|---:|---:|---:|
-| Rust | 80 ms | 38,700 | 39,600 | 39,700 | 35,000 | 35,400 | ~35,000 |
-| Java (JVM, JDK 25) | 1,600 ms | 3,400 | 16,000 | 36,800 | 64,800 | 68,300 | ~69,000 |
-| Java (JDK 26 + AOT cache) | 840 ms | 3,900 | 21,300 | 30,400 | 42,300 | 59,900 | ~66,000 |
-| Java (JDK 28 EA + AOT code) | 780 ms | 3,600 | 13,700 | 27,500 | 61,200 | 67,000 | ~67,000 |
-| Java (native) | 140 ms | 15,500 | 16,600 | 16,600 | 16,000 | 16,100 | ~15,500 |
-
-- **Native build:** starts fastest of the Java builds and is at full speed at once, but that speed is a fraction of
-  the JVM's: it has no JIT, and the Community Edition has neither PGO nor G1.
-- **AOT cache:** halves JVM startup. JDK 28's AOT code (JEP 544, `--build-arg JDK=28`) adds little to that here,
-  and none of the JVM builds is at full speed before about the fourth second, because the JIT still compiles on
-  the same 4 CPUs. Steady state is within a few percent of the plain JVM.
-- **room_show:** the harness measures it first, about 5 s after the container starts, so it carries most of the
-  JVM's warmup.
 
 ## Known differences from the Rust port
 
