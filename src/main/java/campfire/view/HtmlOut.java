@@ -108,11 +108,11 @@ public final class HtmlOut implements HtmlTemplateOutput {
         writeBinaryContent(bytes);
     }
 
-    /// The rendered bytes; when fragments were handed, their {@link PageDigest} is remembered with
-    /// the array returned.
+    /// The rendered bytes; when fragments were handed, they and their {@link PageDigest} are
+    /// remembered with the array returned.
     public byte[] body() {
         byte[] body = toByteArray();
-        if (!handed.isEmpty()) PageDigest.remember(body, PageDigest.digest(body, handed));
+        if (!handed.isEmpty()) PageDigest.remember(body, handed);
         return body;
     }
 

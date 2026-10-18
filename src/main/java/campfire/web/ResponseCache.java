@@ -2,6 +2,7 @@ package campfire.web;
 
 import campfire.sessions.Session;
 import campfire.sessions.Viewer;
+import campfire.view.PageDigest;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import io.quarkus.arc.ClientProxy;
@@ -12,7 +13,6 @@ import jakarta.ws.rs.core.Response;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HexFormat;
@@ -115,7 +115,7 @@ public final class ResponseCache {
     /// header except validators and tracing ids. Null when that's implausibly large.
     private static @Nullable String key(HttpServerRequest request, RequestState state, long userId, Session session, String baseUrl,
                                         String endpoint) {
-        MessageDigest digest = sha256();
+        MessageDigest digest = PageDigest.sha256();
         int[] length = {0};
         ByteBuffer size = ByteBuffer.allocate(8);
         java.util.function.Consumer<String> field = value -> {
@@ -145,24 +145,5 @@ public final class ResponseCache {
             field.accept("");
         }
         return length[0] > MAX_KEY_INPUT ? null : HexFormat.of().formatHex(digest.digest());
-    }
-
-    /// Cloning a prototype skips the provider lookup `MessageDigest.getInstance` does each time.
-    private static final MessageDigest SHA256;
-
-    static {
-        try {
-            SHA256 = MessageDigest.getInstance("SHA-256");
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException(e);
-        }
-    }
-
-    private static MessageDigest sha256() {
-        try {
-            return (MessageDigest) SHA256.clone();
-        } catch (CloneNotSupportedException e) {
-            throw new IllegalStateException(e);
-        }
     }
 }

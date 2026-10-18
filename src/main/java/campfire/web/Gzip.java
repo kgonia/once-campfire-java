@@ -1,5 +1,7 @@
 package campfire.web;
 
+import campfire.view.PageDigest;
+import campfire.view.Safe;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import java.io.ByteArrayOutputStream;
@@ -7,6 +9,7 @@ import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.zip.CRC32;
@@ -58,6 +61,10 @@ public final class Gzip {
     }
 
     public static byte[] compress(byte[] body) {
+        List<PageDigest.Handed> handed = PageDigest.handed(body);
+        for (PageDigest.Handed h : handed) {
+            if (h.fragment().utf8().length >= SPLICE_MIN) return spliced(body, handed);
+        }
         if (body.length > SMALL_BODY) return deflate(body);
         byte[] gzip = SMALL.getIfPresent(ByteBuffer.wrap(body));
         if (gzip == null) {
@@ -71,6 +78,51 @@ public final class Gzip {
     /// deflater's tables costs more than compressing. Callers never modify what they get back.
     private static final int SMALL_BODY = 1024;
     private static final Cache<ByteBuffer, byte[]> SMALL = Caffeine.newBuilder().maximumSize(512).build();
+
+    /// Fragments at least this big are compressed once, on their own, and their compressed bytes
+    /// copied into each response that has them, as the Rust port does (`kit::deflater::splice`):
+    /// the importmap alone is 15 KB, more than half of an uncached page. Smaller ones, messages
+    /// among them, compress better along with the rest of the page.
+    static final int SPLICE_MIN = 4096;
+    private static final Cache<Safe, byte[]> BLOCKS = Caffeine.newBuilder().weakKeys().build();
+
+    private static byte[] spliced(byte[] body, List<PageDigest.Handed> handed) {
+        var out = new ByteArrayOutputStream(Math.max(64, body.length / 4));
+        out.writeBytes(HEADER);
+        try (var gzip = new Member(out)) {
+            int position = 0;
+            for (PageDigest.Handed h : handed) {
+                byte[] fragment = h.fragment().utf8();
+                if (fragment.length < SPLICE_MIN) continue;
+                gzip.write(body, position, h.offset() - position);
+                gzip.splice(fragment, BLOCKS.get(h.fragment(), f -> block(f.utf8())));
+                position = h.offset() + fragment.length;
+            }
+            gzip.write(body, position, body.length - position);
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
+        return out.toByteArray();
+    }
+
+    /// `plain` as raw deflate data that ends on a byte boundary without a final block (a full
+    /// flush), so it can sit between two other runs of deflate data.
+    private static byte[] block(byte[] plain) {
+        var deflater = new Deflater(6, true);
+        try {
+            deflater.setInput(plain);
+            var out = new ByteArrayOutputStream(Math.max(64, plain.length / 3));
+            byte[] buffer = new byte[16384];
+            int n;
+            do {
+                n = deflater.deflate(buffer, 0, buffer.length, Deflater.FULL_FLUSH);
+                out.write(buffer, 0, n);
+            } while (n == buffer.length);
+            return out.toByteArray();
+        } finally {
+            deflater.end();
+        }
+    }
 
     private static byte[] deflate(byte[] body) {
         var out = new ByteArrayOutputStream(Math.max(64, body.length / 4));
@@ -131,6 +183,19 @@ public final class Gzip {
                 deflater.reset();
                 POOL.offer(deflater);
             }
+        }
+
+        /// Ends the data so far on a byte boundary with the history cleared (a full flush), so
+        /// nothing after refers back across it, then copies in `block`: `plain`, compressed alone.
+        void splice(byte[] plain, byte[] block) throws IOException {
+            int n;
+            do {
+                n = deflater.deflate(buffer, 0, buffer.length, Deflater.FULL_FLUSH);
+                out.write(buffer, 0, n);
+            } while (n == buffer.length);
+            out.write(block);
+            crc.update(plain);
+            size += plain.length;
         }
 
         private void drain() throws IOException {

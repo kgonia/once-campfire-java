@@ -29,15 +29,24 @@ public final class PageDigest {
     static final int MAX_GLUE = 256;
 
     /// A handed fragment at its byte offset in the body.
-    record Handed(int offset, Safe fragment) {}
+    public record Handed(int offset, Safe fragment) {}
 
-    /// Digests of bodies rendered with fragments, keyed by the body array itself (weak keys compare
-    /// by identity), for the response filter that tags the body later in the request.
-    private static final Cache<byte[], String> BODIES = Caffeine.newBuilder().weakKeys().maximumSize(10_000).build();
+    private record Rendered(String digest, List<Handed> handed) {}
+
+    /// Bodies rendered with fragments, keyed by the body array itself (weak keys compare by
+    /// identity), for the response filter that tags and compresses the body later in the request.
+    private static final Cache<byte[], Rendered> BODIES = Caffeine.newBuilder().weakKeys().maximumSize(10_000).build();
 
     /// The part digest for `body` if it was rendered with fragments, else null.
     public static @Nullable String of(byte[] body) {
-        return BODIES.getIfPresent(body);
+        Rendered rendered = BODIES.getIfPresent(body);
+        return rendered != null ? rendered.digest() : null;
+    }
+
+    /// The fragments `body` was rendered with, in order, or none.
+    public static List<Handed> handed(byte[] body) {
+        Rendered rendered = BODIES.getIfPresent(body);
+        return rendered != null ? rendered.handed() : List.of();
     }
 
     /// What identifies `body` as a validator: its part digest, else its whole SHA-256 in hex.
@@ -46,8 +55,8 @@ public final class PageDigest {
         return digest != null ? digest : HexFormat.of().formatHex(sha256().digest(body));
     }
 
-    static void remember(byte[] body, String digest) {
-        BODIES.put(body, digest);
+    static void remember(byte[] body, List<Handed> handed) {
+        BODIES.put(body, new Rendered(digest(body, handed), List.copyOf(handed)));
     }
 
     /// The digest of `body` with `handed` (in order) at their offsets.
@@ -88,10 +97,23 @@ public final class PageDigest {
         return ByteBuffer.allocate(8).order(ByteOrder.LITTLE_ENDIAN).putLong(value).array();
     }
 
-    static MessageDigest sha256() {
+    /// Cloning a prototype skips the provider lookup `MessageDigest.getInstance` does each time,
+    /// about 4% of an uncached page's CPU.
+    private static final MessageDigest SHA256;
+
+    static {
         try {
-            return MessageDigest.getInstance("SHA-256");
+            SHA256 = MessageDigest.getInstance("SHA-256");
         } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    /// A fresh SHA-256 digest.
+    public static MessageDigest sha256() {
+        try {
+            return (MessageDigest) SHA256.clone();
+        } catch (CloneNotSupportedException e) {
             throw new IllegalStateException(e);
         }
     }
