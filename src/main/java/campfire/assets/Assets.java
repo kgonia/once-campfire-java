@@ -1,5 +1,6 @@
 package campfire.assets;
 
+import campfire.view.Safe;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
@@ -16,8 +17,8 @@ public final class Assets {
 
     private final Map<String, String> digested = new HashMap<>();
     private final Map<String, StaticFile> files = new HashMap<>();
-    private final String importmapTags;
-    private final String stylesheetTags;
+    private final Safe importmapTags;
+    private final Safe stylesheetTags;
     private final String stylesheetLinkHeader;
     private static final int MAX_LINK_HEADER = 1_000;
 
@@ -26,7 +27,7 @@ public final class Assets {
             int tab = line.indexOf('\t');
             if (tab > 0) digested.put(line.substring(0, tab), line.substring(tab + 1));
         }
-        importmapTags = read("/campfire/assets/importmap.html");
+        importmapTags = Safe.bytes(bytes("/campfire/assets/importmap.html"));
         var tags = new StringBuilder();
         var links = new java.util.ArrayList<String>();
         for (String logical : read("/campfire/assets/stylesheets.txt").split("\n")) {
@@ -36,7 +37,7 @@ public final class Assets {
             tags.append("<link rel=\"stylesheet\" href=\"").append(path).append("\" data-turbo-track=\"reload\" />");
             links.add("<" + path + ">; rel=preload; as=style; nopush");
         }
-        stylesheetTags = tags.toString();
+        stylesheetTags = Safe.bytes(tags.toString().getBytes(StandardCharsets.UTF_8));
         var link = new StringBuilder();
         for (String preload : links) {
             // A link that would push the header past Rails' 1,000 bytes is left out; a later,
@@ -60,13 +61,14 @@ public final class Assets {
         return d == null ? "/" + logical : PREFIX + "/" + d;
     }
 
-    /// `javascript_importmap_tags`
-    public String importmapTags() {
+    /// `javascript_importmap_tags`. This and {@link #stylesheetTags()} are the same instances on
+    /// every page, so their bytes and digests are computed once (see {@link Safe#handed()}).
+    public Safe importmapTags() {
         return importmapTags;
     }
 
     /// `stylesheet_link_tag :all, "data-turbo-track": "reload"`
-    public String stylesheetTags() {
+    public Safe stylesheetTags() {
         return stylesheetTags;
     }
 

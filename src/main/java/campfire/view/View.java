@@ -4,6 +4,7 @@ import campfire.App;
 import campfire.accounts.Account;
 import campfire.users.User;
 import campfire.web.Paths;
+import gg.jte.Content;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -113,13 +114,13 @@ public final class View {
         return account == null || account.customStyles() == null || account.customStyles().isEmpty() ? null : account.customStyles();
     }
 
-    public Safe stylesheetTags() {
+    public Content stylesheetTags() {
         stylesheetsLinked = true;
-        return Safe.of(app.assets().stylesheetTags());
+        return app.assets().stylesheetTags().handed();
     }
 
-    public Safe importmapTags() {
-        return Safe.of(app.assets().importmapTags());
+    public Content importmapTags() {
+        return app.assets().importmapTags().handed();
     }
 
     /// `body_classes`
