@@ -1,0 +1,197 @@
+diff --git a/DIFFERENCES.md b/DIFFERENCES.md
+index fc39895..a8c8735 100644
+--- a/DIFFERENCES.md
++++ b/DIFFERENCES.md
+@@ -37,3 +37,19 @@ The loadgen this repository used before Hyperfoil parsed its 1.87 MB contract on
+ the measured window (about 7.5 ms each), so its 1,024- and 4,096-connection steps started late. That also
+ affected the article's numbers at those connection counts; DHH's runs (16 connections, the route
+ contract) were barely affected. This repository no longer uses it.
++
++## The Java port
++
++[once-campfire-java](https://github.com/kgonia/once-campfire-java) is measured as a fourth app (`--apps
++...,java`), checked out next to this repository (`JAVA_PORT` overrides). It is a whole Campfire on Quarkus
++REST, built as a drop-in for the Rails app rather than for this page. The rule it is held to is **the same
++content**, not the same bytes: what the page says and how it is structured must match Rust's, while how
++it is spelled and compressed is the app's own design.
++
++| | Rust, Kotlin, Quarkus | Java port | Why |
++|---|---|---|---|
++| The smoke test after every start | each decoded body byte-identical to Rust's page | each decoded body identical to Rust's page **as markup**: the Java port's `tools/parity/markup.py`, one token per tag or text run, attributes decoded and sorted, whitespace collapsed (`same_page` in `bench.sh`) | jte and Askama spell the same elements differently. On the seed both pages have 7,497 tokens, all equal (7,557 on the desktop-browser branch, all equal). The bytes differ by 0.3% (417,243 against 416,116). The check rejects a one-word change. |
++| The gzipped page on the wire | Rust 24,229 bytes; Kotlin and Quarkus 24,227 | 20,678 bytes, 15% fewer | All use deflate at level 6. Rust and the Kotlin modules compress each message fragment as a piece of its own and splice the pieces together; the Java port splices only the fragments every page shares (the importmap and stylesheet tags) and compresses the rest of the page as one stream, which compresses better. Fewer bytes per cached page is part of its design: count it when reading all-out requests per second, where writing the page is much of the work. |
++| Response headers | Rust's | Rust's less `X-Request-Id`, `X-Runtime` and `X-Cache`; `Vary: Accept-Encoding` alone; cookies with `Max-Age`; `Cache-Control` directives in another order | Deliberate in the Java port (its README, "Known differences from the Rust port"). Not compared by the smoke test. A cached page's headers are 1,544 bytes against the others' 1,657. |
++| JVM | Kotlin: Temurin 25; Quarkus: Temurin 27, plus the UBI image's and Netty's options | Temurin 25 (`JDK_JAVA`), the options every JVM app gets (`JVM_COMMON`: ParallelGC, compact headers, `-Xmx512m`) and nothing more | Its own image runs ZGC with a 1 GB soft maximum; here it gets the shared baseline. Its README measures `-Xmx256m` at 6% slower on the room page. |
++| SQLite | Kotlin and Quarkus: FFM; Rust: rusqlite | sqlite-jdbc through Agroal, one writer and up to 16 readers, statements cached per connection | As published. It creates Rust's two indexes on `messages` at boot, as Rust and Quarkus do. |
+diff --git a/bench.sh b/bench.sh
+index 5706f9e..df3fca3 100755
+--- a/bench.sh
++++ b/bench.sh
+@@ -25,10 +25,10 @@
+ #                          presence every PRESENCE_EVERY s and posts a message every MESSAGE_EVERY s: per page
+ #                          load, PAGE_EVERY/PRESENCE_EVERY presence commits and PAGE_EVERY/MESSAGE_EVERY messages
+ #   --force                measure even if the preflight finds a problem
+-#   --app A                (profile) the app: quarkus or kotlin
++#   --app A                (profile) the app: quarkus, kotlin or java
+ #   --event E[,E...]       (profile) async-profiler events: cpu (default), alloc, wall, lock; several need --format jfr
+ #   --format F             (profile) html (flame graph, default), jfr (for JFR tools and the Jafar MCP server), collapsed
+-# Environment: JDK_KOTLIN, JDK_QUARKUS (SDKMAN identifiers), BENCH_LOCK (the lock file runs share),
++# Environment: JDK_KOTLIN, JDK_QUARKUS, JDK_JAVA, JDK_DRIVER (SDKMAN identifiers), BENCH_LOCK (the lock file runs share),
+ #   AP_OPTS (more async-profiler options for profile, e.g. "-i 100us"), APP_JVM_OPTS (more options for both JVM apps),
+ #   CAMPFIRE_FRAGMENT_MEMORY=heap|native and CAMPFIRE_DEFLATE=ffm|jdk (the Quarkus app's switches, README "After").
+ set -euo pipefail
+@@ -38,8 +38,12 @@ ROOT=$(cd "$(dirname "$0")" && pwd)
+ # ---- what is measured ------------------------------------------------------------------------
+ JDK_KOTLIN=${JDK_KOTLIN:-25.0.3-tem}     # the Kotlin port as published
+ JDK_QUARKUS=${JDK_QUARKUS:-27.0.0-tem}   # Quarkus: build and run
++JDK_JAVA=${JDK_JAVA:-25.0.3-tem}         # the Java port (once-campfire-java): build and run
++JDK_DRIVER=${JDK_DRIVER:-$JDK_KOTLIN}    # Hyperfoil, so the apps' JDKs can change without the load driver's
+ PORT=4390 ROOM=486777696
+ RUST=$ROOT/upstream/once-campfire-rust KOTLIN=$ROOT/upstream/once-campfire-kotlin
++# The Java port, a full Campfire on Quarkus REST, checked out next to this repository (JAVA_PORT overrides).
++JAVA_PORT=${JAVA_PORT:-$(cd "$ROOT/.." && pwd)/once-campfire-java}
+ # The Kotlin port's modules as the Quarkus app uses them: a fork whose per-thread objects are pooled on
+ # virtual threads (DIFFERENCES.md); the Kotlin app itself always runs from $KOTLIN, as published.
+ KOTLIN_POOLED=$ROOT/upstream/once-campfire-kotlin-pooled
+@@ -83,6 +87,7 @@ cmd_setup() {
+ 
+   log "the ports at the measured commits (git submodules)"
+   git submodule update --init upstream/once-campfire-rust upstream/once-campfire-kotlin upstream/once-campfire-kotlin-pooled
++  git -C "$RUST" submodule update --init --depth 1 reference  # its asset build reads the Rails app's assets
+   git -C "$KOTLIN" submodule update --init --depth 1 reference
+   git -C "$KOTLIN_POOLED" submodule update --init --depth 1 reference
+ 
+@@ -114,6 +119,15 @@ cmd_setup() {
+   done
+   (cd quarkus4-app && JAVA_HOME=$jq ./mvnw -B package -Dcampfire.kotlin.version="$version") >> "$WORK/build-quarkus.log" 2>&1 \
+     || die "Quarkus build failed: $WORK/build-quarkus.log"
++
++  if [ -d "$JAVA_PORT" ]; then
++    log "building the Java port ($JAVA_PORT, $WORK/build-java.log)"
++    local jj; jj=$(jdk "$JDK_JAVA")
++    git -C "$JAVA_PORT" submodule update --init --depth 1 reference
++    (cd "$JAVA_PORT" && JAVA_HOME=$jj mvn -B package -DskipTests) > "$WORK/build-java.log" 2>&1 || die "Java build failed: $WORK/build-java.log"
++  else
++    log "no Java port at $JAVA_PORT: skipped (JAVA_PORT=...)"
++  fi
+   log "done; next: ./bench.sh parity, then ./bench.sh run"
+ }
+ 
+@@ -121,7 +135,9 @@ cmd_setup() {
+ APP_PID=""
+ start_app() {  # APP CPUS: on a fresh copy of the seed, pinned, until /up answers
+   local app=$1 cpus=$2 dir=$WORK/run-$1-$PORT
+-  ! curl -fs -o /dev/null "http://127.0.0.1:$PORT/up" || die "something already answers on port $PORT"
++  # --connect-timeout: with WSL's mirrored networking, a SYN to a port nothing listens on can go
++  # unanswered instead of refused, and each probe would wait out the kernel's retries (about 2 min).
++  ! curl -fs --connect-timeout 1 -o /dev/null "http://127.0.0.1:$PORT/up" || die "something already answers on port $PORT"
+   rm -rf "$dir"; mkdir -p "$dir/db" "$dir/files"
+   cp "$SEED_DB" "$dir/db/production.sqlite3"
+   local env=(RAILS_LOG_LEVEL=warn LOG_REQUESTS=false RAILS_MAX_THREADS=5 HTTP_PORT=$PORT TARGET_PORT=$((PORT + 1))
+@@ -134,7 +150,11 @@ start_app() {  # APP CPUS: on a fresh copy of the seed, pinned, until /up answer
+     quarkus) java=$(jdk "$JDK_QUARKUS")/bin/java
+       env+=(CAMPFIRE_SQLITE_LIB="$KOTLIN/native/linux-x86_64/libcampfire_sqlite3.so")
+       cmd=("$java" "${JVM_COMMON[@]}" "${JVM_QUARKUS[@]}" -jar "$ROOT/quarkus4-app/target/quarkus-app/quarkus-run.jar") ;;
+-    *) die "unknown app $app (quarkus, kotlin, rust)" ;;
++    java) java=$(jdk "$JDK_JAVA")/bin/java
++      # Its storage directory holds db/production.sqlite3 and files/, the layout above.
++      env+=(CAMPFIRE_STORAGE="$dir")
++      cmd=("$java" "${JVM_COMMON[@]}" -jar "$JAVA_PORT/target/quarkus-app/quarkus-run.jar") ;;
++    *) die "unknown app $app (quarkus, kotlin, rust, java)" ;;
+   esac
+   # The Rust port's parity environment (secret key, settings), then ours. 9>&-: the app never holds
+   # the lock, even if it outlives this script.
+@@ -142,7 +162,7 @@ start_app() {  # APP CPUS: on a fresh copy of the seed, pinned, until /up answer
+   APP_PID=$!
+   for _ in $(seq 1 600); do
+     kill -0 "$APP_PID" 2> /dev/null || break
+-    curl -fs -o /dev/null "http://127.0.0.1:$PORT/up" && return 0
++    curl -fs --connect-timeout 1 -o /dev/null "http://127.0.0.1:$PORT/up" && return 0
+     sleep 0.05
+   done
+   tail -20 "$OUT/$app.log" >&2; die "$app didn't start"
+@@ -242,7 +262,7 @@ report() {  # UTF-8 whatever the locale: the tables use µ and the chart █
+ 
+ # ---- Hyperfoil -------------------------------------------------------------------------------
+ hyperfoil() {  # RUN_DIR ARGS: Hyperfoil 0.29.3 (jbang-catalog.json) on the driver CPUs, its run data under RUN_DIR
+-  local run=$1 java; shift; java=$(jdk "$JDK_KOTLIN")
++  local run=$1 java; shift; java=$(jdk "$JDK_DRIVER")
+   local args=(-PPORT="$PORT" -PROOM="$ROOM" -PCOOKIE="$COOKIE" -PTHREADS="$(cpu_list "$DRIVER_CPUS" | wc -l)" "$@")
+   if [ "$WORKLOAD" = realistic ]; then  # a template's files are never read from disk (Hyperfoil asks to upload them)
+     mkdir -p "$run"; render "${args[-1]}" "$run/scenario.hf.yaml" "${args[@]:0:${#args[@]}-1}"; args=("$run/scenario.hf.yaml")
+@@ -317,20 +337,43 @@ reference() {
+   stop_app
+ }
+ 
++# Whether every PAGE equals EXPECTED: byte for byte, or for the Java port as markup (its
++# tools/parity/markup.py: tags with sorted, decoded attributes and collapsed whitespace), since it
++# renders the same elements as Rust with other spelling.
++same_page() {  # APP EXPECTED PAGE...
++  local app=$1 expected=$2 f; shift 2
++  if [ "$app" = java ]; then
++    python3 -B - "$JAVA_PORT/tools/parity" "$expected" "$@" <<'EOF'
++import sys
++sys.path.insert(0, sys.argv[1])
++from markup import tokens
++want = tokens(open(sys.argv[2], encoding='utf-8').read())
++sys.exit(any(tokens(open(f, encoding='utf-8').read()) != want for f in sys.argv[3:]))
++EOF
++  else
++    for f in "$@"; do cmp -s "$f" "$expected" || return 1; done
++  fi
++}
++
+ # After every start: a smoke test (100 requests, each decoded body equal to the Rust page; a failure
+ # stops the run), then WARMUP seconds all out at 16 connections.
+ warm() {
+-  local app=$1 i
+-  for i in $(seq 1 100); do
+-    fetch | cmp -s - "$OUT/expected.html" || die "$app's room page differs from the Rust port's (request $i)"
+-  done
+-  log "$app: 100 of 100 room pages identical to the Rust port's"
++  local app=$1 i smoke=$OUT/smoke-$1 same=identical
++  [ "$app" = java ] && same="identical as markup"
++  rm -rf "$smoke"; mkdir -p "$smoke"
++  for i in $(seq 1 100); do fetch > "$smoke/$i.html" || die "$app didn't serve the room page (request $i)"; done
++  same_page "$app" "$OUT/expected.html" "$smoke"/*.html || die "$app's room page differs from the Rust port's ($smoke)"
++  rm -rf "$smoke"
++  log "$app: 100 of 100 room pages $same to the Rust port's"
+   if [ "$WORKLOAD" = realistic ]; then
+     local n=0 cookie room person
++    mkdir -p "$smoke"
+     while IFS=, read -r cookie room person; do
+-      n=$((n + 1)); fetch "$cookie" "$room" | cmp -s - "$OUT/expected/$n.html" || die "$app's room $room for person $person differs from the Rust port's"
++      n=$((n + 1)); fetch "$cookie" "$room" > "$smoke/page.html"
++      same_page "$app" "$OUT/expected/$n.html" "$smoke/page.html" || die "$app's room $room for person $person differs from the Rust port's"
+     done < "$OUT/workload/checks.csv"
+-    log "$app: all $n (person, room) pages identical to the Rust port's"
++    rm -rf "$smoke"
++    log "$app: all $n (person, room) pages $same to the Rust port's"
+   fi
+   all_out "$OUT/warmup-$app" 16 "$WARMUP" > "$OUT/warmup-$app.out" 2>&1 || true
+ }
+@@ -445,13 +488,14 @@ describe() {
+   echo "jdk_kotlin=$JDK_KOTLIN jdk_quarkus=$JDK_QUARKUS jvm_common=${JVM_COMMON[*]} jvm_quarkus=${JVM_QUARKUS[*]}"
+   local libz; libz=$(ldconfig -p 2> /dev/null | awk '!found && /libz\.so\.1 \(libc6,x86-64\)/ { print $NF; found = 1 }')
+   echo "quarkus_fragment_memory=${CAMPFIRE_FRAGMENT_MEMORY:-heap} quarkus_deflate=${CAMPFIRE_DEFLATE:-ffm} libz=$libz -> $(readlink -f "$libz" 2> /dev/null)"
+-  local d; for d in "$ROOT" "$RUST" "$KOTLIN" "$KOTLIN_POOLED"; do echo "$(basename "$d") $(git -C "$d" rev-parse --short HEAD) $(git -C "$d" status --short -- . ':!results/runs' | wc -l) changed"; done
++  echo "jdk_java=$JDK_JAVA jdk_driver=$JDK_DRIVER"
++  local d; for d in "$ROOT" "$RUST" "$KOTLIN" "$KOTLIN_POOLED" $([ -d "$JAVA_PORT" ] && echo "$JAVA_PORT"); do echo "$(basename "$d") $(git -C "$d" rev-parse --short HEAD) $(git -C "$d" status --short -- . ':!results/runs' | wc -l) changed"; done
+ }
+ 
+ # ---- profile ---------------------------------------------------------------------------------
+ LOAD_PID=""
+ cmd_profile() {
+-  case $PROFILE_APP in quarkus|kotlin) ;; *) die "profile needs --app quarkus or --app kotlin" ;; esac
++  case $PROFILE_APP in quarkus|kotlin|java) ;; *) die "profile needs --app quarkus, kotlin or java" ;; esac
+   case $FORMAT in html|jfr|collapsed) ;; *) die "--format html, jfr or collapsed" ;; esac
+   [[ $EVENT != *,* ]] || [ "$FORMAT" = jfr ] || die "several events (--event $EVENT) need --format jfr"
+   [ -n "$APP_CPUS" ] || place "${CORES%% *}"
+@@ -499,7 +543,7 @@ cmd_profile() {
+ RUST_PID=""
+ cmd_parity() {
+   local app=${1:-quarkus} extra_file=$ROOT/bench/requests-extra.txt
+-  case $app in quarkus|kotlin) ;; *) die "parity compares quarkus or kotlin with the Rust port" ;; esac
++  case $app in quarkus|kotlin|java) ;; *) die "parity compares quarkus, kotlin or java with the Rust port" ;; esac
+   OUT=$WORK/parity-$app; rm -rf "$OUT"; mkdir -p "$OUT"
+   trap 'kill "$RUST_PID" 2> /dev/null || true; stop_app' EXIT
+   local all; all=$(lscpu -p=CPU | grep -v '^#' | paste -sd,)

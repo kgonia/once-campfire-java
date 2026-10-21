@@ -11,6 +11,10 @@ internals are kept only where drop-in compatibility needs them.
 
 ## Performance
 
+Two benchmarks: the verification harness's eight routes (below, [detailed results](docs/benchmarks.md)), and
+franz1981's room-page benchmark ([On campfire-quarkus-bench](#on-campfire-quarkus-bench),
+[explainer](docs/quarkus-bench.md)).
+
 We measured Java and the Rust port on an AWS c7a.4xlarge with 16 AMD EPYC cores. Each app ran on four cores, and
 the load generator ran on four others. The load generator ran 16 concurrent connections. Each value is the median
 of three interleaved rounds of the verification harness's `bin/benchmark`, run on October 18, 2026. Each app ran
@@ -52,6 +56,122 @@ are the ones this port's tuning measured, and the Rust port could likely gain fr
 
 **[Detailed results](docs/benchmarks.md):** all six builds and eight routes, the uncached pages, warmup curves,
 AOT training on the benchmark itself, posting checks, memory by heap size, and the scripts.
+
+### On campfire-quarkus-bench
+
+> **📖 [Read the full explainer: docs/quarkus-bench.md](docs/quarkus-bench.md)**
+>
+> It covers how this benchmark differs from the verification harness, the exact setup, where the CPU goes, why
+> JDBC doesn't limit this port, what Valhalla's preview turns on, and how to reproduce every number below.
+
+We also ran [franz1981](https://github.com/franz1981)'s
+[campfire-quarkus-bench](https://github.com/franz1981/campfire-quarkus-bench), which measures one page, the
+signed-in room page, against the [Rust](https://github.com/basecamp/once-campfire-rust) and
+[Kotlin](https://github.com/mysticcoders/once-campfire-kotlin) ports. This port was added to its harness as a
+fourth app ([the patch](tools/quarkus-bench/campfire-quarkus-bench.patch)).
+
+The setup:
+
+- Hyperfoil, closed loop: 16 and 1,024 connections, 15 s per step, 5 reps.
+- Each app on four efficiency cores of an Intel Core Ultra 5 135U laptop, with the load driver on eight
+  other cores.
+- Both JVMs on Temurin 25 with the harness's options: ParallelGC and a 512 MB heap.
+- Before each measurement, 100 pages compared with Rust's: as markup for this port (the same tags, attributes
+  and text), byte for byte for Kotlin.
+
+**Throughput and CPU.** Mean ± standard deviation over the 5 reps:
+
+| conns | app | req/s | spread between reps | spread within a step | CPU µs/req | cores busy (of 4) |
+|---:|---|---:|---:|---:|---:|---:|
+| 16 | **Java** | **45,069 ± 530** | 1.2% | 1.3% | 82.8 ± 1.0 | 3.10 |
+| 16 | Kotlin | 43,632 ± 321 | 0.7% | 0.6% | 81.2 ± 0.9 | 2.93 |
+| 16 | Rust | 37,196 ± 211 | 0.6% | 0.3% | 105 ± 0.5 | 3.24 |
+| 1,024 | Kotlin | **57,163 ± 723** | 1.3% | 1.3% | 64.7 ± 0.8 | 3.01 |
+| 1,024 | Java | 46,583 ± 579 | 1.2% | 1.5% | 82.1 ± 1.2 | 3.20 |
+| 1,024 | Rust | 29,122 ± 329 | 1.1% | 1.6% | 135 ± 1.1 | 3.13 |
+
+**Latency and memory:**
+
+| conns | app | mean ms | p50 ms | p99 ms | latency std ms | RSS MB | peak RSS MB |
+|---:|---|---:|---:|---:|---:|---:|---:|
+| 16 | Java | 0.35 | 0.33 | 0.89 ± 0.02 | 0.18 | 412 ± 20 | 442 ± 12 |
+| 16 | Kotlin | 0.37 | 0.36 | 0.81 ± 0.02 | 0.13 | 245 ± 7 | 331 ± 8 |
+| 16 | Rust | 0.43 | 0.41 | 0.83 ± 0.01 | 0.15 | 54 ± 1 | 55 ± 1 |
+| 1,024 | Java | 22.0 | 33.1 | 46.2 ± 0.6 | 17.8 | 509 ± 11 | 509 ± 11 |
+| 1,024 | Kotlin | 17.9 | 17.8 | 24.1 ± 0.3 | 2.3 | 348 ± 6 | 348 ± 6 |
+| 1,024 | Rust | 35.1 | 34.3 | 52.7 ± 0.4 | 6.3 | 107 | 108 ± 1 |
+
+How to read the columns:
+
+- **Spread between reps** is the standard deviation of the reps' req/s as a share of their mean.
+- **Spread within a step** is the same for the 15 one-second intervals of a step, averaged over the reps.
+- **Latency std** is the standard deviation over all of a step's responses. The latencies barely changed between
+  reps (0.6–2.1%).
+- **RSS** is the app's memory after the step; **peak RSS** is the most since it started.
+- **Cores busy** is the average number of the app's 4 CPUs in use. No app saturated them, and the load driver
+  used 0.8–1.2 of its 8.
+- No step had an error, a missing connection or an invalid response.
+
+What the numbers say:
+
+- **At 16 connections, Java is ahead of Kotlin by 3%.** Its slowest rep (44,316) beat Kotlin's fastest (43,985).
+- **At 1,024 connections, Kotlin is ahead by 23%.** Its CPU per request falls to 65 µs, while Java's stays at
+  82 µs.
+- **Java serves connections unevenly at 1,024.** Its latency std is 17.8 ms against Kotlin's 2.3 ms. Its median
+  (33 ms) is above its mean (22 ms): a share of requests is answered fast, and most wait about 33 ms.
+- **Rust at 1,024 is limited by its listen backlog of 128,** which the harness leaves unpatched. It overflowed in
+  4 of the 5 reps.
+- **Memory:** Rust uses a fraction of the JVMs': 55–108 MB at its peak, against 331–348 MB for Kotlin and
+  442–509 MB for Java.
+
+**JDBC, which that benchmark's Quarkus app avoids for FFM.** This port uses sqlite-jdbc, and it takes 17–20% of
+the CPU, about 15 µs per request. It doesn't set a ceiling here:
+
+- a cached room page makes only two SQLite calls;
+- each request makes its calls on its own virtual thread, so there is no single SQLite thread for them to queue on.
+
+**JDK 28 early access and Valhalla.** The same run twice more, with only the JVM apps on JDK 28 (`28-ea+20`): as
+is, and with `--enable-preview`, which turns on Valhalla's value objects (JEP 401). The load driver stayed on
+JDK 25.
+
+| conns | app | metric | JDK 25 | JDK 28 | JDK 28, `--enable-preview` |
+|---:|---|---|---:|---:|---:|
+| 16 | Java | req/s | 45,069 ± 530 | **47,146 ± 367 (+4.6%)** | 45,774 ± 1,288 (+1.6%) |
+| 16 | Java | CPU µs/req | 82.8 ± 1.0 | **79.1 ± 0.5** | 81.5 ± 1.9 |
+| 16 | Java | p99 ms | 0.89 ± 0.02 | **0.82 ± 0.01** | 0.88 ± 0.08 |
+| 16 | Java | peak RSS MB | 442 ± 12 | **399 ± 16** | 417 ± 36 |
+| 16 | Kotlin | req/s | 43,632 ± 321 | 44,095 ± 437 (+1.1%) | **44,348 ± 233 (+1.6%)** |
+| 16 | Kotlin | CPU µs/req | 81.2 ± 0.9 | 80.4 ± 0.9 | **79.9 ± 0.6** |
+| 16 | Kotlin | p99 ms | 0.81 ± 0.02 | **0.73 ± 0.01** | **0.73 ± 0.02** |
+| 16 | Kotlin | peak RSS MB | 331 ± 8 | **270 ± 5** | **275 ± 5** |
+| 1,024 | Java | req/s | 46,583 ± 579 | **48,232 ± 516 (+3.5%)** | 47,361 ± 841 (+1.7%) |
+| 1,024 | Java | CPU µs/req | 82.1 ± 1.2 | **79.4 ± 0.9** | 81.4 ± 2.3 |
+| 1,024 | Java | p99 ms | 46.2 ± 0.6 | **43.2 ± 0.7** | **44.3 ± 0.6** |
+| 1,024 | Java | latency std ms | 17.8 ± 0.4 | **16.3 ± 0.3** | **16.9 ± 0.2** |
+| 1,024 | Java | peak RSS MB | 509 ± 11 | 489 ± 21 | 508 ± 30 |
+| 1,024 | Kotlin | req/s | 57,163 ± 723 | 57,466 ± 452 (+0.5%) | 57,598 ± 376 (+0.8%) |
+| 1,024 | Kotlin | CPU µs/req | 64.7 ± 0.8 | 64.5 ± 0.5 | 64.4 ± 0.5 |
+| 1,024 | Kotlin | p99 ms | 24.1 ± 0.3 | 24.1 ± 0.3 | 24.1 ± 0.3 |
+| 1,024 | Kotlin | peak RSS MB | 348 ± 6 | 342 ± 8 | 349 ± 7 |
+| 16 | Rust | req/s | 37,196 ± 211 | 37,398 ± 145 | 37,361 ± 238 |
+| 1,024 | Rust | req/s | 29,122 ± 329 | 29,236 ± 179 | 29,339 ± 191 |
+
+Values in bold differ from JDK 25 by more than the reps' spread (Welch's t-test at 95%). Rust didn't change, so
+the machine didn't drift between the runs.
+
+- **JDK 28 helps.** Java gains 3.5–4.6% with 3–4% less CPU per request, and its p99 drops by about 7%. Kotlin
+  gains no throughput, but its p99 at 16 connections drops by 10%.
+- **Memory barely moves with the JDK.**
+  - Kotlin's peak drops by 18% at 16 connections because a spike during startup and warmup is gone. After the
+    step it holds 7% more (262 against 245 MB), and at 1,024 connections the JDKs are level.
+  - Java uses 4–10% less on JDK 28, mostly within the reps' spread.
+  - With ParallelGC, RSS is mostly how far the GC grew the heap, not how much of it is live.
+- **Valhalla doesn't help, without code changes.**
+  - `--enable-preview` turns 31 JDK classes into value classes: the boxes, `java.time`'s dates, `Optional`.
+  - It gains nothing over plain JDK 28. Java even uses 3% more CPU per request at 16 connections.
+  - Neither app declares a value class of its own, and the JDK's ones are about 1% of what this page allocates.
+
+> **📖 [Full explainer, with the profiles and how to reproduce: docs/quarkus-bench.md](docs/quarkus-bench.md)**
 
 ## Layout
 
